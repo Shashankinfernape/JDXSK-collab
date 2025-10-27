@@ -14,11 +14,12 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      // --- HARDCODE FIX ---
+      // --- FIX: Added 'transports: ["websocket", "polling"]' ---
       const newSocket = io(RENDER_API_URL, {
         query: { userId: user._id },
+        transports: ["websocket", "polling"] 
       });
-      // --- END HARDCODE FIX ---
+      // --- END FIX ---
 
       newSocket.on('connect', () => {
         console.log('Socket.IO connected:', newSocket.id);
