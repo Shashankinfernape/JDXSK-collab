@@ -41,8 +41,8 @@ const GoogleButton = styled.button`
 `;
 
 const Login = () => {
-  // Get the REAL login handler from our new AuthContext
-  const { handleGoogleLogin } = useAuth(); 
+  // Get the login handler from AuthContext
+  const { handleGoogleLogin } = useAuth();
 
   return (
     <LoginContainer>
@@ -56,3 +56,4 @@ const Login = () => {
 };
 
 export default Login;
+

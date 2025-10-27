@@ -3,24 +3,30 @@ const passport = require('passport');
 const authController = require('../controllers/auth.controller');
 const router = express.Router();
 
-// @desc    Auth with Google
-// @route   GET /api/auth/google
-router.get('/google', passport.authenticate('google', { 
+// Route 1: Initiate Google Login
+// When the client redirects here, Passport starts the Google OAuth flow.
+// GET /api/auth/google
+router.get('/google', passport.authenticate('google', {
   scope: [
-    'profile', 
-    'email', 
-    'https://www.googleapis.com/auth/drive.file' // Request Drive scope at login
-  ] 
+    'profile', // Request basic profile info (name, photo)
+    'email',   // Request email address
+    'https://www.googleapis.com/auth/drive.file' // Scope needed for Google Drive backup later
+  ],
+  session: false // We are not using server sessions, using JWT instead
 }));
 
-// @desc    Google auth callback
-// @route   GET /api/auth/google/callback
+// Route 2: Google Callback
+// Google redirects the user back HERE after they approve login.
+// GET /api/auth/google/callback
 router.get(
   '/google/callback',
-  passport.authenticate('google', { 
-    failureRedirect: `${process.env.CLIENT_URL}/login`, // Redirect to login on fail
-    session: false // We are using JWTs, not sessions
+  // Passport middleware tries to authenticate using the code Google provides
+  passport.authenticate('google', {
+    failureRedirect: `${process.env.CLIENT_URL}/login?error=true`, // Redirect back to client login on failure
+    session: false // Still no sessions needed
   }),
+  // If passport.authenticate succeeds, it attaches 'req.user'
+  // Then, it calls our controller function to handle the success
   authController.googleCallback
 );
 
