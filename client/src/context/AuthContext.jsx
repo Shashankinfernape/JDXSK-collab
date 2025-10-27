@@ -1,7 +1,4 @@
-// --- THIS IS THE FIX ---
-// We import 'useCallback'
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-// --- END FIX ---
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'; 
 
@@ -15,9 +12,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // --- THIS IS THE FIX ---
-  // We wrap 'login', 'logout', and 'updateUser' in useCallback.
-  // This ensures they don't change on every render.
   const login = useCallback((userData, userToken) => {
     setUser(userData);
     setToken(userToken);
@@ -25,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', userToken);
     api.defaults.headers.common['Authorization'] = `Bearer ${userToken}`;
     navigate('/');
-  }, [navigate]); // 'navigate' is a dependency
+  }, [navigate]); 
 
   const logout = useCallback(() => {
     setUser(null);
@@ -34,7 +28,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
     navigate('/login');
-  }, [navigate]); // 'navigate' is a dependency
+  }, [navigate]); 
 
   const updateUser = useCallback((updatedInfo) => {
     setUser((prevUser) => {
@@ -42,8 +36,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(newUser));
       return newUser;
     });
-  }, []); // No dependencies
-  // --- END FIX ---
+  }, []); 
 
   useEffect(() => {
     const checkToken = async () => {
@@ -78,23 +71,23 @@ export const AuthProvider = ({ children }) => {
     } else {
       checkToken();
     }
-  // --- THIS IS THE FIX ---
-  // We add 'login' and 'logout' to the dependency array.
-  // It's now safe because we wrapped them in useCallback.
   }, [login, logout]);
-  // --- END FIX ---
 
 
+  // --- THIS IS THE FIX ---
+  // This function now reads the URL from your environment variable
+  // instead of being hard-coded to localhost.
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    window.location.href = `${process.env.REACT_APP_API_URL}/api/auth/google`;
   };
+  // --- END FIX ---
 
   const value = {
     user,
     token,
     loading,
     login,
-    handleGoogleLogin,
+    handleGoogleLogin, // This is the fixed function
     logout,
     updateUser,
     isAuthenticated: !!user,
@@ -106,3 +99,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
