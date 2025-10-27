@@ -3,9 +3,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import { useAuth } from './context/AuthContext';
-import { ThemeProvider } from 'styled-components'; // Import from styled-components
-import { GlobalStyles } from './theme/GlobalStyles'; // Import GlobalStyles
-import { useTheme } from './context/ThemeContext'; // Import our new theme hook
+import { ThemeProvider } from 'styled-components'; // From styled-components
+import { GlobalStyles } from './theme/GlobalStyles'; 
+import { useTheme } from './context/ThemeContext'; // From our custom hook
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -17,12 +17,16 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const { user } = useAuth();
-  const { theme } = useTheme(); // Get the active theme object
+  // --- This is the key change ---
+  // We get the active theme object from our custom hook
+  const { theme } = useTheme(); 
 
+  // We wrap the entire app in the styled-components ThemeProvider
+  // This makes the theme available to all styled components
   return (
-    // Pass the active theme to ThemeProvider
     <ThemeProvider theme={theme}>
-      <GlobalStyles /> {/* This injects all the global styles */}
+      {/* GlobalStyles MUST be rendered here to use the dynamic theme object */}
+      <GlobalStyles /> 
       <Routes>
         <Route
           path="/"

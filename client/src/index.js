@@ -5,17 +5,18 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { ChatProvider } from './context/ChatContext';
-import { AppThemeProvider } from './context/ThemeContext'; // Import new provider
+import { AppThemeProvider } from './context/ThemeContext'; // Import theme provider
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      {/* Wrap everything in the new theme provider */}
+      {/* All providers go here */}
       <AppThemeProvider>
         <AuthProvider>
           <SocketProvider>
             <ChatProvider>
+              {/* App is inside all providers */}
               <App />
             </ChatProvider>
           </SocketProvider>
