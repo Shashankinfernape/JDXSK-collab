@@ -6,18 +6,19 @@ const SocketContext = createContext();
 
 export const useSocket = () => useContext(SocketContext);
 
+const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; // --- HARDCODE FIX ---
+
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
-      // --- THIS IS THE FIX ---
-      // The user object from Mongo has '_id', not 'id'.
-      const newSocket = io('http://localhost:5000', {
-        query: { userId: user._id }, // Changed from user.id
+      // --- HARDCODE FIX ---
+      const newSocket = io(RENDER_API_URL, {
+        query: { userId: user._id },
       });
-      // --- END FIX ---
+      // --- END HARDCODE FIX ---
 
       newSocket.on('connect', () => {
         console.log('Socket.IO connected:', newSocket.id);
@@ -35,7 +36,7 @@ export const SocketProvider = ({ children }) => {
         setSocket(null);
       }
     }
-  }, [user]); 
+  }, [user, socket]); // <-- FIX: Added 'user' and 'socket'
 
   return (
     <SocketContext.Provider value={socket}>
