@@ -74,11 +74,10 @@ export const AuthProvider = ({ children }) => {
   }, [login, logout]);
 
 
-  // --- THIS IS THE FIX ---
-  // This function now reads the URL from your environment variable
-  // instead of being hard-coded to localhost.
+  // --- THIS IS THE HARD-CODED FIX ---
+  // I am no longer using the .env variable, just as a test.
   const handleGoogleLogin = () => {
-    window.location.href = `${process.env.REACT_APP_API_URL}/api/auth/google`;
+    window.location.href = `https://jdxsk-collab.onrender.com/api/auth/google`;
   };
   // --- END FIX ---
 
@@ -87,7 +86,7 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     login,
-    handleGoogleLogin, // This is the fixed function
+    handleGoogleLogin, 
     logout,
     updateUser,
     isAuthenticated: !!user,
