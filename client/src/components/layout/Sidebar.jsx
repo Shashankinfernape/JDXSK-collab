@@ -96,17 +96,46 @@ const IconButton = styled.button`
   }
 `;
 
+// --- FIX: Apply specific brand colors to ThemeSwitcher icon ---
 const ThemeSwitcher = styled(IconButton)`
   font-size: 1.6rem;
+  /* Default icon color */
   color: ${props => props.theme.colors.icon};
-  &:hover {
-    color: ${props => props.theme.colors.iconActive};
-  }
+
+  /* Specific colors based on the current theme */
+  ${({ theme }) => theme.name === 'netflix' && css`
+    color: #E50914; /* Netflix Red */
+  `}
+  ${({ theme }) => theme.name === 'spotify' && css`
+    color: #1DB954; /* Spotify Green */
+  `}
+  ${({ theme }) => theme.name === 'apple' && css`
+    /* Use textPrimary which is black/white based on mode */
+    color: ${props => props.theme.colors.textPrimary};
+  `}
+   ${({ theme }) => theme.name === 'google' && css`
+    color: #4285F4; /* Google Blue */
+  `}
   ${({ theme }) => theme.name === 'instagram' && css`
     svg { fill: url(#instagram-gradient-icon); }
-    color: ${theme.colors.primary};
+    /* Remove color override for gradient to work */
+    color: inherit;
   `}
+
+  &:hover {
+     /* Optional: Slightly dim the color on hover, or keep theme's iconActive */
+     opacity: 0.8;
+     /* If hover color is needed, apply conditionally */
+     /* color: ${props => props.theme.colors.iconActive}; */
+     ${({ theme }) => theme.name === 'instagram' && css`
+        opacity: 0.8; // Dim gradient slightly
+        color: inherit; // Prevent hover color override
+        svg { fill: url(#instagram-gradient-icon); }
+     `}
+  }
 `;
+// --- END FIX ---
+
 
 const DropdownMenu = styled.div`
   position: absolute; top: 120%; right: 0;
@@ -153,7 +182,7 @@ const SearchInput = styled.input`
 // --- Sidebar Component ---
 const Sidebar = ({ onChatSelect }) => {
   const { user, logout } = useAuth();
-  const { themeName, cycleTheme, theme } = useTheme(); // Pass theme for avatar
+  const { themeName, cycleTheme, theme } = useTheme(); // Pass theme for avatar & switcher
   const [showMenu, setShowMenu] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
