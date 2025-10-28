@@ -15,12 +15,14 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
+      // --- CRITICAL STABILITY FIX ---
       const newSocket = io(RENDER_API_URL, {
         query: { userId: user._id },
-        transports: ['polling'],
-        reconnectionAttempts: 3, 
-        reconnectionDelayMax: 5000 
+        transports: ['polling'], // Forced polling to avoid WebSocket failures
+        reconnectionAttempts: 3, // Limited retries to 3 attempts
+        reconnectionDelayMax: 5000 // Max delay of 5 seconds between retries
       });
+      // --- END FIX ---
 
       newSocket.on('connect', () => {
         console.log('Socket.IO connected:', newSocket.id);
@@ -47,5 +49,5 @@ export const SocketProvider = ({ children }) => {
   );
 };
 
-// 2. Export the hook using its simple, preferred name.
+// 2. Export the hook cleanly
 export const useSocket = useSocketHook;

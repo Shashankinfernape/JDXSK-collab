@@ -22,6 +22,7 @@ const app = express();
 // Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL, // Allow requests from our client app
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Explicitly allow all methods
   credentials: true
 }));
 app.use(express.json());
@@ -38,16 +39,14 @@ app.use('/api/backup', require('./routes/backup.routes'));
 // Create HTTP server
 const httpServer = http.createServer(app);
 
-// --- START FIX: Explicitly Configure Socket.IO Server ---
+// --- CRITICAL FIX: Ensure Socket.IO is initialized robustly ---
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
   },
-  // CRITICAL FIX: Ensure Socket.IO uses only 'websocket' first, 
-  // and uses the explicit path the client is looking for
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'] // Allow both, but client is forced to polling first
 });
 // --- END FIX ---
 
@@ -60,7 +59,7 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-// CRITICAL FIX: Listen on '0.0.0.0' for Render deployment stability
+// CRITICAL FIX: Listen on '0.0.0.0' for Render stability
 httpServer.listen(PORT, '0.0.0.0', () => { 
   console.log(`Server running on port ${PORT}`);
 });
