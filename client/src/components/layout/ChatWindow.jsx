@@ -30,10 +30,25 @@ const ChatHeader = styled.header`
   flex-shrink: 0; // Prevent header shrinking
 `;
 
+// --- FIX: Define IconButton *before* BackButton ---
+const IconButton = styled.button`
+  background: none; border: none;
+  color: ${props => props.theme.colors.icon};
+  cursor: pointer; font-size: 1.5rem; display: flex; align-items: center;
+  padding: 4px; border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  &:hover {
+    background-color: ${props => props.theme.colors.hoverBackground};
+    color: ${props => props.theme.colors.iconActive};
+  }
+`;
+// --- END FIX ---
+
+// Now BackButton can correctly extend IconButton
 const BackButton = styled(IconButton)`
-  display: none;
+  display: none; // Hidden by default on larger screens
   margin-right: 0.5rem;
-  @media (max-width: 900px) { display: flex; }
+  @media (max-width: 900px) { display: flex; } // Shown on smaller screens
 `;
 
 const ChatInfo = styled.div`
@@ -78,61 +93,40 @@ const HeaderIcons = styled.div`
     gap: 1rem;
 `;
 
-// Define IconButton here if it's not globally available or imported
-const IconButton = styled.button`
-  background: none; border: none;
-  color: ${props => props.theme.colors.icon};
-  cursor: pointer; font-size: 1.5rem; display: flex; align-items: center;
-  padding: 4px; border-radius: 50%;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  &:hover {
-    background-color: ${props => props.theme.colors.hoverBackground};
-    color: ${props => props.theme.colors.iconActive};
-  }
-`;
-
-
 // --- ChatWindow Component ---
 const ChatWindow = ({ onBack }) => {
     const { activeChat, onlineUsers } = useChat();
     const { user } = useAuth();
 
-    // Guard clause: If there's no active chat, render nothing or a placeholder
+    // Guard clause: If there's no active chat, render nothing
     if (!activeChat) {
-        // This should ideally be handled by Home.jsx showing the WelcomePlaceholder
         return null;
     }
 
-    // --- FIX: Implement the logic to find display info ---
-    let displayName = 'Chat'; // Default
-    let displayPicture = `https://i.pravatar.cc/150?u=default`; // Default fallback
+    // Logic to find display info (remains the same)
+    let displayName = 'Chat';
+    let displayPicture = `https://i.pravatar.cc/150?u=default`;
     let otherUserId = null;
     let isOnline = false;
 
     if (activeChat.isGroup) {
         displayName = activeChat.groupName || 'Group Chat';
-        displayPicture = activeChat.groupIcon || `https://i.pravatar.cc/150?u=${activeChat._id}`; // Use chat ID for placeholder uniqueness
-        // 'isOnline' is not typically shown for groups, maybe participant count?
+        displayPicture = activeChat.groupIcon || `https://i.pravatar.cc/150?u=${activeChat._id}`;
     } else if (user && activeChat.participants) {
-        // Find the participant who is NOT the current logged-in user
         const otherParticipant = activeChat.participants.find(p => p._id !== user._id);
         if (otherParticipant) {
             displayName = otherParticipant.name;
             displayPicture = otherParticipant.profilePic || `https://i.pravatar.cc/150?u=${otherParticipant._id}`;
             otherUserId = otherParticipant._id;
-            // Check if this other user's ID is in the onlineUsers list
             isOnline = onlineUsers.includes(otherUserId);
         } else {
-             // Handle case where participant data might be missing temporarily
              displayName = "Chat User";
              displayPicture = `https://i.pravatar.cc/150?u=unknown`;
         }
     }
-    // --- END FIX ---
 
 
   return (
-    // Ensure ChatWindowContainer is using 100% height from parent
     <ChatWindowContainer style={{ height: '100%' }}>
       <ChatHeader>
         <ChatInfo>
@@ -142,7 +136,6 @@ const ChatWindow = ({ onBack }) => {
           <ChatAvatar src={displayPicture} alt={displayName} />
           <InfoTextContainer>
             <ChatName>{displayName}</ChatName>
-            {/* Show online/offline for 1-on-1, members for group */}
             {!activeChat.isGroup && (
               <ChatStatus>{isOnline ? 'online' : 'offline'}</ChatStatus>
             )}
@@ -157,9 +150,7 @@ const ChatWindow = ({ onBack }) => {
         </HeaderIcons>
       </ChatHeader>
 
-      {/* MessageList should take remaining space and be scrollable */}
       <MessageList />
-      {/* MessageInput is fixed at the bottom */}
       <MessageInput />
     </ChatWindowContainer>
   );
