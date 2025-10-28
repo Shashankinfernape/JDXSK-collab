@@ -8,9 +8,11 @@ import SettingsModal from '../settings/SettingsModal';
 import userService from '../../services/user.service';
 import SearchResults from '../search/SearchResults';
 import { useTheme } from '../../context/ThemeContext';
-// Original 4 theme icons
+// --- FIX: Add FaInstagram back ---
 import { TbBrandNetflix } from 'react-icons/tb';
 import { BsSpotify, BsApple, BsGoogle } from 'react-icons/bs';
+import { FaInstagram } from 'react-icons/fa'; // Instagram Icon
+// --- END FIX ---
 // Icons for dropdown
 import { HiDotsVertical } from 'react-icons/hi';
 import { CgProfile } from 'react-icons/cg';
@@ -21,12 +23,12 @@ import { AiOutlineSearch } from 'react-icons/ai';
 const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
 
 // --- Styled components ---
-// Reverted SidebarContainer height to 100vh
+// Using 100vh height as reverted
 const SidebarContainer = styled.div`
   width: ${props => props.theme.panel_width};
   max-width: ${props => props.theme.max_panel_width};
   min-width: 300px;
-  height: 100vh; // Reverted
+  height: 100vh; // Reverted height
   display: flex;
   flex-direction: column; /* Stack header, search, list vertically */
   background-color: ${props => props.theme.colors.panelBackground};
@@ -56,7 +58,26 @@ const UserAvatar = styled.img`
   border-radius: 50%;
   cursor: pointer;
   object-fit: cover;
-  /* Removed Instagram border logic as it was part of later changes */
+  /* Include Instagram border logic based on theme */
+   ${({ theme }) => theme.name === 'instagram' && css`
+    border: 2px solid transparent;
+    padding: 2px;
+    background-clip: content-box;
+    background: ${theme.colors.panelBackground};
+    position: relative;
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 50%;
+      padding: 2px; /* Control border thickness */
+      background: ${theme.gradient};
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out;
+      mask-composite: exclude;
+      z-index: -1; /* Place behind avatar */
+    }
+  `}
 `;
 
 const HeaderIcons = styled.div`
@@ -81,19 +102,20 @@ const IconButton = styled.button`
   }
 `;
 
-// ThemeSwitcher reverted to simpler version matching this state
+// --- FIX: Add Instagram color rule back ---
 const ThemeSwitcher = styled(IconButton)`
   font-size: 1.6rem;
   color: ${props => props.theme.colors.icon};
 
   ${({ theme }) => theme.name === 'netflix' && css` color: #E50914; `}
   ${({ theme }) => theme.name === 'spotify' && css` color: #1DB954; `}
-  ${({ theme }) => theme.name === 'apple' && css` color: ${props => props.theme.colors.textSecondary}; /* Grey for light Apple */ `}
+  ${({ theme }) => theme.name === 'apple' && css` color: ${props => props.theme.colors.textPrimary}; `} /* White for dark apple */
   ${({ theme }) => theme.name === 'google' && css` color: #4285F4; `}
-  /* No Instagram */
+  ${({ theme }) => theme.name === 'instagram' && css` color: #C13584; `} /* Pink for monolithic insta */
 
   &:hover { opacity: 0.8; }
 `;
+// --- END FIX ---
 
 const DropdownMenu = styled.div`
   position: absolute; top: 120%; right: 0;
@@ -187,16 +209,18 @@ const Sidebar = ({ onChatSelect }) => {
     setIsSearching(false);
   };
 
-  // Render correct theme icon (4 themes)
+  // --- FIX: Add Instagram case back ---
   const renderThemeIcon = () => {
     switch (themeName) {
       case 'netflix': return <TbBrandNetflix />;
       case 'spotify': return <BsSpotify />;
       case 'apple': return <BsApple />;
       case 'google': return <BsGoogle />;
+      case 'instagram': return <FaInstagram />; // Added back
       default: return <TbBrandNetflix />;
     }
   };
+  // --- END FIX ---
 
   return (
     <>
@@ -204,7 +228,7 @@ const Sidebar = ({ onChatSelect }) => {
         <SidebarHeader>
           <HeaderLeft>
             <UserAvatar
-              theme={theme} // Keep theme prop
+              theme={theme} // Pass theme for Instagram border
               src={user?.profilePic || `https://i.pravatar.cc/150?u=${user?._id}`}
               alt={user?.name}
               onClick={() => setShowProfile(true)}
