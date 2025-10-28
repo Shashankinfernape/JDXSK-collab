@@ -10,7 +10,9 @@ const themeNames = ['netflix', 'spotify', 'apple', 'google']; // Order of themes
 export const AppThemeProvider = ({ children }) => {
   // Read saved theme from localStorage or default to 'netflix'
   const [themeName, setThemeName] = useState(() => {
-    return localStorage.getItem('chatflix-theme') || 'netflix';
+    const savedTheme = localStorage.getItem('chatflix-theme');
+    // Ensure saved theme is valid, otherwise default
+    return themeNames.includes(savedTheme) ? savedTheme : 'netflix';
   });
 
   // Save theme to localStorage whenever it changes
@@ -27,7 +29,7 @@ export const AppThemeProvider = ({ children }) => {
   };
 
   // Select the correct theme object based on the name
-  const theme = useMemo(() => themes[themeName], [themeName]);
+  const theme = useMemo(() => themes[themeName] || themes['netflix'], [themeName]); // Fallback if name is invalid
 
   const value = {
     themeName,

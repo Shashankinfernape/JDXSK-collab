@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
-// --- FIX: Add missing imports ---
 import ChatList from '../chat/ChatList';
 import ProfileDrawer from '../profile/ProfileDrawer';
 import SettingsModal from '../settings/SettingsModal';
 import userService from '../../services/user.service';
 import SearchResults from '../search/SearchResults';
-// --- END FIX ---
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext'; // Import theme hook
 import { TbBrandNetflix } from 'react-icons/tb';
-import { BsSpotify, BsApple, BsGoogle } from 'react-icons/bs';
+import { BsSpotify, BsApple, BsGoogle } from 'react-icons/bs'; // Add Apple/Google icons
 import { HiDotsVertical } from 'react-icons/hi';
 import { CgProfile } from 'react-icons/cg';
 import { IoMdSettings, IoMdLogOut } from 'react-icons/io';
 import { AiOutlineSearch } from 'react-icons/ai';
 
-// --- Styled components ---
+// Helper for subtle borders
+const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
+
+// --- Styled Components using new theme structure ---
 const SidebarContainer = styled.div`
   width: ${props => props.theme.panel_width};
   max-width: ${props => props.theme.max_panel_width};
@@ -24,17 +25,18 @@ const SidebarContainer = styled.div`
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: ${props => props.theme.colors.panelBackground};
-  position: relative; /* For positioning search results */
+  background-color: ${props => props.theme.colors.panelBackground}; // Use panelBackground
+  position: relative;
+  border-right: ${props => subtleBorder(props.theme)}; // Add subtle right border
 `;
 
 const SidebarHeader = styled.header`
-  padding: 1rem;
+  padding: 0.6rem 1rem; // Adjust padding like WhatsApp
   background-color: ${props => props.theme.colors.headerBackground};
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid ${props => props.theme.colors.hoverBackground}; // Subtle border
+  // No border needed here
 `;
 
 const HeaderLeft = styled.div`
@@ -75,22 +77,25 @@ const IconButton = styled.button`
 
   &:hover {
     background-color: ${props => props.theme.colors.hoverBackground};
-    color: ${props => props.theme.colors.iconHover};
+    color: ${props => props.theme.colors.iconActive}; // Use active color on hover
   }
 `;
 
 const ThemeSwitcher = styled(IconButton)`
-  font-size: 1.6rem; // Adjust size if needed
-  color: ${props => props.theme.colors.primary}; // Use primary color for active theme icon
+  font-size: 1.6rem;
+  color: ${props => props.theme.colors.icon}; // Standard icon color
+  &:hover {
+    color: ${props => props.theme.colors.iconActive};
+  }
 `;
 
 const DropdownMenu = styled.div`
   position: absolute;
   top: 120%;
   right: 0;
-  background-color: ${props => props.theme.colors.hoverBackground};
+  background-color: ${props => props.theme.colors.hoverBackground}; // Background for dropdown
   border-radius: 5px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); // Softer shadow
   z-index: 100;
   width: 220px;
   overflow: hidden;
@@ -110,7 +115,7 @@ const DropdownItem = styled.button`
   cursor: pointer;
 
   &:hover {
-    background-color: ${props => props.theme.colors.inputBackground}; // Use input background for hover
+    background-color: ${props => props.theme.colors.inputBackground}; // Use input bg for hover
   }
 
   &.logout {
@@ -120,36 +125,39 @@ const DropdownItem = styled.button`
 `;
 
 const SearchBar = styled.div`
-  padding: 0.75rem 1rem;
-  background-color: ${props => props.theme.colors.headerBackground}; // Match header bg
-  border-bottom: 1px solid ${props => props.theme.colors.hoverBackground};
+  padding: 0.5rem 0.8rem; // WhatsApp style padding
+  background-color: ${props => props.theme.colors.panelBackground}; // Match sidebar bg
+  border-bottom: ${props => subtleBorder(props.theme)}; // Subtle border below search
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+`;
+
+const SearchInputWrapper = styled.div` // Wrapper for input + icon
   position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background-color: ${props => props.theme.colors.inputBackground}; // Input field bg
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem; // Inner padding
 `;
 
 const SearchIcon = styled(AiOutlineSearch)`
   color: ${props => props.theme.colors.icon};
-  font-size: 1.2rem;
-  position: absolute;
-  left: 1.75rem;
-  z-index: 1; // Ensure icon is above input background
+  font-size: 1.1rem; // Adjust size
+  margin-right: 0.8rem; // Space between icon and text
 `;
 
 const SearchInput = styled.input`
   width: 100%;
-  background: ${props => props.theme.colors.inputBackground}; // Use input background
+  background: transparent; // Background handled by wrapper
   border: none;
-  border-radius: 8px;
-  padding: 0.6rem 1rem 0.6rem 2.5rem; // Padding for icon
-  color: ${props => props.theme.colors.textPrimary}; // Use primary text color
+  padding: 0.2rem 0; // Minimal vertical padding
+  color: ${props => props.theme.colors.textPrimary};
   outline: none;
-  font-size: 0.95rem;
-  transition: background-color 0.2s ease;
-
-  &:focus {
-    background-color: ${props => props.theme.colors.hoverBackground}; // Use hover background on focus
+  font-size: 0.9rem; // Adjust font size
+  &::placeholder {
+    color: ${props => props.theme.colors.textSecondary};
   }
 `;
 
@@ -171,27 +179,22 @@ const Sidebar = () => {
       setIsSearching(false);
       return;
     }
-
     const search = async () => {
       try {
         const { data: users } = await userService.searchUsers(searchQuery);
         setSearchResults(users);
       } catch (error) {
         console.error("Failed to search users", error);
-        setSearchResults([]); // Clear results on error
+        setSearchResults([]);
       }
     };
-
-    const delay = setTimeout(() => {
-      search();
-    }, 300);
-
+    const delay = setTimeout(search, 300);
     return () => clearTimeout(delay);
   }, [searchQuery]);
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-    setIsSearching(true); // Show results immediately while typing/debouncing
+    setIsSearching(true);
   };
 
   const closeSearch = () => {
@@ -217,16 +220,16 @@ const Sidebar = () => {
         <SidebarHeader>
           <HeaderLeft>
             <UserAvatar
-              src={user.profilePic || `https://i.pravatar.cc/150?u=${user._id}`} // Add fallback avatar
-              alt={user.name}
+              src={user?.profilePic || `https://i.pravatar.cc/150?u=${user?._id}`} // Fallback
+              alt={user?.name}
               onClick={() => setShowProfile(true)}
             />
-            <ThemeSwitcher onClick={cycleTheme}>
+             {/* Theme switcher moved to the right */}
+          </HeaderLeft>
+          <HeaderIcons>
+             <ThemeSwitcher onClick={cycleTheme}>
               {renderThemeIcon()}
             </ThemeSwitcher>
-          </HeaderLeft>
-
-          <HeaderIcons>
             <IconWrapper>
               <IconButton onClick={() => setShowMenu(prev => !prev)}>
                 <HiDotsVertical />
@@ -249,33 +252,35 @@ const Sidebar = () => {
         </SidebarHeader>
 
         <SearchBar>
-          <SearchIcon />
-          <SearchInput
-            placeholder="Search or start new chat"
-            value={searchQuery}
-            onChange={handleSearchChange}
-          />
+          <SearchInputWrapper>
+            <SearchIcon />
+            <SearchInput
+              placeholder="Search or start new chat"
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+          </SearchInputWrapper>
         </SearchBar>
 
-        {/* --- Lines with potential errors --- */}
         {isSearching ? (
-          <SearchResults results={searchResults} onUserClick={closeSearch} /> // Line ~181
+          <SearchResults results={searchResults} onUserClick={closeSearch} />
         ) : (
-          <ChatList /> // Line ~183
+          <ChatList />
         )}
       </SidebarContainer>
 
-      {/* --- Lines with potential errors --- */}
+      {/* Modals/Drawers */}
       <ProfileDrawer
         isOpen={showProfile}
-        onClose={() => setShowProfile(false)} // Line ~189
+        onClose={() => setShowProfile(false)}
       />
       <SettingsModal
         isOpen={showSettings}
-        onClose={() => setShowSettings(false)} // Line ~190
+        onClose={() => setShowSettings(false)}
       />
     </>
   );
 };
 
 export default Sidebar;
+
