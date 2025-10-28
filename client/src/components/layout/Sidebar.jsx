@@ -1,6 +1,6 @@
-// --- Ensure ALL necessary imports are here ---
 import React, { useState, useEffect } from 'react';
 import styled, { css } from 'styled-components'; // Import css
+import PropTypes from 'prop-types'; // Import PropTypes
 import { useAuth } from '../../context/AuthContext';
 import ChatList from '../chat/ChatList';
 import ProfileDrawer from '../profile/ProfileDrawer';
@@ -15,9 +15,8 @@ import { HiDotsVertical } from 'react-icons/hi';
 import { CgProfile } from 'react-icons/cg';
 import { IoMdSettings, IoMdLogOut } from 'react-icons/io';
 import { AiOutlineSearch } from 'react-icons/ai';
-// --- END IMPORTS ---
 
-// Helper for subtle borders
+// --- Helper for subtle borders (Defined locally) ---
 const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
 
 // --- Styled components ---
@@ -39,7 +38,7 @@ const SidebarHeader = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0;
+  flex-shrink: 0; // Prevent header from shrinking
 `;
 
 const HeaderLeft = styled.div`
@@ -54,7 +53,6 @@ const UserAvatar = styled.img`
   border-radius: 50%;
   cursor: pointer;
   object-fit: cover;
-  /* Instagram story ring idea */
   ${({ theme }) => theme.name === 'instagram' && css`
     border: 2px solid transparent;
     padding: 2px;
@@ -71,7 +69,7 @@ const UserAvatar = styled.img`
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: destination-out;
       mask-composite: exclude;
-      z-index: -1; // Place behind image
+      z-index: -1;
     }
   `}
 `;
@@ -87,17 +85,11 @@ const IconWrapper = styled.div`
 `;
 
 const IconButton = styled.button`
-  background: none;
-  border: none;
+  background: none; border: none;
   color: ${props => props.theme.colors.icon};
-  cursor: pointer;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  padding: 4px;
-  border-radius: 50%;
+  cursor: pointer; font-size: 1.5rem; display: flex; align-items: center;
+  padding: 4px; border-radius: 50%;
   transition: background-color 0.2s ease, color 0.2s ease;
-
   &:hover {
     background-color: ${props => props.theme.colors.hoverBackground};
     color: ${props => props.theme.colors.iconActive};
@@ -110,94 +102,58 @@ const ThemeSwitcher = styled(IconButton)`
   &:hover {
     color: ${props => props.theme.colors.iconActive};
   }
-  /* Specific style for instagram icon gradient */
   ${({ theme }) => theme.name === 'instagram' && css`
-    svg {
-      fill: url(#instagram-gradient-icon); // Needs SVG gradient definition
-    }
-     // Simple color fallback
+    svg { fill: url(#instagram-gradient-icon); }
     color: ${theme.colors.primary};
   `}
 `;
 
 const DropdownMenu = styled.div`
-  position: absolute;
-  top: 120%;
-  right: 0;
+  position: absolute; top: 120%; right: 0;
   background-color: ${props => props.theme.colors.hoverBackground};
-  border-radius: 5px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 100;
-  width: 220px;
-  overflow: hidden;
+  border-radius: 5px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 100; width: 220px; overflow: hidden;
 `;
 
 const DropdownItem = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: none;
-  border: none;
+  display: flex; align-items: center; gap: 0.75rem;
+  background: none; border: none;
   color: ${props => props.theme.colors.textPrimary};
-  padding: 0.8rem 1rem;
-  width: 100%;
-  text-align: left;
-  font-size: 0.95rem;
-  cursor: pointer;
-
-  &:hover {
-    background-color: ${props => props.theme.colors.inputBackground};
-  }
-
-  &.logout {
-    color: ${props => props.theme.colors.primary};
-    font-weight: 600;
-  }
+  padding: 0.8rem 1rem; width: 100%; text-align: left;
+  font-size: 0.95rem; cursor: pointer;
+  &:hover { background-color: ${props => props.theme.colors.inputBackground}; }
+  &.logout { color: ${props => props.theme.colors.primary}; font-weight: 600; }
 `;
 
 const SearchBar = styled.div`
   padding: 0.5rem 0.8rem;
   background-color: ${props => props.theme.colors.panelBackground};
   border-bottom: ${props => subtleBorder(props.theme)};
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
+  display: flex; align-items: center; flex-shrink: 0;
 `;
 
 const SearchInputWrapper = styled.div`
-  position: relative;
-  width: 100%;
-  display: flex;
-  align-items: center;
+  position: relative; width: 100%; display: flex; align-items: center;
   background-color: ${props => props.theme.colors.inputBackground};
-  border-radius: 8px;
-  padding: 0.4rem 0.8rem;
+  border-radius: 8px; padding: 0.4rem 0.8rem;
 `;
 
 const SearchIcon = styled(AiOutlineSearch)`
   color: ${props => props.theme.colors.icon};
-  font-size: 1.1rem;
-  margin-right: 0.8rem;
+  font-size: 1.1rem; margin-right: 0.8rem;
 `;
 
 const SearchInput = styled.input`
-  width: 100%;
-  background: transparent;
-  border: none;
-  padding: 0.2rem 0;
-  color: ${props => props.theme.colors.textPrimary};
-  outline: none;
-  font-size: 0.9rem;
-  &::placeholder {
-    color: ${props => props.theme.colors.textSecondary};
-  }
+  width: 100%; background: transparent; border: none;
+  padding: 0.2rem 0; color: ${props => props.theme.colors.textPrimary};
+  outline: none; font-size: 0.9rem;
+  &::placeholder { color: ${props => props.theme.colors.textSecondary}; }
 `;
 
 // --- Sidebar Component ---
-const Sidebar = () => {
+const Sidebar = ({ onChatSelect }) => {
   const { user, logout } = useAuth();
-  // --- FIX: Pass theme to UserAvatar ---
-  const { themeName, cycleTheme, theme } = useTheme();
+  const { themeName, cycleTheme, theme } = useTheme(); // Pass theme for avatar
   const [showMenu, setShowMenu] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -248,7 +204,7 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* SVG Gradient Definition */}
+      {/* SVG Gradient Definition for Instagram Icon */}
       <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
           <linearGradient id="instagram-gradient-icon" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -265,7 +221,7 @@ const Sidebar = () => {
         <SidebarHeader>
           <HeaderLeft>
             <UserAvatar
-              theme={theme} // Pass theme for border
+              theme={theme} // Pass theme for Instagram border
               src={user?.profilePic || `https://i.pravatar.cc/150?u=${user?._id}`}
               alt={user?.name}
               onClick={() => setShowProfile(true)}
@@ -307,12 +263,12 @@ const Sidebar = () => {
           </SearchInputWrapper>
         </SearchBar>
 
-        {/* List container takes remaining space */}
+        {/* List container */}
         <div style={{ flexGrow: 1, overflowY: 'auto' }}>
           {isSearching ? (
             <SearchResults results={searchResults} onUserClick={closeSearch} />
           ) : (
-            <ChatList />
+            <ChatList onChatSelect={onChatSelect} />
           )}
         </div>
       </SidebarContainer>
@@ -322,6 +278,10 @@ const Sidebar = () => {
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </>
   );
+};
+
+Sidebar.propTypes = {
+  onChatSelect: PropTypes.func.isRequired,
 };
 
 export default Sidebar;

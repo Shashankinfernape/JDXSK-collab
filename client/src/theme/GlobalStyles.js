@@ -1,9 +1,9 @@
 import { createGlobalStyle, css, keyframes } from 'styled-components';
 
-// --- REMOVED subtleBorder helper function ---
+// --- FIX: Removed subtleBorder function ---
 
 // --- Theme Definitions ---
-// (All theme objects like netflixTheme, spotifyTheme, etc., remain exactly the same as the previous version)
+// (All theme objects remain the same as previous full version)
 
 export const netflixTheme = {
   name: 'netflix',
@@ -24,7 +24,6 @@ export const netflixTheme = {
     icon: '#B3B3B3',
     iconActive: '#FFFFFF',
     border: '#2A2A2A',
-    scrollbarTrack: '#1F1F1F',
     scrollbarThumb: '#808080',
     scrollbarThumbHover: '#E50914',
     tick_sent: '#808080',
@@ -56,7 +55,6 @@ export const spotifyTheme = {
     icon: '#B3B3B3',
     iconActive: '#FFFFFF',
     border: '#282828',
-    scrollbarTrack: '#181818',
     scrollbarThumb: '#808080',
     scrollbarThumbHover: '#1DB954',
     tick_sent: '#B3B3B3',
@@ -69,74 +67,79 @@ export const spotifyTheme = {
   bubbleBorderRadius: '7px',
 };
 
-export const appleTheme = {
-  name: 'apple',
-  mode: 'light', // Apple is primarily light
+export const appleThemeDark = {
+  name: 'apple', // Keep name 'apple'
+  mode: 'dark', // Specify dark mode
   colors: {
-    primary: '#007AFF', // Apple Blue
-    background: '#FFFFFF',
-    panelBackground: '#F2F2F7', // Sidebar Grey
-    headerBackground: '#F9F9F9', // Header slightly lighter, almost white
-    inputBackground: '#E9E9EB', // Input fields darker grey
-    hoverBackground: '#E9E9EB', // Consistent hover
-    bubbleMe: '#007AFF', // Standard Blue bubble
-    bubbleOther: '#E9E9EB', // Grey bubble
-    textPrimary: '#000000', // Black text
-    textSecondary: '#6D6D72', // Slightly darker secondary text
+    primary: '#0A84FF', // Slightly brighter blue for dark mode contrast
+    background: '#000000', // True black background
+    panelBackground: '#1C1C1E', // Dark grey panels (iOS standard)
+    headerBackground: '#1C1C1E', // Match panel background
+    inputBackground: '#2C2C2E', // Slightly lighter input fields
+    hoverBackground: '#2C2C2E', // Consistent hover
+    bubbleMe: '#0A84FF', // Blue bubble
+    bubbleOther: '#2C2C2E', // Dark grey bubble
+    textPrimary: '#FFFFFF', // White text
+    textSecondary: '#8E8E93', // iOS secondary grey text
     textBubbleMe: '#FFFFFF',
-    textBubbleOther: '#000000',
-    icon: '#8A8A8E', // Standard icon grey
-    iconActive: '#000000', // Black for active/hover
-    border: '#D1D1D6', // Subtle light border
-    scrollbarTrack: 'transparent', // Make scrollbar less intrusive
-    scrollbarThumb: '#C7C7CC',
-    scrollbarThumbHover: '#007AFF',
-    tick_sent: '#8A8A8E',
-    tick_delivered: '#8A8A8E',
-    tick_read: '#007AFF',
-    welcomeText: '#6D6D72',
+    textBubbleOther: '#FFFFFF',
+    icon: '#8E8E93', // Standard icon grey
+    iconActive: '#FFFFFF', // White for active/hover
+    border: '#38383A', // Subtle dark border
+    scrollbarThumb: '#555555', // Darker scrollbar
+    scrollbarThumbHover: '#8E8E93',
+    tick_sent: '#8E8E93',
+    tick_delivered: '#8E8E93',
+    tick_read: '#0A84FF', // Blue
+    welcomeText: '#8E8E93',
   },
-  font: "'SF Pro Display', 'Roboto', sans-serif", // Prioritize Apple font
-  logo: '/apple-logo.svg',
-  bubbleBorderRadius: '18px', // Keep rounded for Apple iMessage style
+  font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif",
+  logo: '/apple-logo-white.svg', // Need white logo version
+  bubbleBorderRadius: '18px', // Keep rounded
 };
 
-export const googleTheme = {
-  name: 'google',
-  mode: 'light', // Google Chat/Messages are primarily light
+const googleBlue = '#8AB4F8';
+const googleRed = '#F28B82';
+const googleYellow = '#FDD663';
+const googleGreen = '#81C995';
+
+export const googleThemeDark = {
+  name: 'google', // Keep name 'google'
+  mode: 'dark', // Specify dark mode
   colors: {
-    primary: '#1A73E8', // Updated Google Blue
-    background: '#FFFFFF', // White background
-    panelBackground: '#FFFFFF', // White sidebar like Gmail/Chat
-    headerBackground: '#FFFFFF', // White header
-    inputBackground: '#F1F3F4', // Material Input Grey
-    hoverBackground: '#E8EAED', // Material Hover Grey
-    bubbleMe: '#D1E3FF', // Light blue bubble (Material style)
-    bubbleOther: '#F1F3F4', // Grey bubble
-    textPrimary: '#202124', // Dark Grey text (Material standard)
-    textSecondary: '#5F6368', // Medium Grey text
-    textBubbleMe: '#174EA6', // Darker blue text on bubble
-    textBubbleOther: '#202124',
-    icon: '#5F6368', // Standard Material icon color
-    iconActive: '#1967D2', // Google Blue for active icons
-    border: '#DADCE0', // Material border color
-    scrollbarTrack: 'transparent',
-    scrollbarThumb: '#BDC1C6',
-    scrollbarThumbHover: '#4285F4',
-    accentRed: '#EA4335',
-    accentYellow: '#FBBC05',
-    accentGreen: '#34A853',
-    tick_sent: '#5F6368',
-    tick_delivered: '#5F6368',
-    tick_read: '#1A73E8', // Use primary blue for read ticks
-    welcomeText: '#5F6368',
+    primary: googleBlue,
+    background: '#121212',
+    panelBackground: '#1E1F21',
+    headerBackground: '#1E1F21',
+    inputBackground: '#2D2E31',
+    hoverBackground: '#2D2E31',
+    bubbleMe: googleBlue,
+    bubbleOther: '#2D2E31',
+    textPrimary: '#E8EAED',
+    textSecondary: '#9AA0A6',
+    textBubbleMe: '#202124',
+    textBubbleOther: '#E8EAED',
+    icon: '#9AA0A6',
+    iconActive: googleBlue,
+    border: '#3C4043',
+    scrollbarThumb: '#5F6368',
+    scrollbarThumbHover: googleBlue,
+    accentRed: googleRed,
+    accentYellow: googleYellow,
+    accentGreen: googleGreen,
+    tick_sent: '#9AA0A6',
+    tick_delivered: '#9AA0A6',
+    tick_read: googleBlue,
+    welcomeText: '#9AA0A6',
   },
-  font: "'Google Sans', 'Roboto', sans-serif", // Prioritize Google font
-  logo: '/google-logo.svg',
-  bubbleBorderRadius: '16px', // Material style rounding
+  font: "'Google Sans', 'Roboto', sans-serif",
+  logo: '/google-logo-white.svg',
+  bubbleBorderRadius: '16px',
 };
+
 
 const instagramGradient = 'linear-gradient(135deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D, #F77737, #FCAF45)';
+// --- FIX: Ensure animation is defined BEFORE it's used ---
 const instagramBgAnimation = keyframes`
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -163,7 +166,6 @@ export const instagramTheme = {
     icon: '#FFFFFF',
     iconActive: '#FCAF45',
     border: '#383838',
-    scrollbarTrack: '#181818',
     scrollbarThumb: '#555555',
     scrollbarThumbHover: '#E1306C',
     tick_sent: '#A8A8A8',
@@ -175,6 +177,7 @@ export const instagramTheme = {
   logo: '/instagram-logo.svg',
   bubbleBorderRadius: '14px',
   gradient: instagramGradient,
+  // --- FIX: Use defined animation correctly ---
   backgroundAnimation: css`
     background: ${instagramGradient};
     background-size: 300% 300%;
@@ -192,6 +195,7 @@ export const GlobalStyles = createGlobalStyle`
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
+    /* Apply background animation correctly */
     ${({ theme }) => theme.name === 'instagram' && theme.backgroundAnimation}
   }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -208,8 +212,8 @@ export const GlobalStyles = createGlobalStyle`
 export const themes = {
   netflix: netflixTheme,
   spotify: spotifyTheme,
-  apple: appleTheme,
-  google: googleTheme,
+  apple: appleThemeDark,
+  google: googleThemeDark,
   instagram: instagramTheme,
 };
 

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { themes } from '../theme/GlobalStyles';
-// --- NOTE: css helper is NOT needed in this file itself ---
-// It's used within the theme objects defined in GlobalStyles.js
+// --- FIX: Removed unused 'css' import ---
+// import { css } from 'styled-components';
 
 const ThemeContext = createContext();
 
