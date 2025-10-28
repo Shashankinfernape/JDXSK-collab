@@ -25,7 +25,8 @@ const SidebarContainer = styled.div`
   width: ${props => props.theme.panel_width};
   max-width: ${props => props.theme.max_panel_width};
   min-width: 300px;
-  height: 100%; /* Occupy full height of parent (HomeContainer) */
+  /* Reverted to 100vh */
+  height: 100vh;
   display: flex;
   flex-direction: column; /* Stack header, search, list vertically */
   background-color: ${props => props.theme.colors.panelBackground};
@@ -140,9 +141,7 @@ const ListContainer = styled.div`
   flex-grow: 1; /* Take remaining vertical space */
   overflow-y: auto; /* Make ONLY this part scrollable */
   overflow-x: hidden; /* Hide horizontal scroll */
-  /* --- FIX: Add min-height to ensure flex-grow works correctly --- */
-  min-height: 0; /* Allows the container to shrink properly */
-  /* --- END FIX --- */
+  /* Removed min-height: 0 */
 `;
 
 
