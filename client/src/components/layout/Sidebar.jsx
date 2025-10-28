@@ -25,7 +25,9 @@ const SidebarContainer = styled.div`
   width: ${props => props.theme.panel_width};
   max-width: ${props => props.theme.max_panel_width};
   min-width: 300px;
-  height: 100vh; /* Full viewport height */
+  /* --- FIX: Use 100% height relative to parent --- */
+  height: 100%; /* Occupy full height of parent (HomeContainer) */
+  /* --- END FIX --- */
   display: flex;
   flex-direction: column; /* Stack header, search, list vertically */
   background-color: ${props => props.theme.colors.panelBackground};
@@ -135,11 +137,12 @@ const SearchInput = styled.input`
   &::placeholder { color: ${props => props.theme.colors.textSecondary}; }
 `;
 
-// --- NEW: Container for the scrollable list ---
+// --- Container for the scrollable list ---
 const ListContainer = styled.div`
   flex-grow: 1; /* Take remaining vertical space */
   overflow-y: auto; /* Make ONLY this part scrollable */
   overflow-x: hidden; /* Hide horizontal scroll */
+  /* Add height: 0; /* Help flex-grow calculate correctly */
 `;
 
 
@@ -201,7 +204,7 @@ const Sidebar = ({ onChatSelect }) => {
         <SidebarHeader>
           <HeaderLeft>
             <UserAvatar
-              theme={theme} // Keep theme prop for potential future use (like borders)
+              theme={theme} // Keep theme prop
               src={user?.profilePic || `https://i.pravatar.cc/150?u=${user?._id}`}
               alt={user?.name}
               onClick={() => setShowProfile(true)}
@@ -243,7 +246,7 @@ const Sidebar = ({ onChatSelect }) => {
           </SearchInputWrapper>
         </SearchBar>
 
-        {/* --- FIX: Use ListContainer for scrolling --- */}
+        {/* --- Use ListContainer for scrolling --- */}
         <ListContainer>
           {isSearching ? (
             <SearchResults results={searchResults} onUserClick={closeSearch} />
@@ -251,7 +254,6 @@ const Sidebar = ({ onChatSelect }) => {
             <ChatList onChatSelect={onChatSelect} />
           )}
         </ListContainer>
-        {/* --- END FIX --- */}
 
       </SidebarContainer>
 
