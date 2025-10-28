@@ -25,8 +25,9 @@ const SidebarContainer = styled.div`
   width: ${props => props.theme.panel_width};
   max-width: ${props => props.theme.max_panel_width};
   min-width: 300px;
-  /* Reverted to 100vh */
+  /* --- REVERTED: Back to 100vh --- */
   height: 100vh;
+  /* --- END REVERT --- */
   display: flex;
   flex-direction: column; /* Stack header, search, list vertically */
   background-color: ${props => props.theme.colors.panelBackground};
@@ -141,7 +142,7 @@ const ListContainer = styled.div`
   flex-grow: 1; /* Take remaining vertical space */
   overflow-y: auto; /* Make ONLY this part scrollable */
   overflow-x: hidden; /* Hide horizontal scroll */
-  /* Removed min-height: 0 */
+  /* --- REVERTED: Removed min-height: 0 --- */
 `;
 
 
