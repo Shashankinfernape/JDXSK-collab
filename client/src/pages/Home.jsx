@@ -6,24 +6,24 @@ import { useChat } from '../context/ChatContext';
 
 const HomeContainer = styled.div`
   display: flex;
-  /* --- FIX: Use 100% height --- */
-  height: 100%;
-  /* --- END FIX --- */
-  width: 100vw; // Still full width
+  /* Use 100vh for the main container to ensure it fills viewport initially */
+  height: 100vh;
+  /* Use 100% for inner height stability if needed, but 100vh is standard */
+  /* height: 100%; */
+  width: 100vw;
   background-color: ${({ theme }) => theme.colors.background};
-  overflow: hidden;
+  overflow: hidden; // Prevent body scrolling
 `;
 
 const StyledSidebar = styled.div`
+  /* Default Desktop/Tablet view */
   width: ${({ theme }) => theme.panel_width};
   max-width: ${({ theme }) => theme.max_panel_width};
   min-width: 300px;
-  /* --- FIX: Use 100% height --- */
-  height: 100%;
-  /* --- END FIX --- */
-  display: flex;
+  height: 100%; // Take full height from HomeContainer
+  display: flex; // Needed for SidebarContainer's flex layout
 
-  /* Media query remains the same */
+  /* Mobile/Smaller Tablet View */
   @media (max-width: 900px) {
     display: ${({ $showChatWindow }) => ($showChatWindow ? 'none' : 'flex')};
     width: 100%;
@@ -35,12 +35,9 @@ const StyledSidebar = styled.div`
 
 const StyledChatWindow = styled.div`
   flex: 1;
-  /* --- FIX: Use 100% height --- */
-  height: 100%;
-  /* --- END FIX --- */
-  display: flex; // Keep flex for internal layout if needed
+  height: 100%; // Take full height from HomeContainer
+  display: flex; // Needed for ChatWindowContainer's flex layout
 
-  /* Media query remains the same */
   @media (max-width: 900px) {
     display: ${({ $showChatWindow }) => ($showChatWindow ? 'flex' : 'none')};
     width: 100%;
@@ -49,7 +46,7 @@ const StyledChatWindow = styled.div`
   }
 `;
 
-// WelcomePlaceholder styling remains the same
+// Welcome Placeholder Styling (Ensure it uses consistent background)
 const WelcomePlaceholder = styled.div`
   flex: 1;
   display: flex;
@@ -59,84 +56,95 @@ const WelcomePlaceholder = styled.div`
   height: 100%;
   color: ${({ theme }) => theme.colors.textSecondary};
   text-align: center;
-  border-left: 1px solid ${({ theme }) => theme.colors.border || theme.colors.hoverBackground}; // Use theme border
+  /* Use chatBackground for consistency */
+  background-color: ${({ theme }) => theme.colors.chatBackground};
+  /* Add border only if sidebar is visible */
+  border-left: 1px solid ${({ theme }) => theme.colors.border};
   padding: 1rem;
-  background-color: ${({ theme }) => theme.colors.chatBackground}; // Use chat background
 
-  h2 {
-    font-size: 1.8rem;
-    font-weight: 500;
-    margin-bottom: 0.8rem;
-    color: ${({ theme }) => theme.colors.textPrimary};
-  }
-  p {
-    font-size: 0.9rem;
-    max-width: 300px;
-    line-height: 1.5;
-  }
+  h2 { /* styles */ }
+  p { /* styles */ }
 
   @media (max-width: 900px) {
       border-left: none;
+      /* Show only if chat window is hidden */
       display: ${({ $showChatWindow }) => ($showChatWindow ? 'none' : 'flex')};
   }
 `;
 
-// Home component logic remains the same
+// Home Component Logic
 const Home = () => {
   const { activeChat, selectChat } = useChat();
   const [showChatWindow, setShowChatWindow] = useState(false);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 900);
 
+  // Effect to handle window resize and determine view type
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 900;
       setIsMobileView(mobile);
-      if (!mobile) {
-          setShowChatWindow(true); // Always show potential chat/placeholder area on desktop
-      } else {
-          setShowChatWindow(!!activeChat); // On mobile, show only if chat active
+      // Logic to decide if chat window should be visible based on resize
+      if (!mobile) { // Resized to desktop
+          setShowChatWindow(true); // Always show area on desktop
+      } else { // Resized to mobile
+          setShowChatWindow(!!activeChat); // Show chat only if one is active
       }
     };
     window.addEventListener('resize', handleResize);
-    handleResize();
+    handleResize(); // Initial check
     return () => window.removeEventListener('resize', handleResize);
-  }, [activeChat]); // Removed unnecessary dependencies
+  }, [activeChat]); // Re-run when activeChat changes
 
-  // Effect to automatically show chat on mobile if one becomes active
+  // Automatically show chat on mobile if one becomes active AFTER initial load
   useEffect(() => {
     if (isMobileView && activeChat && !showChatWindow) {
       setShowChatWindow(true);
     }
+    // Automatically hide chat on mobile if activeChat becomes null
+    if (isMobileView && !activeChat && showChatWindow) {
+        setShowChatWindow(false);
+    }
   }, [activeChat, isMobileView, showChatWindow]);
 
-
+  // Handler passed to Sidebar -> ChatList -> ChatListItem
   const handleChatSelect = (chat) => {
-    selectChat(chat);
+    selectChat(chat); // Update context
     if (isMobileView) {
-        setShowChatWindow(true);
+        setShowChatWindow(true); // Show chat window on mobile
     }
   };
 
+  // --- FIX: Ensure this is passed correctly and works ---
+  // Handler passed to ChatWindow for the back button
   const handleBackToSidebar = () => {
-    // selectChat(null); // Keep active chat, just hide window
-    setShowChatWindow(false);
+    // Only change visibility state on mobile, don't deselect chat necessarily
+    if (isMobileView) {
+      setShowChatWindow(false);
+    }
+    // Optional: deselect chat if needed
+    // selectChat(null);
   };
+  // --- END FIX ---
 
-  const showPlaceholder = !activeChat && (!isMobileView || !showChatWindow);
+
+  // Determine if placeholder should be shown
+  const showPlaceholder = !activeChat && (!isMobileView); // Only show placeholder on desktop
 
   return (
     <HomeContainer>
+      {/* Sidebar - Conditionally displayed based on mobile view and state */}
       <StyledSidebar $showChatWindow={showChatWindow}>
         <Sidebar onChatSelect={handleChatSelect} />
       </StyledSidebar>
 
-     {/* Always render the container on desktop, or on mobile if chat window should show */}
-     {(!isMobileView || showChatWindow) && (
+      {/* Chat Window Area - Render container if needed */}
+      {(!isMobileView || showChatWindow) && ( // Render container on desktop OR mobile if showing chat
         <StyledChatWindow $showChatWindow={showChatWindow}>
           {activeChat ? (
+            // Pass the back handler TO ChatWindow component
             <ChatWindow onBack={handleBackToSidebar} />
           ) : (
-            // Only show placeholder on desktop when no active chat
+            // Show placeholder only on Desktop when no chat selected
             !isMobileView && (
               <WelcomePlaceholder $showChatWindow={showChatWindow}>
                 <h2>Welcome to Chatflix</h2>
