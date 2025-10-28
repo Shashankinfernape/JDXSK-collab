@@ -21,8 +21,8 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL, // Allow requests from our client app
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Explicitly allow all methods
+  origin: process.env.CLIENT_URL, // Use the CLIENT_URL variable
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
   credentials: true
 }));
 app.use(express.json());
@@ -42,11 +42,12 @@ const httpServer = http.createServer(app);
 // --- CRITICAL FIX: Ensure Socket.IO is initialized robustly ---
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: process.env.CLIENT_URL, // Use the CLIENT_URL variable
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
   },
-  transports: ['websocket', 'polling'] // Allow both, but client is forced to polling first
+  // Ensure polling is allowed, as client is forced to use it
+  transports: ['websocket', 'polling'] 
 });
 // --- END FIX ---
 

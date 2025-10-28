@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-// --- HARDCODE FIX ---
-// The live app must use the Render server for API calls
+// --- FINAL HARDCODE FIX ---
 const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; 
 
 // Set up a base instance of Axios
@@ -10,7 +9,7 @@ const api = axios.create({
 });
 // --- END HARDCODE FIX ---
 
-// This "interceptor" runs before every request.
+// Interceptor to add the user token to all requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');

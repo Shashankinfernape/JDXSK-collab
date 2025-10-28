@@ -4,7 +4,6 @@ import { useAuth } from './AuthContext';
 
 const SocketContext = createContext();
 
-// 1. Define the hook immediately
 const useSocketHook = () => useContext(SocketContext);
 
 const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; // Your Server URL
@@ -18,8 +17,8 @@ export const SocketProvider = ({ children }) => {
       // --- CRITICAL STABILITY FIX ---
       const newSocket = io(RENDER_API_URL, {
         query: { userId: user._id },
-        transports: ['polling'], // Forced polling to avoid WebSocket failures
-        reconnectionAttempts: 3, // Limited retries to 3 attempts
+        transports: ['polling'], // Forced polling to bypass WebSocket failure
+        reconnectionAttempts: 3, // Limited retries to 3
         reconnectionDelayMax: 5000 // Max delay of 5 seconds between retries
       });
       // --- END FIX ---
@@ -49,5 +48,4 @@ export const SocketProvider = ({ children }) => {
   );
 };
 
-// 2. Export the hook cleanly
 export const useSocket = useSocketHook;

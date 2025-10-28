@@ -8,7 +8,6 @@ export const useAuth = () => useContext(AuthContext);
 
 const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; 
 
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -66,7 +65,6 @@ export const AuthProvider = ({ children }) => {
       try {
         const userData = JSON.parse(decodeURIComponent(redirectUser));
         login(userData, redirectToken); 
-        // CRITICAL: Clean the URL immediately after processing the token
         window.history.replaceState(null, '', window.location.pathname);
       } catch (e) {
         console.error("Failed to parse user data from URL", e);
