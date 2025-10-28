@@ -1,49 +1,104 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import io from 'socket.io-client';
-import { useAuth } from './AuthContext';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api'; 
 
-const SocketContext = createContext();
+const AuthContext = createContext();
 
-export const useSocket = () => useContext(SocketContext);
+export const useAuth = () => useContext(AuthContext);
 
-const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; // Your Server URL
+// --- HARDCODE FIX ---
+const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; 
+// --- END HARDCODE FIX ---
 
-export const SocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
-  const { user } = useAuth();
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const login = useCallback((userData, userToken) => {
+    setUser(userData);
+    setToken(userToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('token', userToken);
+    api.defaults.headers.common['Authorization'] = `Bearer ${userToken}`;
+    navigate('/');
+  }, [navigate]); 
+
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    navigate('/login');
+  }, [navigate]); 
+
+  const updateUser = useCallback((updatedInfo) => {
+    setUser((prevUser) => {
+      const newUser = { ...prevUser, ...updatedInfo };
+      localStorage.setItem('user', JSON.stringify(newUser));
+      return newUser;
+    });
+  }, []); 
 
   useEffect(() => {
-    if (user) {
-      // --- FIX: Added reconnectionDelayMax and reduced retries ---
-      const newSocket = io(RENDER_API_URL, {
-        query: { userId: user._id },
-        transports: ['polling'], // Sticking with polling for stability
-        reconnectionAttempts: 5, // Limit retries to prevent looping
-        reconnectionDelayMax: 5000 // Wait up to 5 seconds before retrying
-      });
-      // --- END FIX ---
-
-      newSocket.on('connect', () => {
-        console.log('Socket.IO connected:', newSocket.id);
-      });
-
-      setSocket(newSocket);
-
-      return () => {
-        console.log('Socket.IO disconnecting...');
-        newSocket.close();
-      };
-    } else {
-      if (socket) {
-        socket.close();
-        setSocket(null);
+    const checkToken = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        setToken(storedToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+        try {
+          const { data: userData } = await api.get('/users/me'); 
+          login(userData, storedToken); 
+        } catch (error) {
+          console.error("Auth Error (Token Check):", error);
+          logout(); 
+        }
       }
+      setLoading(false);
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectToken = urlParams.get('token');
+    const redirectUser = urlParams.get('user');
+
+    if (redirectToken && redirectUser) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(redirectUser));
+        login(userData, redirectToken); 
+        window.history.replaceState(null, '', window.location.pathname);
+      } catch (e) {
+        console.error("Failed to parse user data from URL", e);
+        setLoading(false); 
+      }
+    } else {
+      checkToken();
     }
-  }, [user, socket]);
+  }, [login, logout]);
+
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${RENDER_API_URL}/api/auth/google`;
+  };
+
+  const value = {
+    user,
+    token,
+    loading,
+    login,
+    handleGoogleLogin, 
+    logout,
+    updateUser,
+    isAuthenticated: !!user,
+  };
 
   return (
-    <SocketContext.Provider value={socket}>
-      {children}
-    </SocketContext.Provider>
+    // Line 49 will now be clean: starts with <AuthContext.Provider
+    <AuthContext.Provider value={value}>
+      {/* Renders children only when the authentication check is complete */}
+      {!loading && children} 
+    </AuthContext.Provider>
   );
 };
