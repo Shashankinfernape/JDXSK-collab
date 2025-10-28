@@ -1,21 +1,20 @@
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
-import { themes } from '../theme/GlobalStyles'; // Import the themes object
+import { themes } from '../theme/GlobalStyles';
+// --- NOTE: css helper is NOT needed in this file itself ---
+// It's used within the theme objects defined in GlobalStyles.js
 
 const ThemeContext = createContext();
 
 export const useTheme = () => useContext(ThemeContext);
 
-const themeNames = ['netflix', 'spotify', 'apple', 'google']; // Order of themes
+const themeNames = ['netflix', 'spotify', 'apple', 'google', 'instagram'];
 
 export const AppThemeProvider = ({ children }) => {
-  // Read saved theme from localStorage or default to 'netflix'
   const [themeName, setThemeName] = useState(() => {
     const savedTheme = localStorage.getItem('chatflix-theme');
-    // Ensure saved theme is valid, otherwise default
     return themeNames.includes(savedTheme) ? savedTheme : 'netflix';
   });
 
-  // Save theme to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('chatflix-theme', themeName);
   }, [themeName]);
@@ -23,18 +22,17 @@ export const AppThemeProvider = ({ children }) => {
   const cycleTheme = () => {
     setThemeName(prev => {
       const currentIndex = themeNames.indexOf(prev);
-      const nextIndex = (currentIndex + 1) % themeNames.length; // Loop back to 0
+      const nextIndex = (currentIndex + 1) % themeNames.length;
       return themeNames[nextIndex];
     });
   };
 
-  // Select the correct theme object based on the name
-  const theme = useMemo(() => themes[themeName] || themes['netflix'], [themeName]); // Fallback if name is invalid
+  const theme = useMemo(() => themes[themeName] || themes['netflix'], [themeName]);
 
   const value = {
     themeName,
     theme,
-    cycleTheme, // Renamed from toggleTheme
+    cycleTheme,
   };
 
   return (
@@ -43,3 +41,4 @@ export const AppThemeProvider = ({ children }) => {
     </ThemeContext.Provider>
   );
 };
+

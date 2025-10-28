@@ -1,13 +1,16 @@
 import React from 'react';
+// --- FIX: Removed 'css' from import ---
 import styled from 'styled-components';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
+// --- FIX: Import useTheme for background animation check ---
+import { useTheme } from '../../context/ThemeContext';
 import MessageList from '../chat/MessageList';
 import MessageInput from '../chat/MessageInput';
 import { HiDotsVertical } from 'react-icons/hi';
-import { AiOutlineSearch } from 'react-icons/ai'; // Assuming you want search in chat header too
+import { AiOutlineSearch } from 'react-icons/ai';
 
-// Helper for subtle borders
+// Helper
 const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
 
 const ChatWindowContainer = styled.div`
@@ -15,18 +18,43 @@ const ChatWindowContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: ${props => props.theme.colors.background}; // Use main background
-  // No border needed, sidebar has the border now
+  background-color: ${props => props.theme.colors.background};
+  // --- FIX: Apply background animation correctly ---
+  ${({ theme }) => theme.name === 'instagram' && theme.backgroundAnimation}
+`;
+
+const WelcomePlaceholder = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: ${props => props.theme.colors.welcomeText};
+  text-align: center;
+  padding: 2rem;
+
+  h2 {
+    font-size: 2rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: ${props => props.theme.colors.textPrimary};
+  }
+  p {
+    font-size: 0.9rem;
+    max-width: 300px;
+    line-height: 1.5;
+  }
 `;
 
 const ChatHeader = styled.header`
-  padding: 0.6rem 1rem; // Match sidebar header padding
-  background-color: ${props => props.theme.colors.headerBackground}; // Match sidebar header bg
+  padding: 0.6rem 1rem;
+  background-color: ${props => props.theme.colors.headerBackground};
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: ${props => subtleBorder(props.theme)}; // Consistent subtle border
-  flex-shrink: 0; // Prevent header from shrinking
+  border-bottom: ${props => subtleBorder(props.theme)};
+  flex-shrink: 0;
 `;
 
 const ChatInfo = styled.div`
@@ -34,8 +62,8 @@ const ChatInfo = styled.div`
   align-items: center;
   gap: 0.75rem;
   cursor: pointer;
-  min-width: 0; // Allow shrinking if needed
-  flex-grow: 1; // Take up available space
+  min-width: 0;
+  flex-grow: 1;
 `;
 
 const ChatAvatar = styled.img`
@@ -45,37 +73,37 @@ const ChatAvatar = styled.img`
   object-fit: cover;
 `;
 
-const InfoTextContainer = styled.div` // Wrapper for name and status
+const InfoTextContainer = styled.div`
   display: flex;
   flex-direction: column;
-  min-width: 0; // Allow shrinking
+  min-width: 0;
 `;
 
 const ChatName = styled.h3`
-  font-size: 1rem; // Adjust size
+  font-size: 1rem;
   font-weight: 500;
-  color: ${props => props.theme.colors.textPrimary}; // Use primary text color
-  white-space: nowrap; // Prevent wrapping
+  color: ${props => props.theme.colors.textPrimary};
+  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis; // Add ellipsis if name is too long
+  text-overflow: ellipsis;
 `;
 
 const ChatStatus = styled.span`
-  font-size: 0.75rem; // Adjust size
-  color: ${props => props.theme.colors.textSecondary}; // Use secondary text color
+  font-size: 0.75rem;
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const HeaderIcons = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem; // Adjust gap as needed
-  flex-shrink: 0; // Prevent icons from shrinking
+  gap: 1rem;
+  flex-shrink: 0;
 `;
 
 const IconButton = styled.button`
   background: none;
   border: none;
-  color: ${props => props.theme.colors.icon}; // Use theme icon color
+  color: ${props => props.theme.colors.icon};
   cursor: pointer;
   font-size: 1.5rem;
   display: flex;
@@ -86,7 +114,7 @@ const IconButton = styled.button`
 
   &:hover {
     background-color: ${props => props.theme.colors.hoverBackground};
-    color: ${props => props.theme.colors.iconActive}; // Use active icon color
+    color: ${props => props.theme.colors.iconActive};
   }
 `;
 
@@ -94,22 +122,26 @@ const IconButton = styled.button`
 const ChatWindow = () => {
   const { activeChat, onlineUsers } = useChat();
   const { user } = useAuth();
+  // --- FIX: Removed unused theme variable ---
+  // const { theme } = useTheme(); <-- Removed
+
+  // Get theme object directly for passing to styled component if needed
+  const { theme } = useTheme();
+
 
   if (!activeChat) {
-      // Display placeholder when no chat is selected (like WhatsApp Web)
-      // You might want to style this better later
       return (
-        <ChatWindowContainer style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <div>
-            <h2>Select a chat</h2>
-            <p>Start messaging or select a chat from the sidebar.</p>
-          </div>
+        // Pass theme to container for background animation
+        <ChatWindowContainer theme={theme}>
+            <WelcomePlaceholder>
+              <h2>Welcome</h2>
+              <p>Select a chat from the sidebar to start messaging.</p>
+            </WelcomePlaceholder>
         </ChatWindowContainer>
       );
   }
 
-
-  // Logic to determine display name, picture, and online status
+  // Logic for display name, picture, online status
   let displayName = activeChat.groupName;
   let displayPicture = activeChat.groupIcon;
   let otherUserId = null;
@@ -121,41 +153,46 @@ const ChatWindow = () => {
       displayPicture = otherParticipant.profilePic;
       otherUserId = otherParticipant._id;
     } else {
-        displayName = "Chat"; // Fallback
+        displayName = "Chat"; // Fallback name
     }
   }
-  displayName = displayName || "Chat"; // Ensure display name is not null/undefined
+  displayName = displayName || "Chat"; // Ensure displayName is never falsy
   const isOnline = otherUserId ? onlineUsers.includes(otherUserId) : false;
 
   return (
-    <ChatWindowContainer>
+    // Pass theme to container for background animation
+    <ChatWindowContainer theme={theme}>
       <ChatHeader>
         <ChatInfo>
           <ChatAvatar
-            src={displayPicture || `https://i.pravatar.cc/150?u=${displayName}`}
+            src={displayPicture || `https://i.pravatar.cc/150?u=${activeChat._id}`} // Fallback using chat ID
             alt={displayName}
            />
           <InfoTextContainer>
             <ChatName>{displayName}</ChatName>
             {!activeChat.isGroup && (
-              <ChatStatus>{isOnline ? 'online' : 'offline'}</ChatStatus> // Consider showing 'last seen' later
+              <ChatStatus>{isOnline ? 'online' : 'offline'}</ChatStatus>
             )}
             {activeChat.isGroup && (
-               <ChatStatus>{activeChat.participants?.length || 0} members</ChatStatus> // Add check for participants array
+               <ChatStatus>{activeChat.participants?.length || 0} members</ChatStatus>
             )}
           </InfoTextContainer>
         </ChatInfo>
         <HeaderIcons>
-          {/* Add relevant icons */}
           <IconButton><AiOutlineSearch /></IconButton>
           <IconButton><HiDotsVertical /></IconButton>
         </HeaderIcons>
       </ChatHeader>
 
-      <MessageList />
+      {/* MessageList wrapper */}
+      <div style={{ flexGrow: 1, overflowY: 'hidden', display: 'flex' }}>
+        <MessageList />
+      </div>
+
       <MessageInput />
     </ChatWindowContainer>
   );
 };
 
 export default ChatWindow;
+

@@ -9,11 +9,11 @@ import { useChat } from '../../context/ChatContext';
 const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
 
 const InputContainer = styled.form`
-  padding: 0.5rem 1rem; // Adjust padding
+  padding: 0.5rem 1rem;
   background-color: ${props => props.theme.colors.panelBackground}; // Use panel bg (like sidebar)
   display: flex;
   align-items: center;
-  gap: 0.8rem; // Adjust gap
+  gap: 0.8rem;
   border-top: ${props => subtleBorder(props.theme)}; // Subtle top border
   flex-shrink: 0; // Prevent input bar from shrinking
 `;
@@ -23,7 +23,7 @@ const IconButton = styled.button`
   border: none;
   color: ${props => props.theme.colors.icon}; // Use theme icon color
   cursor: pointer;
-  font-size: 1.6rem; // Slightly larger icons
+  font-size: 1.6rem;
   display: flex;
   align-items: center;
   padding: 4px;
@@ -35,14 +35,22 @@ const IconButton = styled.button`
   }
 `;
 
+// Specific style for Send button to use primary color
+const SendButton = styled(IconButton)`
+  color: ${props => props.theme.colors.primary}; // Use primary color
+   &:hover {
+    color: ${props => props.theme.colors.iconActive}; // Still use hover effect if desired
+  }
+`;
+
 const TextInput = styled.input`
   flex: 1;
   background-color: ${props => props.theme.colors.inputBackground}; // Use theme input bg
   border: none;
-  border-radius: 20px; // Keep rounded
-  padding: 0.6rem 1rem; // Adjust padding
+  border-radius: 20px;
+  padding: 0.6rem 1rem;
   color: ${props => props.theme.colors.textPrimary}; // Use primary text color
-  font-size: 0.95rem; // Adjust font size
+  font-size: 0.95rem;
   outline: none;
   &::placeholder {
     color: ${props => props.theme.colors.textSecondary}; // Use secondary text for placeholder
@@ -72,13 +80,14 @@ const MessageInput = () => {
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
-      {/* Conditionally render Send button only if there is text */}
       {text.trim() && (
-        <IconButton type="submit"> <IoMdSend /> </IconButton>
+        <SendButton type="submit"> <IoMdSend /> </SendButton> // Use styled SendButton
       )}
-      {/* You might want a different icon like a microphone if text is empty */}
+      {/* Optional: Add microphone icon when text is empty */}
+      {/* {!text.trim() && ( <IconButton type="button"> <FaMicrophone /> </IconButton> )} */}
     </InputContainer>
   );
 };
 
 export default MessageInput;
+
