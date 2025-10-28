@@ -14,11 +14,12 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      // --- FINAL FIX: Force Polling transport only ---
-      // This bypasses potential WebSocket configuration issues on the host.
+      // --- FIX: Added reconnectionDelayMax and reduced retries ---
       const newSocket = io(RENDER_API_URL, {
         query: { userId: user._id },
-        transports: ['polling'] // Removed 'websocket' to stop the handshake error
+        transports: ['polling'], // Sticking with polling for stability
+        reconnectionAttempts: 5, // Limit retries to prevent looping
+        reconnectionDelayMax: 5000 // Wait up to 5 seconds before retrying
       });
       // --- END FIX ---
 
