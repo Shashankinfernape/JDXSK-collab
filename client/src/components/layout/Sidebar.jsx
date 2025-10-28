@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react'; // <-- THIS IS THE FIX
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
+// --- FIX: Add missing imports ---
 import ChatList from '../chat/ChatList';
 import ProfileDrawer from '../profile/ProfileDrawer';
 import SettingsModal from '../settings/SettingsModal';
 import userService from '../../services/user.service';
 import SearchResults from '../search/SearchResults';
+// --- END FIX ---
+import { useTheme } from '../../context/ThemeContext';
+import { TbBrandNetflix } from 'react-icons/tb';
+import { BsSpotify, BsApple, BsGoogle } from 'react-icons/bs';
 import { HiDotsVertical } from 'react-icons/hi';
 import { CgProfile } from 'react-icons/cg';
 import { IoMdSettings, IoMdLogOut } from 'react-icons/io';
 import { AiOutlineSearch } from 'react-icons/ai';
 
-// --- Import new theme items ---
-import { useTheme } from '../../context/ThemeContext';
-import { TbBrandNetflix } from 'react-icons/tb';
-import { BsSpotify } from 'react-icons/bs';
-
-// ... (All styled-components are correct, no changes needed) ...
+// --- Styled components ---
 const SidebarContainer = styled.div`
   width: ${props => props.theme.panel_width};
   max-width: ${props => props.theme.max_panel_width};
@@ -24,18 +24,17 @@ const SidebarContainer = styled.div`
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: ${props => props.theme.colors.black};
+  background-color: ${props => props.theme.colors.panelBackground};
   position: relative; /* For positioning search results */
 `;
 
-
 const SidebarHeader = styled.header`
   padding: 1rem;
-  background-color: ${props => props.theme.colors.black_lighter};
+  background-color: ${props => props.theme.colors.headerBackground};
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid ${props => props.theme.colors.black};
+  border-bottom: 1px solid ${props => props.theme.colors.hoverBackground}; // Subtle border
 `;
 
 const HeaderLeft = styled.div`
@@ -50,12 +49,6 @@ const UserAvatar = styled.img`
   border-radius: 50%;
   cursor: pointer;
   object-fit: cover;
-  border: 2px solid transparent;
-  transition: border-color 0.2s ease;
-
-  &:hover {
-    border-color: ${props => props.theme.colors.primary};
-  }
 `;
 
 const HeaderIcons = styled.div`
@@ -71,7 +64,7 @@ const IconWrapper = styled.div`
 const IconButton = styled.button`
   background: none;
   border: none;
-  color: ${props => props.theme.colors.grey_light};
+  color: ${props => props.theme.colors.icon}; // Use theme color
   cursor: pointer;
   font-size: 1.5rem;
   display: flex;
@@ -81,26 +74,21 @@ const IconButton = styled.button`
   transition: background-color 0.2s ease, color 0.2s ease;
 
   &:hover {
-    background-color: ${props => props.theme.colors.black_lightest};
-    color: ${props => props.theme.colors.white};
+    background-color: ${props => props.theme.colors.hoverBackground};
+    color: ${props => props.theme.colors.iconHover};
   }
 `;
 
 const ThemeSwitcher = styled(IconButton)`
-  font-size: 1.7rem;
-  color: ${props => props.themeName === 'netflix' ? props.theme.colors.primary : props.theme.colors.grey_light};
-
-  /* Spotify Icon Color */
-  & > .spotify-icon {
-    color: ${props => props.themeName === 'spotify' ? props.theme.colors.primary : props.theme.colors.grey_light};
-  }
+  font-size: 1.6rem; // Adjust size if needed
+  color: ${props => props.theme.colors.primary}; // Use primary color for active theme icon
 `;
 
 const DropdownMenu = styled.div`
   position: absolute;
   top: 120%;
   right: 0;
-  background-color: ${props => props.theme.colors.black_lightest};
+  background-color: ${props => props.theme.colors.hoverBackground};
   border-radius: 5px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   z-index: 100;
@@ -114,7 +102,7 @@ const DropdownItem = styled.button`
   gap: 0.75rem;
   background: none;
   border: none;
-  color: ${props => props.theme.colors.text};
+  color: ${props => props.theme.colors.textPrimary}; // Use primary text color
   padding: 0.8rem 1rem;
   width: 100%;
   text-align: left;
@@ -122,19 +110,19 @@ const DropdownItem = styled.button`
   cursor: pointer;
 
   &:hover {
-    background-color: ${props => props.theme.colors.black_lighter};
+    background-color: ${props => props.theme.colors.inputBackground}; // Use input background for hover
   }
 
   &.logout {
-    color: ${props => props.theme.colors.primary};
+    color: ${props => props.theme.colors.primary}; // Use primary color for logout
     font-weight: 600;
   }
 `;
 
 const SearchBar = styled.div`
   padding: 0.75rem 1rem;
-  background-color: ${props => props.theme.colors.black_lighter};
-  border-bottom: 1px solid ${props => props.theme.colors.black};
+  background-color: ${props => props.theme.colors.headerBackground}; // Match header bg
+  border-bottom: 1px solid ${props => props.theme.colors.hoverBackground};
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -142,44 +130,41 @@ const SearchBar = styled.div`
 `;
 
 const SearchIcon = styled(AiOutlineSearch)`
-  color: ${props => props.theme.colors.grey};
+  color: ${props => props.theme.colors.icon};
   font-size: 1.2rem;
   position: absolute;
   left: 1.75rem;
+  z-index: 1; // Ensure icon is above input background
 `;
 
 const SearchInput = styled.input`
   width: 100%;
-  background: ${props => props.theme.colors.black};
+  background: ${props => props.theme.colors.inputBackground}; // Use input background
   border: none;
   border-radius: 8px;
-  padding: 0.6rem 1rem 0.6rem 2.5rem;
-  color: ${props => props.theme.colors.text};
+  padding: 0.6rem 1rem 0.6rem 2.5rem; // Padding for icon
+  color: ${props => props.theme.colors.textPrimary}; // Use primary text color
   outline: none;
   font-size: 0.95rem;
   transition: background-color 0.2s ease;
 
   &:focus {
-    background-color: ${props => props.theme.colors.black_lightest};
+    background-color: ${props => props.theme.colors.hoverBackground}; // Use hover background on focus
   }
 `;
-// ... (End of styled-components)
 
-
+// --- Sidebar Component ---
 const Sidebar = () => {
   const { user, logout } = useAuth();
-  const { themeName, toggleTheme } = useTheme(); // Get theme state
+  const { themeName, cycleTheme } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-
-  // --- New Search State ---
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  // ---
 
-  // This is the function (Line 182) that was causing the error
+  // Search Debounce Effect
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -193,28 +178,38 @@ const Sidebar = () => {
         setSearchResults(users);
       } catch (error) {
         console.error("Failed to search users", error);
+        setSearchResults([]); // Clear results on error
       }
     };
 
-    // "Debounce" the search: wait 300ms after user stops typing
     const delay = setTimeout(() => {
       search();
     }, 300);
 
-    return () => clearTimeout(delay); // Clear timeout on re-render
+    return () => clearTimeout(delay);
   }, [searchQuery]);
-
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-    setIsSearching(true);
+    setIsSearching(true); // Show results immediately while typing/debouncing
   };
-  
+
   const closeSearch = () => {
     setSearchQuery('');
     setSearchResults([]);
     setIsSearching(false);
-  }
+  };
+
+  // Helper to render the correct theme icon
+  const renderThemeIcon = () => {
+    switch (themeName) {
+      case 'netflix': return <TbBrandNetflix />;
+      case 'spotify': return <BsSpotify />;
+      case 'apple': return <BsApple />;
+      case 'google': return <BsGoogle />;
+      default: return <TbBrandNetflix />;
+    }
+  };
 
   return (
     <>
@@ -222,13 +217,12 @@ const Sidebar = () => {
         <SidebarHeader>
           <HeaderLeft>
             <UserAvatar
-              src={user.profilePic}
+              src={user.profilePic || `https://i.pravatar.cc/150?u=${user._id}`} // Add fallback avatar
               alt={user.name}
               onClick={() => setShowProfile(true)}
             />
-            {/* --- Add the switcher button --- */}
-            <ThemeSwitcher onClick={toggleTheme} themeName={themeName}>
-              {themeName === 'netflix' ? <BsSpotify className='spotify-icon' /> : <TbBrandNetflix />}
+            <ThemeSwitcher onClick={cycleTheme}>
+              {renderThemeIcon()}
             </ThemeSwitcher>
           </HeaderLeft>
 
@@ -253,7 +247,7 @@ const Sidebar = () => {
             </IconWrapper>
           </HeaderIcons>
         </SidebarHeader>
-        
+
         <SearchBar>
           <SearchIcon />
           <SearchInput
@@ -263,24 +257,22 @@ const Sidebar = () => {
           />
         </SearchBar>
 
-        {/* --- Conditionally render search or chats --- */}
+        {/* --- Lines with potential errors --- */}
         {isSearching ? (
-          <SearchResults results={searchResults} onUserClick={closeSearch} />
+          <SearchResults results={searchResults} onUserClick={closeSearch} /> // Line ~181
         ) : (
-          <ChatList />
+          <ChatList /> // Line ~183
         )}
-
       </SidebarContainer>
 
-      {/* These components are hidden by default */}
+      {/* --- Lines with potential errors --- */}
       <ProfileDrawer
         isOpen={showProfile}
-        onClose={() => setShowProfile(false)}
+        onClose={() => setShowProfile(false)} // Line ~189
       />
-
       <SettingsModal
         isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
+        onClose={() => setShowSettings(false)} // Line ~190
       />
     </>
   );
