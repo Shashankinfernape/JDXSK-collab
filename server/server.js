@@ -8,27 +8,23 @@ const passport = require('passport');
 const connectDB = require('./config/db');
 const { initSocket } = require('./socket/socket');
 
-// Load environment variables
 dotenv.config();
-
-// Connect to MongoDB
 connectDB();
-
-// Passport config (for Google Login)
 require('./config/passport');
 
 const app = express();
 
-// Middleware
+// --- CORS Middleware for REST API ---
+// Apply stricter CORS here if needed, but allow client origin
 app.use(cors({
-  origin: process.env.CLIENT_URL, // Use the CLIENT_URL variable
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+  origin: process.env.CLIENT_URL, // Use environment variable
   credentials: true
 }));
+
 app.use(express.json());
 app.use(passport.initialize());
 
-// API Routes
+// --- API Routes ---
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/chats', require('./routes/chat.routes'));
@@ -36,31 +32,32 @@ app.use('/api/messages', require('./routes/message.routes'));
 app.use('/api/status', require('./routes/status.routes'));
 app.use('/api/backup', require('./routes/backup.routes'));
 
-// Create HTTP server
+// --- HTTP Server Setup ---
 const httpServer = http.createServer(app);
 
-// --- CRITICAL FIX: Ensure Socket.IO is initialized robustly ---
+// --- Socket.IO Server Setup (Explicit Configuration) ---
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL, // Use the CLIENT_URL variable
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: process.env.CLIENT_URL, // CRITICAL: Use the exact client URL from ENV
+    methods: ["GET", "POST"],
     credentials: true
   },
-  // Ensure polling is allowed, as client is forced to use it
-  transports: ['websocket', 'polling'] 
+  // Adding allowEIO3 for potential compatibility issues
+  allowEIO3: true, 
+  transports: ['websocket', 'polling'] // Allow both standard transports
 });
-// --- END FIX ---
 
-// Pass the 'io' instance to our socket logic
+// Pass the configured io instance to the socket logic file
 initSocket(io);
 
-// Health check route
+// Health check
 app.get('/', (req, res) => {
   res.send('Chatflix Server is running!');
 });
 
 const PORT = process.env.PORT || 5000;
-// CRITICAL FIX: Listen on '0.0.0.0' for Render stability
-httpServer.listen(PORT, '0.0.0.0', () => { 
+// Listen on all interfaces for Render compatibility
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
+

@@ -6,20 +6,27 @@ const SocketContext = createContext();
 
 const useSocketHook = () => useContext(SocketContext);
 
-const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; // Your Server URL
+// --- Revert to using Environment Variable ---
+// Ensure REACT_APP_API_URL is correctly set in your Vercel/Render client environment
+const SERVER_API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000"; // Fallback for local
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      // --- CRITICAL STABILITY FIX ---
-      const newSocket = io(RENDER_API_URL, {
+    let newSocket = null; // Declare here to access in cleanup
+
+    if (user && SERVER_API_URL) { // Check if user and URL exist
+      console.log(`Attempting to connect socket to: ${SERVER_API_URL}`);
+      
+      // --- Use Default Connection Settings Initially ---
+      newSocket = io(SERVER_API_URL, {
         query: { userId: user._id },
-        transports: ['polling'], // Forced polling to bypass WebSocket failure
-        reconnectionAttempts: 3, // Limited retries to 3
-        reconnectionDelayMax: 5000 // Max delay of 5 seconds between retries
+        transports: ['websocket', 'polling'], // Allow standard transports
+        // Remove aggressive retry limits for now
+        // reconnectionAttempts: 3, 
+        // reconnectionDelayMax: 5000 
       });
       // --- END FIX ---
 
@@ -27,19 +34,32 @@ export const SocketProvider = ({ children }) => {
         console.log('Socket.IO connected:', newSocket.id);
       });
 
+      // --- Add Error Listeners ---
+      newSocket.on('connect_error', (err) => {
+        console.error('Socket.IO Connection Error:', err.message, err.cause);
+      });
+      
+      newSocket.on('disconnect', (reason) => {
+        console.warn('Socket.IO disconnected:', reason);
+      });
+      // --- End Error Listeners ---
+
       setSocket(newSocket);
 
-      return () => {
-        console.log('Socket.IO disconnecting...');
-        newSocket.close();
-      };
     } else {
-      if (socket) {
-        socket.close();
-        setSocket(null);
-      }
+      console.log("User not logged in or API URL missing, skipping socket connection.");
     }
-  }, [user, socket]); 
+
+    // Cleanup function: runs when user logs out or component unmounts
+    return () => {
+      if (newSocket) {
+        console.log('Cleaning up socket connection...');
+        newSocket.close(); // Ensure socket is closed
+        setSocket(null); // Clear socket state
+      }
+    };
+    // Ensure effect runs only when user or API URL changes significantly
+  }, [user]); 
 
   return (
     <SocketContext.Provider value={socket}>
@@ -49,3 +69,4 @@ export const SocketProvider = ({ children }) => {
 };
 
 export const useSocket = useSocketHook;
+
