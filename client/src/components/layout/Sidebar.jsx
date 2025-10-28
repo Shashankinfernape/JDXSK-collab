@@ -8,6 +8,7 @@ import SettingsModal from '../settings/SettingsModal';
 import userService from '../../services/user.service';
 import SearchResults from '../search/SearchResults';
 import { useTheme } from '../../context/ThemeContext';
+// FIX: Use specific icons for each brand that represent their logo
 import { TbBrandNetflix } from 'react-icons/tb';
 import { BsSpotify, BsApple, BsGoogle } from 'react-icons/bs';
 import { FaInstagram } from 'react-icons/fa'; // Instagram Icon
@@ -99,7 +100,8 @@ const IconButton = styled.button`
 // --- FIX: Apply specific brand colors to ThemeSwitcher icon ---
 const ThemeSwitcher = styled(IconButton)`
   font-size: 1.6rem;
-  /* Default icon color */
+
+  /* Default/fallback icon color */
   color: ${props => props.theme.colors.icon};
 
   /* Specific colors based on the current theme */
@@ -110,28 +112,22 @@ const ThemeSwitcher = styled(IconButton)`
     color: #1DB954; /* Spotify Green */
   `}
   ${({ theme }) => theme.name === 'apple' && css`
-    /* Use textPrimary which is black/white based on mode */
-    color: ${props => props.theme.colors.textPrimary};
+    color: #FFFFFF; /* White for dark Apple theme */
   `}
    ${({ theme }) => theme.name === 'google' && css`
     color: #4285F4; /* Google Blue */
   `}
   ${({ theme }) => theme.name === 'instagram' && css`
-    svg { fill: url(#instagram-gradient-icon); }
-    /* Remove color override for gradient to work */
-    color: inherit;
+    /* Instagram icon is monolithic, use its primary color */
+    color: #C13584; /* A strong pink from Instagram's gradient */
+    /* Remove SVG fill for monolithic approach unless a single color fill is desired for the icon */
+    /* svg { fill: url(#instagram-gradient-icon); } */
   `}
 
   &:hover {
-     /* Optional: Slightly dim the color on hover, or keep theme's iconActive */
-     opacity: 0.8;
-     /* If hover color is needed, apply conditionally */
+     opacity: 0.8; /* Slight dim on hover for all */
+     /* If hover color is needed, apply conditionally, otherwise rely on default hover logic */
      /* color: ${props => props.theme.colors.iconActive}; */
-     ${({ theme }) => theme.name === 'instagram' && css`
-        opacity: 0.8; // Dim gradient slightly
-        color: inherit; // Prevent hover color override
-        svg { fill: url(#instagram-gradient-icon); }
-     `}
   }
 `;
 // --- END FIX ---
@@ -233,8 +229,12 @@ const Sidebar = ({ onChatSelect }) => {
 
   return (
     <>
-      {/* SVG Gradient Definition for Instagram Icon */}
-      <svg width="0" height="0" style={{ position: 'absolute' }}>
+      {/*
+        FIX: Removed the SVG gradient definition for Instagram icon.
+        If Instagram icon is monolithic, it should just be a single color,
+        not a gradient applied via SVG fill.
+      */}
+      {/* <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
           <linearGradient id="instagram-gradient-icon" x1="0%" y1="0%" x2="100%" y2="100%">
              <stop offset="0%" style={{stopColor: '#405DE6', stopOpacity: 1}} />
@@ -244,7 +244,7 @@ const Sidebar = ({ onChatSelect }) => {
             <stop offset="100%" style={{stopColor: '#FCAF45', stopOpacity: 1}} />
           </linearGradient>
         </defs>
-      </svg>
+      </svg> */}
 
       <SidebarContainer>
         <SidebarHeader>
