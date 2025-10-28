@@ -4,8 +4,8 @@ import { useAuth } from './AuthContext';
 
 const SocketContext = createContext();
 
-// --- FIX: Exporting both the hook and the provider below ---
-export const useSocket = () => useContext(SocketContext);
+// 1. Define the hook immediately
+const useSocketHook = () => useContext(SocketContext);
 
 const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; // Your Server URL
 
@@ -18,7 +18,7 @@ export const SocketProvider = ({ children }) => {
       const newSocket = io(RENDER_API_URL, {
         query: { userId: user._id },
         transports: ['polling'],
-        reconnectionAttempts: 3,
+        reconnectionAttempts: 3, 
         reconnectionDelayMax: 5000 
       });
 
@@ -46,3 +46,6 @@ export const SocketProvider = ({ children }) => {
     </SocketContext.Provider>
   );
 };
+
+// 2. Export the hook using its simple, preferred name.
+export const useSocket = useSocketHook;
