@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 
 const SocketContext = createContext();
 
+// --- FIX: Exporting both the hook and the provider below ---
 export const useSocket = () => useContext(SocketContext);
 
 const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; // Your Server URL
@@ -14,14 +15,12 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      // --- FIX: Added reconnectionDelayMax and reduced retries ---
       const newSocket = io(RENDER_API_URL, {
         query: { userId: user._id },
-        transports: ['polling'], // Forced polling for maximum stability on Render
-        reconnectionAttempts: 3, // Limited retries to prevent resource exhaustion
+        transports: ['polling'],
+        reconnectionAttempts: 3,
         reconnectionDelayMax: 5000 
       });
-      // --- END FIX ---
 
       newSocket.on('connect', () => {
         console.log('Socket.IO connected:', newSocket.id);
@@ -45,7 +44,5 @@ export const SocketProvider = ({ children }) => {
     <SocketContext.Provider value={socket}>
       {children}
     </SocketContext.Provider>
-    // The closing tag is now correctly </SocketContext.Provider>
-    // but the component structure is SocketProvider, which is correct here.
   );
 };
