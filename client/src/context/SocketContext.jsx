@@ -6,7 +6,7 @@ const SocketContext = createContext();
 
 export const useSocket = () => useContext(SocketContext);
 
-const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; // --- HARDCODE FIX ---
+const RENDER_API_URL = "https://jdxsk-collab.onrender.com"; // Your Server URL
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
@@ -14,10 +14,11 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      // --- FIX: Added 'transports: ["websocket", "polling"]' ---
+      // --- FINAL FIX: Force Polling transport only ---
+      // This bypasses potential WebSocket configuration issues on the host.
       const newSocket = io(RENDER_API_URL, {
         query: { userId: user._id },
-        transports: ["websocket", "polling"] 
+        transports: ['polling'] // Removed 'websocket' to stop the handshake error
       });
       // --- END FIX ---
 
@@ -37,7 +38,7 @@ export const SocketProvider = ({ children }) => {
         setSocket(null);
       }
     }
-  }, [user, socket]); // <-- FIX: Added 'user' and 'socket'
+  }, [user, socket]);
 
   return (
     <SocketContext.Provider value={socket}>
