@@ -286,7 +286,7 @@ const Notifications = ({ onClose }) => {
                             <ContentWrapper>
                                 {/* Make the name bold by parsing the message or constructing it */}
                                 <MessageHTML>
-                                    <strong>{notif.sender?.name || 'Someone'}</strong> {notif.message.replace(`${notif.sender?.name || ''}`, '').trim()}
+                                    <strong>{notif.sender?.name || 'Someone'}</strong> {(notif.message || '').replace(`${notif.sender?.name || ''}`, '').trim()}
                                 </MessageHTML>
                                 
                                 <MetaInfo>
