@@ -18,7 +18,9 @@ const updateUserProfile = async (req, res) => {
 
     user.name = req.body.name || user.name;
     user.about = req.body.about || user.about;
-    // We can add profilePic update logic here (if user uploads a new one)
+    if (req.body.profilePic) {
+        user.profilePic = req.body.profilePic;
+    }
 
     const updatedUser = await user.save();
     res.json(updatedUser);
@@ -155,10 +157,18 @@ const acceptFriendRequest = async (req, res) => {
         if (socketId) {
             const populatedNotif = await notification.populate('sender', 'name profilePic');
             getIo().to(socketId).emit('newNotification', populatedNotif);
+            // Emit event to update friend list
+            getIo().to(socketId).emit('friendRequestAccepted', {
+                _id: req.user._id,
+                name: req.user.name,
+                profilePic: req.user.profilePic,
+                email: req.user.email,
+                about: req.user.about
+            });
         }
       } catch (e) { console.error("Socket emit error:", e); }
 
-      res.json({ message: 'Friend request accepted' });
+      res.json({ message: 'Friend request accepted', newFriend: sender });
 
   } catch (error) {
     console.error(error);

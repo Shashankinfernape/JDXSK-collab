@@ -94,13 +94,29 @@ export const ChatProvider = ({ children }) => {
       });
     });
 
+    // --- NEW: Listener for Friend Request Accepted ---
+    socket.on('friendRequestAccepted', async (newFriend) => {
+        console.log("Friend Request Accepted by:", newFriend);
+        // We want to ensure a chat exists or just add them to the list if the UI supports "Contacts"
+        // But for "ChatList", we typically need a chat object.
+        // Let's try to fetch or create the chat with this user
+        try {
+             // We can optimistically create a "fake" chat object or call API
+             const { data: newChat } = await api.post('/chats', { recipientId: newFriend._id });
+             addNewChat(newChat);
+        } catch(e) {
+            console.error("Failed to create chat on friend accept", e);
+        }
+    });
+
     return () => {
       socket.off('receiveMessage');
       socket.off('getOnlineUsers');
       socket.off('newChat'); 
       socket.off('updateChatList'); 
-      socket.off('messageDelivered'); // Clean up
-      socket.off('messageReadByRecipient'); // Clean up
+      socket.off('messageDelivered'); 
+      socket.off('messageReadByRecipient');
+      socket.off('friendRequestAccepted'); // Clean up
     };
   }, [socket]);
 
@@ -160,7 +176,12 @@ export const ChatProvider = ({ children }) => {
   };
   
   const addNewChat = (chat) => {
-     setChats(prev => [chat, ...prev]);
+     setChats(prev => {
+       if (prev.find(c => c._id === chat._id)) {
+         return prev;
+       }
+       return [chat, ...prev];
+     });
   }
 
   const value = {

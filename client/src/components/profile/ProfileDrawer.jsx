@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
-import userService from '../../services/user.service'; // Import the new service
-import { IoMdArrowBack } from 'react-icons/io';
-import { MdEdit, MdCheck } from 'react-icons/md';
+import userService from '../../services/user.service';
+import { IoMdArrowBack, IoMdClose } from 'react-icons/io';
+import { MdEdit, MdCheck, MdPhotoCamera } from 'react-icons/md';
 import Input from '../common/Input';
+import Cropper from 'react-easy-crop';
 
-// ... (Keep all the styled-components like Overlay, DrawerContainer, etc. They are correct)
 const Overlay = styled.div`
   position: fixed;
   top: 0;
@@ -38,7 +38,7 @@ const DrawerContainer = styled.div`
 
 const DrawerHeader = styled.div`
   padding: 1rem;
-  padding-top: 3.5rem; /* Space for status bar on mobile */
+  padding-top: 3.5rem;
   background-color: ${props => props.theme.colors.black_lightest};
   display: flex;
   align-items: center;
@@ -66,16 +66,45 @@ const ProfileContent = styled.div`
   align-items: center;
   padding: 2rem;
   gap: 1.5rem;
+  overflow-y: auto;
+`;
+
+const ImageContainer = styled.div`
+  position: relative;
+  width: 200px;
+  height: 200px;
 `;
 
 const ProfileImage = styled.img`
-  width: 200px;
-  height: 200px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 1rem;
   cursor: pointer;
   border: 4px solid ${props => props.theme.colors.black_lighter};
+`;
+
+const ImageOverlay = styled.div`
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  color: white;
+  
+  ${ImageContainer}:hover & {
+    opacity: 1;
+  }
+`;
+
+const HiddenInput = styled.input`
+  display: none;
 `;
 
 const InfoBlock = styled.div`
@@ -114,25 +143,118 @@ const EditButton = styled.button`
   font-size: 1.25rem;
   display: flex;
 `;
-// ... (End of styled-components)
+
+// Crop Modal Styles
+const CropModal = styled.div`
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #000;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+`;
+
+const CropContainer = styled.div`
+  position: relative;
+  flex: 1;
+  background: #333;
+`;
+
+const CropControls = styled.div`
+  height: 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  background: #111;
+`;
+
+const Button = styled.button`
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  background: ${props => props.primary ? props.theme.colors.primary : '#444'};
+  color: white;
+`;
+
+const Slider = styled.input`
+  width: 50%;
+`;
+
+
+// Helper to create the cropped image
+const createImage = (url) =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.setAttribute('crossOrigin', 'anonymous'); 
+    image.src = url;
+  });
+
+function getRadianAngle(degreeValue) {
+  return (degreeValue * Math.PI) / 180;
+}
+
+// Returns a base64 string
+async function getCroppedImg(imageSrc, pixelCrop, rotation = 0) {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  const maxSize = Math.max(image.width, image.height);
+  const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+
+  canvas.width = safeArea;
+  canvas.height = safeArea;
+
+  ctx.translate(safeArea / 2, safeArea / 2);
+  ctx.rotate(getRadianAngle(rotation));
+  ctx.translate(-safeArea / 2, -safeArea / 2);
+
+  ctx.drawImage(
+    image,
+    safeArea / 2 - image.width * 0.5,
+    safeArea / 2 - image.height * 0.5
+  );
+
+  const data = ctx.getImageData(0, 0, safeArea, safeArea);
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.putImageData(
+    data,
+    0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x,
+    0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y
+  );
+
+  return canvas.toDataURL('image/jpeg');
+}
 
 
 const ProfileDrawer = ({ isOpen, onClose }) => {
-  const { user, updateUser } = useAuth(); // 'updateUser' is from AuthContext
+  const { user, updateUser } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [name, setName] = useState(user.name);
   const [about, setAbout] = useState(user.about || 'Just watching Netflix... and chatting.');
+  
+  // Crop State
+  const [imageSrc, setImageSrc] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [isCropping, setIsCropping] = useState(false);
+  
+  const fileInputRef = useRef(null);
 
   const handleSaveName = async () => {
     try {
-      // 1. Call the API to save to database
       const { data: updatedUser } = await userService.updateUser({ name });
-      
-      // 2. Update the local user state in AuthContext
       updateUser(updatedUser); 
-      
-      // 3. Close the editor
       setIsEditingName(false);
     } catch (error) {
       console.error("Failed to update name", error);
@@ -141,16 +263,51 @@ const ProfileDrawer = ({ isOpen, onClose }) => {
   
   const handleSaveAbout = async () => {
     try {
-      // 1. Call the API to save to database
       const { data: updatedUser } = await userService.updateUser({ about });
-      
-      // 2. Update the local user state in AuthContext
       updateUser(updatedUser); 
-      
-      // 3. Close the editor
       setIsEditingAbout(false);
     } catch (error) {
       console.error("Failed to update about", error);
+    }
+  };
+
+  const onFileChange = async (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const imageDataUrl = await readFile(file);
+      setImageSrc(imageDataUrl);
+      setIsCropping(true);
+    }
+  };
+
+  const readFile = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => resolve(reader.result), false);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const showCroppedImage = async () => {
+    try {
+      const croppedImageBase64 = await getCroppedImg(
+        imageSrc,
+        croppedAreaPixels
+      );
+      
+      // Upload to server
+      const { data: updatedUser } = await userService.updateUser({ profilePic: croppedImageBase64 });
+      updateUser(updatedUser);
+      setIsCropping(false);
+      setImageSrc(null);
+      
+    } catch (e) {
+      console.error(e);
+      alert("Failed to update profile picture");
     }
   };
 
@@ -166,7 +323,19 @@ const ProfileDrawer = ({ isOpen, onClose }) => {
         </DrawerHeader>
 
         <ProfileContent>
-          <ProfileImage src={user.profilePic} alt="Profile" />
+          <ImageContainer onClick={() => fileInputRef.current.click()}>
+              <ProfileImage src={user.profilePic || `https://i.pravatar.cc/150?u=${user._id}`} alt="Profile" />
+              <ImageOverlay>
+                  <MdPhotoCamera size={30} />
+                  <span>Change</span>
+              </ImageOverlay>
+          </ImageContainer>
+          <HiddenInput 
+              type="file" 
+              accept="image/*" 
+              ref={fileInputRef} 
+              onChange={onFileChange} 
+          />
 
           <InfoBlock>
             <InfoLabel>Your Name</InfoLabel>
@@ -199,6 +368,36 @@ const ProfileDrawer = ({ isOpen, onClose }) => {
           </InfoBlock>
         </ProfileContent>
       </DrawerContainer>
+      
+      {/* Cropping Modal */}
+      {isCropping && (
+          <CropModal>
+              <CropContainer>
+                  <Cropper
+                    image={imageSrc}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={1} // 1:1 Aspect Ratio (Square)
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                  />
+              </CropContainer>
+              <CropControls>
+                  <Button onClick={() => setIsCropping(false)}>Cancel</Button>
+                  <Slider
+                    type="range"
+                    value={zoom}
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    aria-labelledby="Zoom"
+                    onChange={(e) => setZoom(e.target.value)}
+                  />
+                  <Button primary onClick={showCroppedImage}>Save</Button>
+              </CropControls>
+          </CropModal>
+      )}
     </>
   );
 };
