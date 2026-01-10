@@ -28,6 +28,8 @@ const ChatHeader = styled.header`
   align-items: center;
   border-bottom: ${props => subtleBorder(props.theme)};
   flex-shrink: 0; // Prevent header shrinking
+  position: relative;
+  z-index: 10; // Ensure it stays on top
 `;
 
 // --- FIX: Define IconButton *before* BackButton ---
@@ -48,7 +50,11 @@ const IconButton = styled.button`
 const BackButton = styled(IconButton)`
   display: none; // Hidden by default on larger screens
   margin-right: 0.5rem;
-  @media (max-width: 900px) { display: flex; } // Shown on smaller screens
+  z-index: 20; // Ensure it's above other elements
+  
+  @media (max-width: 900px) { 
+    display: flex !important; // Force display on mobile
+  } 
 `;
 
 const ChatInfo = styled.div`

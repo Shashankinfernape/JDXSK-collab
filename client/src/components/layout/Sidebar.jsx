@@ -46,6 +46,8 @@ const SidebarHeader = styled.header`
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0; /* Prevent header from shrinking */
+  position: relative;
+  z-index: 10;
 `;
 
 const HeaderLeft = styled.div`

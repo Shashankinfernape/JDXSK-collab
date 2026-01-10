@@ -6,10 +6,9 @@ import { useChat } from '../context/ChatContext';
 
 const HomeContainer = styled.div`
   display: flex;
-  /* Use 100vh for the main container to ensure it fills viewport initially */
+  /* Use 100dvh for mobile browser address bar handling, fallback to 100vh */
   height: 100vh;
-  /* Use 100% for inner height stability if needed, but 100vh is standard */
-  /* height: 100%; */
+  height: 100dvh;
   width: 100vw;
   background-color: ${({ theme }) => theme.colors.background};
   overflow: hidden; // Prevent body scrolling
@@ -87,24 +86,25 @@ const Home = () => {
       if (!mobile) { // Resized to desktop
           setShowChatWindow(true); // Always show area on desktop
       } else { // Resized to mobile
-          setShowChatWindow(!!activeChat); // Show chat only if one is active
+          // If we have an active chat, show it. Otherwise show sidebar.
+          setShowChatWindow(!!activeChat);
       }
     };
     window.addEventListener('resize', handleResize);
-    handleResize(); // Initial check
+    // Don't call handleResize() on every render, just setup
+    
+    // Initial check (only once)
+    // handleResize(); 
+    
     return () => window.removeEventListener('resize', handleResize);
-  }, [activeChat]); // Re-run when activeChat changes
+  }, [activeChat]); 
 
-  // Automatically show chat on mobile if one becomes active AFTER initial load
+  // Automatically show chat on mobile if one becomes active
   useEffect(() => {
-    if (isMobileView && activeChat && !showChatWindow) {
+    if (isMobileView && activeChat) {
       setShowChatWindow(true);
     }
-    // Automatically hide chat on mobile if activeChat becomes null
-    if (isMobileView && !activeChat && showChatWindow) {
-        setShowChatWindow(false);
-    }
-  }, [activeChat, isMobileView, showChatWindow]);
+  }, [activeChat, isMobileView]);
 
   // Handler passed to Sidebar -> ChatList -> ChatListItem
   const handleChatSelect = (chat) => {
@@ -114,15 +114,13 @@ const Home = () => {
     }
   };
 
-  // --- FIX: Ensure this is passed correctly and works ---
   // Handler passed to ChatWindow for the back button
   const handleBackToSidebar = () => {
-    // Only change visibility state on mobile, don't deselect chat necessarily
     if (isMobileView) {
       setShowChatWindow(false);
     }
-    // Optional: deselect chat if needed
-    // selectChat(null);
+    // Crucial: Clear the active chat so state stays consistent
+    selectChat(null);
   };
   // --- END FIX ---
 
