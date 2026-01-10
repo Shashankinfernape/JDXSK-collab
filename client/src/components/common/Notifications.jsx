@@ -5,9 +5,9 @@ import { IoMdClose } from 'react-icons/io';
 
 const NotificationContainer = styled.div`
     position: absolute;
-    top: 60px;
-    right: 10px;
-    width: 320px;
+    top: 130%; /* Move it down slightly from the icon */
+    right: 0; /* Align with the right edge of the wrapper */
+    width: 300px;
     background-color: ${props => props.theme.colors.panelBackground};
     border: 1px solid ${props => props.theme.colors.border || '#333'};
     border-radius: 8px;

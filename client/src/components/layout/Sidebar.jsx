@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import PropTypes from 'prop-types';
 import { useAuth } from '../../context/AuthContext';
@@ -195,6 +195,10 @@ const Sidebar = ({ onChatSelect }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Refs for click outside
+  const notificationRef = useRef(null);
+  const menuRef = useRef(null);
+
   // Search Debounce Effect
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -227,11 +231,33 @@ const Sidebar = ({ onChatSelect }) => {
       return () => socket.off('newNotification', handleNotification);
   }, [socket]);
 
+  // Handle clicks outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+        if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+            setShowNotifications(false);
+        }
+        if (menuRef.current && !menuRef.current.contains(event.target)) {
+            setShowMenu(false);
+        }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [notificationRef, menuRef]);
+
   const toggleNotifications = () => {
       if (!showNotifications) {
           setUnreadNotifications(0);
       }
       setShowNotifications(!showNotifications);
+      setShowMenu(false); // Close other menu
+  };
+
+  const toggleMenu = () => {
+      setShowMenu(!showMenu);
+      setShowNotifications(false); // Close other menu
   };
 
   const handleSearchChange = (e) => {
@@ -275,7 +301,7 @@ const Sidebar = ({ onChatSelect }) => {
               {renderThemeIcon()}
             </ThemeSwitcher>
             
-            <IconWrapper>
+            <IconWrapper ref={notificationRef}>
                 <IconButton onClick={toggleNotifications}>
                     <IoMdNotificationsOutline />
                     {unreadNotifications > 0 && <Badge>{unreadNotifications}</Badge>}
@@ -283,8 +309,8 @@ const Sidebar = ({ onChatSelect }) => {
                 {showNotifications && <Notifications onClose={() => setShowNotifications(false)} />}
             </IconWrapper>
 
-            <IconWrapper>
-              <IconButton onClick={() => setShowMenu(prev => !prev)}>
+            <IconWrapper ref={menuRef}>
+              <IconButton onClick={toggleMenu}>
                 <HiDotsVertical />
               </IconButton>
               {showMenu && (
