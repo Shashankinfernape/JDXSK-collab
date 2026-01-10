@@ -4,81 +4,103 @@ import userService from '../../services/user.service';
 import { IoMdClose } from 'react-icons/io';
 
 const NotificationContainer = styled.div`
-    position: absolute;
-    top: 130%; /* Move it down slightly from the icon */
-    right: 0; /* Align with the right edge of the wrapper */
-    width: 300px;
+    position: fixed;
+    top: 60px;
+    left: 400px; /* Positioned just to the right of the standard sidebar */
+    width: 350px;
     background-color: ${props => props.theme.colors.panelBackground};
-    border: 1px solid ${props => props.theme.colors.border || '#333'};
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-    z-index: 2000;
-    max-height: 400px;
+    border: 1px solid ${props => props.theme.colors.border || 'rgba(255,255,255,0.1)'};
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    z-index: 10000;
+    max-height: 80vh;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+
+    /* Handle mobile/small screens */
+    @media (max-width: 768px) {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        top: 70px;
+    }
 `;
 
 const Header = styled.div`
-    padding: 12px 16px;
+    padding: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid ${props => props.theme.colors.border || '#333'};
-    background-color: ${props => props.theme.colors.headerBackground || 'rgba(0,0,0,0.2)'};
+    border-bottom: 1px solid ${props => props.theme.colors.border || 'rgba(255,255,255,0.1)'};
+    background-color: ${props => props.theme.colors.headerBackground};
+    position: sticky;
+    top: 0;
+    z-index: 1;
 `;
 
-const Title = styled.span`
-    font-weight: 600;
+const Title = styled.h3`
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: ${props => props.theme.colors.textPrimary};
-    font-size: 1rem;
 `;
 
 const CloseIcon = styled(IoMdClose)`
     cursor: pointer;
     color: ${props => props.theme.colors.textSecondary};
-    font-size: 1.2rem;
-    &:hover { color: ${props => props.theme.colors.textPrimary}; }
+    font-size: 1.4rem;
+    transition: color 0.2s;
+    &:hover { color: ${props => props.theme.colors.primary}; }
 `;
 
 const NotificationItem = styled.div`
-    padding: 12px 16px;
-    border-bottom: 1px solid ${props => props.theme.colors.border || '#333'};
+    padding: 1rem;
+    border-bottom: 1px solid ${props => props.theme.colors.border || 'rgba(255,255,255,0.05)'};
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background-color: ${props => props.read ? 'transparent' : props.theme.colors.inputBackground};
-    transition: background 0.2s;
+    align-items: flex-start;
+    gap: 12px;
+    background-color: ${props => props.read ? 'transparent' : 'rgba(0, 149, 246, 0.05)'};
+    
+    &:hover {
+        background-color: ${props => props.theme.colors.hoverBackground};
+    }
+`;
 
-    &:last-child { border-bottom: none; }
-    &:hover { background-color: ${props => props.theme.colors.hoverBackground}; }
+const ContentWrapper = styled.div`
+    flex: 1;
 `;
 
 const Message = styled.p`
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: ${props => props.theme.colors.textPrimary};
-    margin: 0;
+    margin: 0 0 8px 0;
     line-height: 1.4;
+`;
+
+const Time = styled.span`
+    font-size: 0.75rem;
+    color: ${props => props.theme.colors.textSecondary};
 `;
 
 const ButtonGroup = styled.div`
     display: flex;
-    gap: 10px;
-    margin-top: 4px;
+    gap: 8px;
+    margin-top: 10px;
 `;
 
 const ActionBtn = styled.button`
-    padding: 6px 12px;
-    border-radius: 4px;
+    padding: 6px 16px;
+    border-radius: 8px;
     border: none;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    background-color: ${props => props.accept ? props.theme.colors.primary : '#444'};
-    color: white;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
+    background-color: ${props => props.accept ? '#0095F6' : props.theme.colors.inputBackground || '#363636'};
+    color: ${props => props.accept ? '#fff' : props.theme.colors.textPrimary};
     
-    &:hover { opacity: 0.9; }
+    &:hover { opacity: 0.8; }
 `;
 
 const EmptyState = styled.div`
@@ -135,13 +157,16 @@ const Notifications = ({ onClose }) => {
             ) : (
                 notifications.map(notif => (
                     <NotificationItem key={notif._id} read={notif.isRead}>
-                        <Message>{notif.message}</Message>
-                        {notif.type === 'friend_request' && (
-                            <ButtonGroup>
-                                <ActionBtn accept onClick={() => handleAccept(notif.sender._id)}>Accept</ActionBtn>
-                                <ActionBtn onClick={() => handleReject(notif.sender._id)}>Reject</ActionBtn>
-                            </ButtonGroup>
-                        )}
+                        <ContentWrapper>
+                            <Message>{notif.message}</Message>
+                            <Time>{new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Time>
+                            {notif.type === 'friend_request' && (
+                                <ButtonGroup>
+                                    <ActionBtn accept onClick={() => handleAccept(notif.sender._id)}>Accept</ActionBtn>
+                                    <ActionBtn onClick={() => handleReject(notif.sender._id)}>Reject</ActionBtn>
+                                </ButtonGroup>
+                            )}
+                        </ContentWrapper>
                     </NotificationItem>
                 ))
             )}

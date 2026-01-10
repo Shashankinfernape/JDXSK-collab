@@ -47,18 +47,25 @@ const UserEmail = styled.p`
 `;
 
 const ActionButton = styled.button`
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
+    padding: 6px 16px;
+    border-radius: 8px; /* More rounded like Insta */
     border: none;
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 600;
     transition: all 0.2s;
-    background-color: ${props => props.primary ? props.theme.colors.primary : '#333'};
-    color: white;
+    /* Insta Logic: Blue for primary action (Follow), Grey/Transparent for secondary (Following/Message) */
+    background-color: ${props => props.primary ? '#0095F6' : '#EFEFEF'}; 
+    color: ${props => props.primary ? '#fff' : '#000'};
+    
+    /* Dark mode override if needed, but keeping simple for now or using theme */
+    ${props => props.theme.mode === 'dark' && !props.primary && `
+        background-color: #363636;
+        color: #fff;
+    `}
     
     &:hover {
-        opacity: 0.9;
+        opacity: 0.8;
     }
     
     &:disabled {
@@ -92,8 +99,9 @@ const SearchResults = ({ results, onUserClick }) => {
       e.stopPropagation();
       try {
           await userService.sendFriendRequest(userId);
-          alert("Request Sent!"); 
-          onUserClick();
+          // Optimistically update UI or just reload search? 
+          // For now, simpler to just alert or rely on parent
+          onUserClick(); // Close search on action (Insta usually keeps open, but this closes)
       } catch (err) {
           alert("Failed to send request: " + (err.response?.data?.message || err.message));
       }
@@ -114,16 +122,16 @@ const SearchResults = ({ results, onUserClick }) => {
           </UserInfo>
           
           {user.connectionStatus === 'friend' && (
-              <ActionButton primary onClick={() => handleStartChat(user._id)}>Message</ActionButton>
+              <ActionButton onClick={() => handleStartChat(user._id)}>Message</ActionButton>
           )}
           {user.connectionStatus === 'none' && (
-              <ActionButton primary onClick={(e) => handleSendRequest(e, user._id)}>Add Friend</ActionButton>
+              <ActionButton primary onClick={(e) => handleSendRequest(e, user._id)}>Follow</ActionButton>
           )}
           {user.connectionStatus === 'pending_sent' && (
               <ActionButton disabled>Requested</ActionButton>
           )}
           {user.connectionStatus === 'pending_received' && (
-              <ActionButton disabled>Pending...</ActionButton> 
+              <ActionButton disabled>Follow Back</ActionButton> 
           )}
         </ResultItem>
       ))}
