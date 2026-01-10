@@ -2,8 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { useChat } from '../../context/ChatContext';
 import api from '../../services/api'; 
+import userService from '../../services/user.service';
 
-// ... (styled-components are correct) ...
 const ResultsContainer = styled.div`
   flex: 1;
   overflow-y: auto;
@@ -15,7 +15,6 @@ const ResultItem = styled.div`
   align-items: center;
   padding: 0.8rem 1rem;
   gap: 0.75rem;
-  cursor: pointer;
   border-bottom: 1px solid ${props => props.theme.colors.black_lighter};
 
   &:hover {
@@ -33,6 +32,7 @@ const Avatar = styled.img`
 const UserInfo = styled.div`
   flex: 1;
   overflow: hidden;
+  cursor: pointer;
 `;
 
 const UserName = styled.h4`
@@ -46,6 +46,27 @@ const UserEmail = styled.p`
   color: ${props => props.theme.colors.grey_light};
 `;
 
+const ActionButton = styled.button`
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    background-color: ${props => props.primary ? props.theme.colors.primary : '#333'};
+    color: white;
+    
+    &:hover {
+        opacity: 0.9;
+    }
+    
+    &:disabled {
+        opacity: 0.6;
+        cursor: default;
+    }
+`;
+
 const NoResults = styled.div`
   padding: 2rem;
   text-align: center;
@@ -54,28 +75,29 @@ const NoResults = styled.div`
 
 
 const SearchResults = ({ results, onUserClick }) => {
-  // --- MODIFIED ---
   const { selectChat, addNewChat } = useChat();
 
-  const handleUserClick = async (recipientId) => {
+  const handleStartChat = async (recipientId) => {
     try {
-      // 1. Call the API to create/get a new 1-on-1 chat
       const { data: newChat } = await api.post('/chats', { recipientId });
-      
-      // 2. Add this chat to our local state *immediately*
       addNewChat(newChat);
-
-      // 3. Select the new chat
       selectChat(newChat);
-      
-      // 4. Close the search results
       onUserClick();
-
     } catch (error) {
       console.error("Failed to create chat", error);
     }
   };
-  // --- END MODIFICATION ---
+
+  const handleSendRequest = async (e, userId) => {
+      e.stopPropagation();
+      try {
+          await userService.sendFriendRequest(userId);
+          alert("Request Sent!"); 
+          onUserClick();
+      } catch (err) {
+          alert("Failed to send request: " + (err.response?.data?.message || err.message));
+      }
+  };
 
   if (results.length === 0) {
     return <NoResults>No users found.</NoResults>
@@ -84,12 +106,25 @@ const SearchResults = ({ results, onUserClick }) => {
   return (
     <ResultsContainer>
       {results.map(user => (
-        <ResultItem key={user._id} onClick={() => handleUserClick(user._id)}>
+        <ResultItem key={user._id}>
           <Avatar src={user.profilePic} alt={user.name} />
-          <UserInfo>
+          <UserInfo onClick={() => user.connectionStatus === 'friend' && handleStartChat(user._id)}>
             <UserName>{user.name}</UserName>
             <UserEmail>{user.email}</UserEmail>
           </UserInfo>
+          
+          {user.connectionStatus === 'friend' && (
+              <ActionButton primary onClick={() => handleStartChat(user._id)}>Message</ActionButton>
+          )}
+          {user.connectionStatus === 'none' && (
+              <ActionButton primary onClick={(e) => handleSendRequest(e, user._id)}>Add Friend</ActionButton>
+          )}
+          {user.connectionStatus === 'pending_sent' && (
+              <ActionButton disabled>Requested</ActionButton>
+          )}
+          {user.connectionStatus === 'pending_received' && (
+              <ActionButton disabled>Pending...</ActionButton> 
+          )}
         </ResultItem>
       ))}
     </ResultsContainer>

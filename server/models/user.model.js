@@ -23,6 +23,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'Hi! I am using Chatflix.',
   },
+  friends: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  pendingRequests: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  sentRequests: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   contacts: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

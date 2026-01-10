@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import styled, { css } from 'styled-components';
 import PropTypes from 'prop-types';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 import ChatList from '../chat/ChatList';
 import ProfileDrawer from '../profile/ProfileDrawer';
 import SettingsModal from '../settings/SettingsModal';
 import userService from '../../services/user.service';
 import SearchResults from '../search/SearchResults';
 import { useTheme } from '../../context/ThemeContext';
+import Notifications from '../common/Notifications';
 // --- FIX: Add FaInstagram back ---
 import { TbBrandNetflix } from 'react-icons/tb';
 import { BsSpotify, BsApple, BsGoogle } from 'react-icons/bs';
@@ -16,7 +18,7 @@ import { FaInstagram } from 'react-icons/fa'; // Instagram Icon
 // Icons for dropdown
 import { HiDotsVertical } from 'react-icons/hi';
 import { CgProfile } from 'react-icons/cg';
-import { IoMdSettings, IoMdLogOut } from 'react-icons/io';
+import { IoMdSettings, IoMdLogOut, IoMdNotificationsOutline } from 'react-icons/io';
 import { AiOutlineSearch } from 'react-icons/ai';
 
 // --- Helper for subtle borders (Defined locally) ---
@@ -102,6 +104,18 @@ const IconButton = styled.button`
   }
 `;
 
+const Badge = styled.span`
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: ${props => props.theme.colors.primary};
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 5px;
+  border-radius: 50%;
+  border: 1px solid ${props => props.theme.colors.headerBackground};
+`;
+
 // --- FIX: Add Instagram color rule back ---
 const ThemeSwitcher = styled(IconButton)`
   font-size: 1.6rem;
@@ -170,10 +184,13 @@ const ListContainer = styled.div`
 // --- Sidebar Component ---
 const Sidebar = ({ onChatSelect }) => {
   const { user, logout } = useAuth();
+  const { socket } = useSocket();
   const { themeName, cycleTheme, theme } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -197,6 +214,25 @@ const Sidebar = ({ onChatSelect }) => {
     const delay = setTimeout(search, 300);
     return () => clearTimeout(delay);
   }, [searchQuery]);
+
+  // Socket Notification Listener
+  useEffect(() => {
+      if (!socket) return;
+      
+      const handleNotification = (notif) => {
+          setUnreadNotifications(prev => prev + 1);
+      };
+      
+      socket.on('newNotification', handleNotification);
+      return () => socket.off('newNotification', handleNotification);
+  }, [socket]);
+
+  const toggleNotifications = () => {
+      if (!showNotifications) {
+          setUnreadNotifications(0);
+      }
+      setShowNotifications(!showNotifications);
+  };
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -238,6 +274,15 @@ const Sidebar = ({ onChatSelect }) => {
              <ThemeSwitcher onClick={cycleTheme} theme={theme}>
               {renderThemeIcon()}
             </ThemeSwitcher>
+            
+            <IconWrapper>
+                <IconButton onClick={toggleNotifications}>
+                    <IoMdNotificationsOutline />
+                    {unreadNotifications > 0 && <Badge>{unreadNotifications}</Badge>}
+                </IconButton>
+                {showNotifications && <Notifications onClose={() => setShowNotifications(false)} />}
+            </IconWrapper>
+
             <IconWrapper>
               <IconButton onClick={() => setShowMenu(prev => !prev)}>
                 <HiDotsVertical />
@@ -291,4 +336,3 @@ Sidebar.propTypes = {
 };
 
 export default Sidebar;
-
