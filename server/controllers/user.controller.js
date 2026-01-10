@@ -143,7 +143,18 @@ const acceptFriendRequest = async (req, res) => {
           $pull: { sentRequests: recipientId }
       });
 
-      // Notify Sender
+      // 1. Update the original notification for the RECIPIENT (me)
+      // Find the notification where I am the recipient and the sender is the one I just accepted
+      await Notification.findOneAndUpdate(
+        { recipient: recipientId, sender: senderId, type: 'friend_request' },
+        { 
+            type: 'friend_request_confirmed', 
+            message: `You started following ${sender.name}`,
+            isRead: true 
+        }
+      );
+
+      // 2. Notify Sender (Create NEW notification for them)
       const notification = await Notification.create({
         recipient: senderId,
         sender: recipientId,

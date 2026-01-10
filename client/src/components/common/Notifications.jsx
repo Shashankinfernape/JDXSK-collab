@@ -269,6 +269,12 @@ const Notifications = ({ onClose }) => {
                                         )}
                                     </ActionButtons>
                                 )}
+                                
+                                {notif.type === 'friend_request_confirmed' && (
+                                    <ActionButtons>
+                                         <Button disabled>Following</Button>
+                                    </ActionButtons>
+                                )}
                             </NotificationItem>
                         );
                     })
