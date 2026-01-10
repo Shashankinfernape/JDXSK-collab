@@ -15,7 +15,7 @@ export const ChatProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
 
-  const socket = useSocket();
+  const { socket } = useSocket(); // Fix: destructure socket
   const { user } = useAuth();
 
   // ... (useEffect for fetchChats is unchanged) ...
