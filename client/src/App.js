@@ -17,6 +17,7 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const { user } = useAuth();
+  // Last Updated: Final Layout & Reply Fixes - v2
   
   // ThemeProvider is now handled globally in index.js via AppThemeProvider
   
