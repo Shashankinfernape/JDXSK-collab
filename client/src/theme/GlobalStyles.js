@@ -1,208 +1,213 @@
 import { createGlobalStyle, css, keyframes } from 'styled-components';
 
-// --- Keyframes for Instagram Background ---
+// --- Keyframes ---
 const instagramBgAnimation = keyframes`
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 `;
 
-// --- Theme Definitions ---
-
-// --- Dark Themes ---
-export const netflixTheme = {
-  name: 'netflix',
+// --- Shared Layout Tokens ---
+const layoutTokens = {
   panel_width: '30%',
   max_panel_width: '400px',
-  isDark: true,
-  colors: {
+  bubbleBorderRadius: '7px', // Default
+};
+
+// --- Brand Palettes ---
+const brands = {
+  netflix: {
     primary: '#E50914',
-    background: '#0b0b0b',
-    panelBackground: '#141414',
-    headerBackground: '#1F1F1F',
-    inputBackground: '#2A2A2A',
-    hoverBackground: '#2A2A2A',
-    bubbleMe: '#E50914',
-    bubbleOther: '#2A2A2A',
-    chatBackground: '#0b0b0b',
-    dateSeparatorBackground: '#2A2A2A',
-    dateSeparatorText: '#808080',
-    textPrimary: '#E5E5E5',
-    textSecondary: '#808080',
-    textBubbleMe: '#FFFFFF',
-    textBubbleOther: '#E5E5E5',
-    icon: '#B3B3B3',
-    iconActive: '#FFFFFF',
-    border: '#2A2A2A',
-    scrollbarTrack: '#1F1F1F',
-    scrollbarThumb: '#808080',
-    scrollbarThumbHover: '#E50914',
-    tick_sent: '#808080',
-    tick_delivered: '#808080',
-    tick_read: '#55C5E9',
+    font: "'Roboto', sans-serif",
+    logo: '/netflix-logo.svg',
+    bubbleBorderRadius: '7px',
   },
-  font: "'Roboto', sans-serif",
-  logo: '/netflix-logo.svg',
-  bubbleBorderRadius: '7px',
-  backgroundImage: '/whatsapp-bg.png', // Keep background
-};
-
-export const spotifyTheme = {
-  name: 'spotify',
-  isDark: true,
-  panel_width: '30%',
-  max_panel_width: '400px',
-  colors: {
+  spotify: {
     primary: '#1DB954',
-    background: '#000000',
-    panelBackground: '#121212',
-    headerBackground: '#181818',
-    inputBackground: '#282828',
-    hoverBackground: '#282828',
-    bubbleMe: '#1DB954',
-    bubbleOther: '#282828',
-    chatBackground: '#000000',
-    dateSeparatorBackground: '#282828',
-    dateSeparatorText: '#B3B3B3',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#B3B3B3',
-    textBubbleMe: '#000000',
-    textBubbleOther: '#E5E5E5',
-    icon: '#B3B3B3',
-    iconActive: '#FFFFFF',
-    border: '#282828',
-    scrollbarTrack: '#181818',
-    scrollbarThumb: '#808080',
-    scrollbarThumbHover: '#1DB954',
-    tick_sent: '#B3B3B3',
-    tick_delivered: '#B3B3B3',
-    tick_read: '#1DB954',
+    font: "'Roboto', sans-serif",
+    logo: '/spotify-logo.svg',
+    bubbleBorderRadius: '7px',
   },
-  font: "'Roboto', sans-serif",
-  logo: '/spotify-logo.svg',
-  bubbleBorderRadius: '7px',
-  backgroundImage: '/whatsapp-bg.png',
-};
-
-// --- Apple Dark Theme ---
-export const appleTheme = {
-  name: 'apple',
-  isDark: true,
-  panel_width: '30%',
-  max_panel_width: '400px',
-  colors: {
+  apple: {
     primary: '#0A84FF',
-    background: '#000000',
-    panelBackground: '#1C1C1E',
-    headerBackground: '#1C1C1E',
-    inputBackground: '#2C2C2E',
-    hoverBackground: '#2C2C2E',
-    bubbleMe: '#0A84FF', // Blue bubble, keep for dark mode contrast
-    bubbleOther: '#2C2C2E',
-    chatBackground: '#000000',
-    dateSeparatorBackground: '#2C2C2E',
-    dateSeparatorText: '#8E8E93',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#8E8E93',
-    textBubbleMe: '#FFFFFF',
-    textBubbleOther: '#FFFFFF',
-    icon: '#8E8E93',
-    iconActive: '#FFFFFF',
-    border: '#3A3A3C',
-    scrollbarTrack: '#1C1C1E',
-    scrollbarThumb: '#545458',
-    scrollbarThumbHover: '#0A84FF',
-    tick_sent: '#8E8E93',
-    tick_delivered: '#8E8E93',
-    tick_read: '#0A84FF',
+    font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    logo: '/apple-logo.svg',
+    bubbleBorderRadius: '18px',
   },
-  font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'",
-  logo: '/apple-logo.svg',
-  bubbleBorderRadius: '18px',
-  // backgroundImage: '/whatsapp-bg-dark.png', // Optional dark bg
+  google: {
+    primary: '#4285F4',
+    font: "'Google Sans', Roboto, sans-serif",
+    logo: '/google-logo.svg',
+    bubbleBorderRadius: '16px',
+    accents: {
+      red: '#EA4335',
+      yellow: '#FBBC05',
+      green: '#34A853',
+    }
+  },
+  instagram: {
+    primary: '#C13584',
+    gradient: 'linear-gradient(135deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D, #F77737, #FCAF45, #FFDC80)',
+    font: "'Poppins', 'Roboto', sans-serif",
+    logo: '/instagram-logo.svg',
+    bubbleBorderRadius: '14px',
+  }
 };
 
-// --- Google Material Theme (Reverted to Blue/Light, kept Quad Colors for potential accents) ---
-export const googleTheme = {
-  name: 'google',
-  isDark: false,
-  panel_width: '30%',
-  max_panel_width: '400px',
-  colors: {
-    primary: '#4285F4', // Google Blue
-    background: '#FFFFFF', // White main background
-    panelBackground: '#F1F3F4', // Light Grey sidebar/panels (like old Gmail/Chat)
-    headerBackground: '#FFFFFF', // White header
-    inputBackground: '#F1F3F4', // Material Input Grey
-    hoverBackground: '#E8EAED', // Lighter grey on hover
-    bubbleMe: '#D1E3FF', // Light blue bubble (Material style)
-    bubbleOther: '#F1F3F4', // Grey bubble
-    chatBackground: '#FFFFFF', // White chat area
-    dateSeparatorBackground: '#F1F3F4',
-    dateSeparatorText: '#5F6368',
-    textPrimary: '#202124', // Dark Grey text
-    textSecondary: '#5F6368', // Medium Grey text
-    textBubbleMe: '#174EA6', // Darker blue text on own bubble
-    textBubbleOther: '#202124', // Dark grey text on other bubble
-    icon: '#5F6368',
-    iconActive: '#1967D2', // Google Blue for active icons
-    border: '#DADCE0', // Material border color
-    scrollbarTrack: '#F1F3F4',
-    scrollbarThumb: '#BDC1C6',
-    scrollbarThumbHover: '#4285F4',
-    tick_sent: '#5F6368',
-    tick_delivered: '#5F6368',
-    tick_read: '#4285F4',
-    // Quad Colors (can be used for specific accents if desired later)
-    googleRed: '#EA4335',
-    googleYellow: '#FBBC05',
-    googleGreen: '#34A853',
+// --- Mode Palettes (Generic) ---
+const modes = {
+  dark: {
+    isDark: true,
+    colors: {
+      background: '#0b0b0b',
+      panelBackground: '#141414',
+      headerBackground: '#1F1F1F',
+      inputBackground: '#2A2A2A',
+      hoverBackground: '#2A2A2A',
+      chatBackground: '#0b0b0b',
+      textPrimary: '#E5E5E5',
+      textSecondary: '#808080',
+      border: '#2A2A2A',
+      icon: '#B3B3B3',
+      iconActive: '#FFFFFF',
+      bubbleOther: '#2A2A2A',
+      textBubbleOther: '#E5E5E5',
+      textBubbleMe: '#FFFFFF',
+      scrollbarTrack: '#1F1F1F',
+      scrollbarThumb: '#808080',
+    }
   },
-  font: "'Google Sans', Roboto, sans-serif",
-  logo: '/google-logo.svg',
-  bubbleBorderRadius: '16px', // Material style rounding
-  // No specific background image for Google theme by default
+  light: {
+    isDark: false,
+    colors: {
+      background: '#FFFFFF',
+      panelBackground: '#F0F2F5', // WhatsApp web style grey
+      headerBackground: '#F0F2F5',
+      inputBackground: '#FFFFFF',
+      hoverBackground: '#E9EDEF',
+      chatBackground: '#EFE7DD', // Warm subtle bg
+      textPrimary: '#111B21',
+      textSecondary: '#667781',
+      border: '#D1D7DB',
+      icon: '#54656F',
+      iconActive: '#111B21',
+      bubbleOther: '#FFFFFF',
+      textBubbleOther: '#111B21',
+      textBubbleMe: '#FFFFFF',
+      scrollbarTrack: '#F0F2F5',
+      scrollbarThumb: '#D1D7DB',
+    }
+  }
 };
 
-// --- Instagram Theme ---
-export const instagramTheme = {
-  name: 'instagram',
-  isDark: true,
-  panel_width: '30%',
-  max_panel_width: '400px',
-  gradient: 'linear-gradient(135deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D, #F77737, #FCAF45, #FFDC80)',
-  colors: {
-    primary: '#C13584', // Pink/Purple
-    background: '#121212',
-    panelBackground: '#1C1C1C',
-    headerBackground: '#1C1C1C',
-    inputBackground: '#2C2C2E',
-    hoverBackground: '#2C2C2E',
-    bubbleMe: '#833AB4', // Purpleish bubble
-    bubbleOther: '#2C2C2E',
-    chatBackground: '#121212',
-    dateSeparatorBackground: '#2C2C2E',
-    dateSeparatorText: '#8E8E93',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#8E8E93',
-    textBubbleMe: '#FFFFFF',
-    textBubbleOther: '#FFFFFF',
-    icon: '#FFFFFF',
-    iconActive: '#FCAF45', // Orange/Yellow hover
-    border: '#3A3A3C',
-    scrollbarTrack: '#1C1C1C',
-    scrollbarThumb: '#545458',
-    scrollbarThumbHover: '#C13584',
-    tick_sent: '#8E8E93',
-    tick_delivered: '#8E8E93',
-    tick_read: '#FCAF45', // Use a gradient accent color
-  },
-  font: "'Poppins', 'Roboto', sans-serif",
-  logo: '/instagram-logo.svg',
-  bubbleBorderRadius: '14px',
-  // Background handled by animation in GlobalStyles
+// --- Theme Generator ---
+const createTheme = (brandKey, modeKey) => {
+  const brand = brands[brandKey];
+  const mode = modes[modeKey];
+  
+  // Base theme construction
+  const theme = {
+    name: brandKey,
+    mode: modeKey,
+    id: `${brandKey}-${modeKey}`,
+    ...layoutTokens,
+    ...brand, // Font, logo, specific radius overrides
+    isDark: mode.isDark,
+    colors: {
+      ...mode.colors,
+      primary: brand.primary, // Inject brand primary
+      bubbleMe: brand.primary, // Messages usually brand color
+      scrollbarThumbHover: brand.primary,
+      tick_read: brand.primary,
+      tick_sent: mode.colors.textSecondary,
+      tick_delivered: mode.colors.textSecondary,
+    }
+  };
+
+  // --- Specific Overrides per Brand/Mode ---
+
+  // Netflix Dark (Cinematic)
+  if (brandKey === 'netflix' && modeKey === 'dark') {
+    theme.colors.background = '#000000';
+    theme.colors.chatBackground = '#000000';
+    theme.backgroundImage = '/whatsapp-bg.png';
+  }
+  // Netflix Light (Soft)
+  if (brandKey === 'netflix' && modeKey === 'light') {
+    theme.colors.chatBackground = '#FFFFFF';
+    theme.colors.panelBackground = '#F3F3F3';
+    theme.colors.headerBackground = '#FFFFFF';
+  }
+
+  // Spotify Dark (Deep)
+  if (brandKey === 'spotify' && modeKey === 'dark') {
+    theme.colors.background = '#121212';
+    theme.colors.panelBackground = '#000000';
+    theme.colors.headerBackground = '#181818';
+  }
+  
+  // Apple Dark (Midnight)
+  if (brandKey === 'apple' && modeKey === 'dark') {
+    theme.colors.background = '#000000';
+    theme.colors.panelBackground = '#1C1C1E';
+    theme.colors.inputBackground = '#2C2C2E';
+  }
+  // Apple Light (Airy)
+  if (brandKey === 'apple' && modeKey === 'light') {
+    theme.colors.panelBackground = '#F5F5F7'; // Apple grey
+    theme.colors.headerBackground = '#F5F5F7';
+    theme.colors.inputBackground = '#FFFFFF';
+    theme.colors.bubbleMe = '#007AFF';
+  }
+
+  // Google Light (Material)
+  if (brandKey === 'google' && modeKey === 'light') {
+     theme.colors.panelBackground = '#FFFFFF';
+     theme.colors.border = '#DADCE0';
+     theme.colors.bubbleMe = '#D2E3FC'; // Light blue
+     theme.colors.textBubbleMe = '#174EA6'; // Dark blue text
+     theme.colors.primary = '#1A73E8';
+  }
+  // Google Dark (Dark Mode)
+  if (brandKey === 'google' && modeKey === 'dark') {
+     theme.colors.background = '#202124';
+     theme.colors.panelBackground = '#202124';
+     theme.colors.chatBackground = '#202124';
+     theme.colors.headerBackground = '#202124';
+     theme.colors.inputBackground = '#303134';
+     theme.colors.bubbleMe = '#8AB4F8'; // Lighter blue
+     theme.colors.textBubbleMe = '#202124';
+  }
+
+  // Instagram Gradient Logic
+  if (brandKey === 'instagram') {
+     theme.gradient = brand.gradient;
+     if (modeKey === 'light') {
+         theme.colors.primary = '#C13584';
+         theme.colors.panelBackground = '#FFFFFF';
+     }
+  }
+
+  return theme;
 };
 
+
+// --- Generated Themes ---
+export const themes = {
+  'netflix-dark': createTheme('netflix', 'dark'),
+  'netflix-light': createTheme('netflix', 'light'),
+  'spotify-dark': createTheme('spotify', 'dark'),
+  'spotify-light': createTheme('spotify', 'light'),
+  'apple-dark': createTheme('apple', 'dark'),
+  'apple-light': createTheme('apple', 'light'),
+  'google-dark': createTheme('google', 'dark'),
+  'google-light': createTheme('google', 'light'),
+  'instagram-dark': createTheme('instagram', 'dark'),
+  'instagram-light': createTheme('instagram', 'light'),
+};
+
+// Fallback for ThemeContext initial load if logic assumes simple keys
+// We will update ThemeContext to handle IDs.
 
 // --- GlobalStyles ---
 export const GlobalStyles = createGlobalStyle`
@@ -210,7 +215,7 @@ export const GlobalStyles = createGlobalStyle`
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden; /* Prevent scrolling on body */
+    overflow: hidden; 
   }
 
   * {
@@ -225,15 +230,17 @@ export const GlobalStyles = createGlobalStyle`
     font-family: ${({ theme }) => theme.font};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Apply instagram animation conditionally */
-    ${({ theme }) => theme.name === 'instagram' && css`
+
+    /* Instagram Animation for Dark Mode Only typically, or both? */
+    /* Requirement: "expressive dark vs clean social light" */
+    ${({ theme }) => theme.name === 'instagram' && theme.isDark && css`
       background: ${theme.gradient};
       background-size: 400% 400%;
       animation: ${instagramBgAnimation} 15s ease infinite;
     `}
   }
 
-  // Scrollbar styles
+  /* Scrollbar styles */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
@@ -244,13 +251,3 @@ export const GlobalStyles = createGlobalStyle`
     background: ${({ theme }) => theme.colors.scrollbarThumbHover};
   }
 `;
-
-// Themes object for easy access
-export const themes = {
-  netflix: netflixTheme,
-  spotify: spotifyTheme,
-  apple: appleTheme,
-  google: googleTheme,
-  instagram: instagramTheme,
-};
-

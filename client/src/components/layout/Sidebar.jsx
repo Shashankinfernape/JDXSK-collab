@@ -10,11 +10,6 @@ import userService from '../../services/user.service';
 import SearchResults from '../search/SearchResults';
 import { useTheme } from '../../context/ThemeContext';
 import Notifications from '../common/Notifications';
-// --- FIX: Add FaInstagram back ---
-import { TbBrandNetflix } from 'react-icons/tb';
-import { BsSpotify, BsApple, BsGoogle } from 'react-icons/bs';
-import { FaInstagram } from 'react-icons/fa'; // Instagram Icon
-// --- END FIX ---
 // Icons for dropdown
 import { HiDotsVertical } from 'react-icons/hi';
 import { CgProfile } from 'react-icons/cg';
@@ -116,21 +111,6 @@ const Badge = styled.span`
   border: 1px solid ${props => props.theme.colors.headerBackground};
 `;
 
-// --- FIX: Add Instagram color rule back ---
-const ThemeSwitcher = styled(IconButton)`
-  font-size: 1.6rem;
-  color: ${props => props.theme.colors.icon};
-
-  ${({ theme }) => theme.name === 'netflix' && css` color: #E50914; `}
-  ${({ theme }) => theme.name === 'spotify' && css` color: #1DB954; `}
-  ${({ theme }) => theme.name === 'apple' && css` color: ${props => props.theme.colors.textPrimary}; `} /* White for dark apple */
-  ${({ theme }) => theme.name === 'google' && css` color: #4285F4; `}
-  ${({ theme }) => theme.name === 'instagram' && css` color: #C13584; `} /* Pink for monolithic insta */
-
-  &:hover { opacity: 0.8; }
-`;
-// --- END FIX ---
-
 const DropdownMenu = styled.div`
   position: absolute; top: 120%; right: 0;
   background-color: ${props => props.theme.colors.hoverBackground};
@@ -185,7 +165,7 @@ const ListContainer = styled.div`
 const Sidebar = ({ onChatSelect }) => {
   const { user, logout } = useAuth();
   const { socket } = useSocket();
-  const { themeName, cycleTheme, theme } = useTheme();
+  const { theme } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -271,19 +251,6 @@ const Sidebar = ({ onChatSelect }) => {
     setIsSearching(false);
   };
 
-  // --- FIX: Add Instagram case back ---
-  const renderThemeIcon = () => {
-    switch (themeName) {
-      case 'netflix': return <TbBrandNetflix />;
-      case 'spotify': return <BsSpotify />;
-      case 'apple': return <BsApple />;
-      case 'google': return <BsGoogle />;
-      case 'instagram': return <FaInstagram />; // Added back
-      default: return <TbBrandNetflix />;
-    }
-  };
-  // --- END FIX ---
-
   return (
     <>
       <SidebarContainer>
@@ -297,9 +264,6 @@ const Sidebar = ({ onChatSelect }) => {
             />
           </HeaderLeft>
           <HeaderIcons>
-             <ThemeSwitcher onClick={cycleTheme} theme={theme}>
-              {renderThemeIcon()}
-            </ThemeSwitcher>
             
             <IconWrapper ref={notificationRef}>
                 <IconButton onClick={toggleNotifications}>
