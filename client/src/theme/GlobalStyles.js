@@ -12,6 +12,9 @@ const instagramBgAnimation = keyframes`
 // --- Dark Themes ---
 export const netflixTheme = {
   name: 'netflix',
+  panel_width: '30%',
+  max_panel_width: '400px',
+  isDark: true,
   colors: {
     primary: '#E50914',
     background: '#0b0b0b',
@@ -46,6 +49,7 @@ export const netflixTheme = {
 
 export const spotifyTheme = {
   name: 'spotify',
+  isDark: true,
   panel_width: '30%',
   max_panel_width: '400px',
   colors: {
@@ -83,6 +87,7 @@ export const spotifyTheme = {
 // --- Apple Dark Theme ---
 export const appleTheme = {
   name: 'apple',
+  isDark: true,
   panel_width: '30%',
   max_panel_width: '400px',
   colors: {
@@ -120,6 +125,7 @@ export const appleTheme = {
 // --- Google Material Theme (Reverted to Blue/Light, kept Quad Colors for potential accents) ---
 export const googleTheme = {
   name: 'google',
+  isDark: false,
   panel_width: '30%',
   max_panel_width: '400px',
   colors: {
@@ -161,6 +167,7 @@ export const googleTheme = {
 // --- Instagram Theme ---
 export const instagramTheme = {
   name: 'instagram',
+  isDark: true,
   panel_width: '30%',
   max_panel_width: '400px',
   gradient: 'linear-gradient(135deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D, #F77737, #FCAF45, #FFDC80)',

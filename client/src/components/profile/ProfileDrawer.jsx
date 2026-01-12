@@ -1,9 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import userService from '../../services/user.service';
 import { IoMdArrowBack } from 'react-icons/io';
-import { MdEdit, MdCheck, MdPhotoCamera } from 'react-icons/md';
+import { MdModeEditOutline, MdCheck, MdPhotoCamera } from 'react-icons/md';
 import Input from '../common/Input';
 import Cropper from 'react-easy-crop';
 
@@ -75,25 +75,23 @@ const HeroSection = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2.5rem 1rem;
+  padding: 2rem 1rem;
   background-color: ${props => props.theme.colors.panelBackground};
-  border-bottom: 1px solid ${props => props.theme.colors.border};
-  margin-bottom: 1rem;
+  margin-bottom: 0; 
 `;
 
 const ImageContainer = styled.div`
   position: relative;
-  width: 160px;
-  height: 160px;
-  margin-bottom: 1.5rem;
+  width: 150px;
+  height: 150px;
+  margin-bottom: 1rem;
 `;
 
 const ProfileImage = styled.img`
   width: 100%; height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid ${props => props.theme.colors.background}; /* subtle border ring */
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border: ${props => props.theme.isDark ? 'none' : `1px solid ${props.theme.colors.border}`};
 `;
 
 const ImageOverlay = styled.div`
@@ -107,63 +105,75 @@ const ImageOverlay = styled.div`
 `;
 
 const UserName = styled.h2`
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 500;
   color: ${props => props.theme.colors.textPrimary};
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.2rem;
   text-align: center;
 `;
 
 const UserStatus = styled.span`
   font-size: 0.9rem;
   color: ${props => props.theme.colors.textSecondary};
+  text-align: center;
 `;
 
 // Info Section
-const SectionCard = styled.div`
+const SectionContainer = styled.div`
+  padding: 1.2rem 1.5rem;
   background-color: ${props => props.theme.colors.panelBackground};
-  padding: 1.5rem;
-  margin-bottom: 0.8rem;
-  border-top: 1px solid ${props => props.theme.colors.border};
-  border-bottom: 1px solid ${props => props.theme.colors.border};
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
   
-  @media (min-width: 900px) {
-      margin: 1rem;
-      border-radius: 8px;
-      border: 1px solid ${props => props.theme.colors.border};
+  &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 1.5rem;
+      right: 0;
+      height: 1px;
+      background-color: ${props => props.theme.colors.border};
+      opacity: 0.5;
+  }
+  
+  &:last-child::after {
+      display: none;
   }
 `;
 
 const SectionTitle = styled.h4`
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  color: ${props => props.theme.colors.primary}; /* Brand color */
-  margin-bottom: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-size: 0.8rem;
+  color: ${props => props.theme.colors.primary};
+  margin-bottom: 0.2rem;
+  font-weight: 500;
 `;
 
 const InfoRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
 `;
 
 const InfoText = styled.p`
   font-size: 1rem;
   color: ${props => props.theme.colors.textPrimary};
-  line-height: 1.5;
+  line-height: 1.4;
   flex: 1;
-  word-break: break-word;
 `;
 
 const EditAction = styled.button`
   background: none; border: none;
-  color: ${props => props.theme.colors.primary};
-  cursor: pointer; font-size: 1.2rem;
+  color: ${props => props.theme.colors.icon};
+  cursor: pointer; font-size: 1.3rem;
   padding: 4px;
-  &:hover { opacity: 0.8; }
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+  
+  &:hover { color: ${props => props.theme.colors.primary}; }
 `;
 
 const HiddenInput = styled.input` display: none; `;
@@ -332,7 +342,7 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser }) => {
             </HeroSection>
 
             {/* About Section */}
-            <SectionCard>
+            <SectionContainer>
                 <SectionTitle>About</SectionTitle>
                 <InfoRow>
                     {isEditingAbout ? (
@@ -348,14 +358,14 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser }) => {
                     
                     {isEditable && (
                         <EditAction onClick={isEditingAbout ? handleSaveAbout : () => setIsEditingAbout(true)}>
-                            {isEditingAbout ? <MdCheck /> : <MdEdit />}
+                            {isEditingAbout ? <MdCheck /> : <MdModeEditOutline />}
                         </EditAction>
                     )}
                 </InfoRow>
-            </SectionCard>
+            </SectionContainer>
 
             {/* Name Section (Editable only) or Other Info */}
-             <SectionCard>
+             <SectionContainer>
                 <SectionTitle>Name</SectionTitle>
                 <InfoRow>
                      {isEditingName ? (
@@ -371,12 +381,12 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser }) => {
                     
                     {isEditable && (
                         <EditAction onClick={isEditingName ? handleSaveName : () => setIsEditingName(true)}>
-                            {isEditingName ? <MdCheck /> : <MdEdit />}
+                            {isEditingName ? <MdCheck /> : <MdModeEditOutline />}
                         </EditAction>
                     )}
                 </InfoRow>
-                {isEditable && <UserStatus style={{ marginTop: '0.5rem', display: 'block' }}>This is not your username or pin. This name will be visible to your contacts.</UserStatus>}
-            </SectionCard>
+                {isEditable && <UserStatus style={{ marginTop: '0.5rem', display: 'block', textAlign: 'left', fontSize: '0.85rem' }}>This is not your username or pin. This name will be visible to your contacts.</UserStatus>}
+            </SectionContainer>
 
         </ScrollableContent>
       </DrawerContainer>
