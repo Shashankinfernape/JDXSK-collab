@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 import MessageList from '../chat/MessageList';
 import MessageInput from '../chat/MessageInput';
+import ProfileDrawer from '../profile/ProfileDrawer'; // Import ProfileDrawer
 import { HiDotsVertical } from 'react-icons/hi';
 import { AiOutlineSearch } from 'react-icons/ai';
 import { IoMdArrowBack } from 'react-icons/io'; // Back Arrow
@@ -103,6 +104,7 @@ const HeaderIcons = styled.div`
 const ChatWindow = ({ onBack }) => {
     const { activeChat, onlineUsers } = useChat();
     const { user } = useAuth();
+    const [showProfile, setShowProfile] = useState(false);
 
     // Guard clause: If there's no active chat, render nothing
     if (!activeChat) {
@@ -114,10 +116,19 @@ const ChatWindow = ({ onBack }) => {
     let displayPicture = `https://i.pravatar.cc/150?u=default`;
     let otherUserId = null;
     let isOnline = false;
+    let profileTarget = null;
 
     if (activeChat.isGroup) {
         displayName = activeChat.groupName || 'Group Chat';
         displayPicture = activeChat.groupIcon || `https://i.pravatar.cc/150?u=${activeChat._id}`;
+        // Map group info to user-like object for ProfileDrawer
+        profileTarget = {
+            _id: activeChat._id,
+            name: activeChat.groupName,
+            profilePic: activeChat.groupIcon,
+            about: activeChat.description || 'Group Chat',
+            email: `${activeChat.participants?.length || 0} members`
+        };
     } else if (user && activeChat.participants) {
         const otherParticipant = activeChat.participants.find(p => p._id !== user._id);
         if (otherParticipant) {
@@ -125,6 +136,7 @@ const ChatWindow = ({ onBack }) => {
             displayPicture = otherParticipant.profilePic || `https://i.pravatar.cc/150?u=${otherParticipant._id}`;
             otherUserId = otherParticipant._id;
             isOnline = onlineUsers.includes(otherUserId);
+            profileTarget = otherParticipant;
         } else {
              displayName = "Chat User";
              displayPicture = `https://i.pravatar.cc/150?u=unknown`;
@@ -135,8 +147,8 @@ const ChatWindow = ({ onBack }) => {
   return (
     <ChatWindowContainer>
       <ChatHeader>
-        <ChatInfo>
-          <BackButton onClick={onBack}>
+        <ChatInfo onClick={() => setShowProfile(true)}>
+          <BackButton onClick={(e) => { e.stopPropagation(); onBack(); }}>
             <IoMdArrowBack />
           </BackButton>
           <ChatAvatar src={displayPicture} alt={displayName} />
@@ -158,6 +170,13 @@ const ChatWindow = ({ onBack }) => {
 
       <MessageList />
       <MessageInput />
+
+      {/* Profile Drawer for viewing contact/group info */}
+      <ProfileDrawer 
+        isOpen={showProfile} 
+        onClose={() => setShowProfile(false)} 
+        targetUser={profileTarget} 
+      />
     </ChatWindowContainer>
   );
 };
