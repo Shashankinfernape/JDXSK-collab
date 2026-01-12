@@ -59,37 +59,37 @@ const MessageBubble = styled.div`
 
 // --- Quoted Message Styles ---
 const QuotedMessage = styled.div`
-  background-color: rgba(0, 0, 0, 0.06); /* Subtle depth */
-  border-left: 3px solid ${props => props.theme.colors.primary};
-  padding: 4px 8px; /* Thinner padding */
-  border-radius: 4px;
-  margin-bottom: 4px; /* Tighter spacing to text */
+  background-color: rgba(0, 0, 0, 0.05);
+  border-left: 2px solid ${props => props.theme.colors.primary}; /* Thinner bar */
+  padding: 2px 8px; /* Minimal vertical padding */
+  border-radius: 3px;
+  margin-bottom: 2px; /* Tight grouping */
   cursor: pointer;
-  font-size: 0.72rem; /* Compact hierarchy */
+  font-size: 0.68rem; /* Even smaller font */
   display: flex;
   flex-direction: column;
-  opacity: 0.9;
+  opacity: 0.85;
   max-width: 100%;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.08);
   }
 `;
 
 const QuotedSender = styled.span`
   font-weight: 700;
   color: ${props => props.theme.colors.primary};
-  font-size: 0.7rem;
-  margin-bottom: 1px;
+  font-size: 0.65rem; /* Ultra compact */
+  margin-bottom: 0px;
 `;
 
 const QuotedText = styled.span`
-  white-space: nowrap; /* Single line for maximum compactness */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: 0.7; /* Lighter feel */
+  opacity: 0.65; /* Subtler text */
   display: block;
 `;
 
