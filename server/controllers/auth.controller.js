@@ -27,13 +27,13 @@ const googleCallback = (req, res) => {
     const token = generateToken(user._id);
 
     // Prepare user data to send back to the client (remove sensitive fields if any)
-    // EXCLUDE profilePic to prevent 414 URI Too Long errors. Client will fetch it.
     const userJson = JSON.stringify({
       _id: user._id,
       name: user.name,
       email: user.email,
-      // profilePic: user.profilePic, // Too large for URL
+      profilePic: user.profilePic,
       about: user.about
+      // DO NOT send back googleId or other sensitive info
     });
 
     // Redirect the user's browser back to the CLIENT application

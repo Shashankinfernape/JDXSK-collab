@@ -59,25 +59,16 @@ export const AuthProvider = ({ children }) => {
 
       if (redirectToken && redirectUser) {
         try {
-          // 1. Immediate Login with data from URL (Fast, no Profile Pic yet)
-          const partialUser = JSON.parse(decodeURIComponent(redirectUser));
-          login(partialUser, redirectToken); 
-          
+          const userData = JSON.parse(decodeURIComponent(redirectUser));
+          // Call login to set state and local storage
+          login(userData, redirectToken); 
+          // Clean the URL *after* processing
           window.history.replaceState(null, '', window.location.pathname);
-          if (isMounted) navigate('/');
-          
-          // 2. Background Fetch for Full Profile (Profile Pic)
-          // This happens AFTER the user is already "in" the app.
-          api.get('/users/me').then(({ data: fullUser }) => {
-              if (isMounted) {
-                  setUser(fullUser);
-                  localStorage.setItem('user', JSON.stringify(fullUser));
-              }
-          }).catch(err => console.error("Background profile fetch failed", err));
-
+          // Now navigate AFTER state is likely set
+          if (isMounted) navigate('/'); 
         } catch (e) {
           console.error("Failed to parse user data from URL", e);
-          if (isMounted) logout(); 
+          if (isMounted) logout(); // Log out if parsing failed
         } finally {
            if (isMounted) setLoading(false);
         }
@@ -135,15 +126,11 @@ export const AuthProvider = ({ children }) => {
 
   // Only render children when loading is complete AND (user exists OR no token exists)
   // This prevents rendering intermediate states during auth check
-  // const shouldRenderChildren = !loading && (!!user || !token);
-
-  if (loading) {
-      return <LoadingSpinner />;
-  }
+  const shouldRenderChildren = !loading && (!!user || !token);
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {shouldRenderChildren ? children : null /* Or show a loading spinner */}
     </AuthContext.Provider>
   );
 };
