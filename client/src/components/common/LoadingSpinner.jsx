@@ -11,7 +11,7 @@ const spin = keyframes`
 `;
 
 const Spinner = styled.div`
-  border: 4px solid ${props => props.theme.colors.black_lighter};
+  border: 4px solid ${props => props.theme.colors.border || '#ccc'};
   border-top: 4px solid ${props => props.theme.colors.primary};
   border-radius: 50%;
   width: ${props => props.size || '40px'};

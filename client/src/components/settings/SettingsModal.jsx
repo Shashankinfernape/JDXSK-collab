@@ -21,7 +21,7 @@ const Overlay = styled.div`
 `;
 
 const ModalContainer = styled.div`
-  background-color: ${props => props.theme.colors.black_lighter || props.theme.colors.panelBackground};
+  background-color: ${props => props.theme.colors.panelBackground};
   border-radius: 8px;
   width: 90%;
   max-width: 500px;
@@ -40,7 +40,7 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid ${props => props.theme.colors.border || props.theme.colors.black};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
 `;
 
 const HeaderTitle = styled.h3`

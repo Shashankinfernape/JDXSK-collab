@@ -7,7 +7,7 @@ import userService from '../../services/user.service';
 const ResultsContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  background-color: ${props => props.theme.colors.black};
+  background-color: ${props => props.theme.colors.panelBackground};
 `;
 
 const ResultItem = styled.div`
@@ -15,10 +15,10 @@ const ResultItem = styled.div`
   align-items: center;
   padding: 0.8rem 1rem;
   gap: 0.75rem;
-  border-bottom: 1px solid ${props => props.theme.colors.black_lighter};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
 
   &:hover {
-    background-color: ${props => props.theme.colors.black_lightest};
+    background-color: ${props => props.theme.colors.hoverBackground};
   }
 `;
 
@@ -38,12 +38,12 @@ const UserInfo = styled.div`
 const UserName = styled.h4`
   font-size: 1.05rem;
   font-weight: 500;
-  color: ${props => props.theme.colors.white};
+  color: ${props => props.theme.colors.textPrimary};
 `;
 
 const UserEmail = styled.p`
   font-size: 0.9rem;
-  color: ${props => props.theme.colors.grey_light};
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const ActionButton = styled.button`
@@ -55,14 +55,8 @@ const ActionButton = styled.button`
     font-weight: 600;
     transition: all 0.2s;
     /* Insta Logic: Blue for primary action (Follow), Grey/Transparent for secondary (Following/Message) */
-    background-color: ${props => props.primary ? '#0095F6' : '#EFEFEF'}; 
-    color: ${props => props.primary ? '#fff' : '#000'};
-    
-    /* Dark mode override if needed, but keeping simple for now or using theme */
-    ${props => props.theme.mode === 'dark' && !props.primary && `
-        background-color: #363636;
-        color: #fff;
-    `}
+    background-color: ${props => props.primary ? props.theme.colors.primary : props.theme.colors.inputBackground}; 
+    color: ${props => props.primary ? '#fff' : props.theme.colors.textPrimary};
     
     &:hover {
         opacity: 0.8;
@@ -77,7 +71,7 @@ const ActionButton = styled.button`
 const NoResults = styled.div`
   padding: 2rem;
   text-align: center;
-  color: ${props => props.theme.colors.grey};
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 
