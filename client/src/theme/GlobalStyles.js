@@ -46,6 +46,8 @@ export const netflixTheme = {
 
 export const spotifyTheme = {
   name: 'spotify',
+  panel_width: '30%',
+  max_panel_width: '400px',
   colors: {
     primary: '#1DB954',
     background: '#000000',
@@ -81,6 +83,8 @@ export const spotifyTheme = {
 // --- Apple Dark Theme ---
 export const appleTheme = {
   name: 'apple',
+  panel_width: '30%',
+  max_panel_width: '400px',
   colors: {
     primary: '#0A84FF',
     background: '#000000',
@@ -116,6 +120,8 @@ export const appleTheme = {
 // --- Google Material Theme (Reverted to Blue/Light, kept Quad Colors for potential accents) ---
 export const googleTheme = {
   name: 'google',
+  panel_width: '30%',
+  max_panel_width: '400px',
   colors: {
     primary: '#4285F4', // Google Blue
     background: '#FFFFFF', // White main background
@@ -155,6 +161,8 @@ export const googleTheme = {
 // --- Instagram Theme ---
 export const instagramTheme = {
   name: 'instagram',
+  panel_width: '30%',
+  max_panel_width: '400px',
   gradient: 'linear-gradient(135deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D, #F77737, #FCAF45, #FFDC80)',
   colors: {
     primary: '#C13584', // Pink/Purple

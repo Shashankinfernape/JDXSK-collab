@@ -27,10 +27,8 @@ const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors
 // --- Styled components ---
 // Using 100vh height as reverted
 const SidebarContainer = styled.div`
-  width: ${props => props.theme.panel_width};
-  max-width: ${props => props.theme.max_panel_width};
-  min-width: 300px;
-  height: 100vh; // Reverted height
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column; /* Stack header, search, list vertically */
   background-color: ${props => props.theme.colors.panelBackground};
