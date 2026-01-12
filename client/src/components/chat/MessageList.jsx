@@ -30,7 +30,7 @@ const DateSeparator = styled.div`
 // --- MessageList Component ---
 const MessageList = () => {
   // --- FIX: Import activeChat ---
-  const { messages, loading, activeChat, selectedMessages, toggleMessageSelection, isSelectionMode } = useChat(); 
+  const { messages, loading, activeChat, selectedMessages, toggleMessageSelection, isSelectionMode, setReplyingTo } = useChat(); 
   // --- END FIX ---
   const endOfMessagesRef = useRef(null);
   let lastDate = null;
@@ -93,6 +93,7 @@ const MessageList = () => {
                 isSelected={isSelected}
                 isSelectionMode={isSelectionMode}
                 onSelect={toggleMessageSelection}
+                onReply={setReplyingTo}
             />
           </React.Fragment>
         );
