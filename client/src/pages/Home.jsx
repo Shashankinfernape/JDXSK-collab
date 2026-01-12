@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Sidebar from '../components/layout/Sidebar';
 import ChatWindow from '../components/layout/ChatWindow';
 import { useChat } from '../context/ChatContext';
 
 const HomeContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: flex;
+  width: 100%;
+  height: 100dvh; /* Fallback for modern browsers */
   background-color: ${({ theme }) => theme.colors.background};
   overflow: hidden; // Prevent body scrolling
 `;
@@ -77,6 +74,39 @@ const Home = () => {
   const { activeChat, selectChat } = useChat();
   const [showChatWindow, setShowChatWindow] = useState(false);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 900);
+  const homeRef = useRef(null); // Ref for VisualViewport handling
+
+  // VisualViewport Handling for Mobile
+  useEffect(() => {
+    // Only run if visualViewport API is supported and we are on mobile
+    if (window.visualViewport && isMobileView) {
+      const handleResize = () => {
+        if (homeRef.current) {
+          // Force container height to match the VISUAL viewport height exactly
+          homeRef.current.style.height = `${window.visualViewport.height}px`;
+          // Prevent document scrolling
+          window.scrollTo(0, 0);
+        }
+      };
+
+      window.visualViewport.addEventListener('resize', handleResize);
+      window.visualViewport.addEventListener('scroll', handleResize);
+
+      // Initial Call
+      handleResize();
+
+      return () => {
+        window.visualViewport.removeEventListener('resize', handleResize);
+        window.visualViewport.removeEventListener('scroll', handleResize);
+      };
+    } else {
+        // Reset if not mobile or API not supported
+        if (homeRef.current) {
+             homeRef.current.style.height = '100dvh';
+        }
+    }
+  }, [isMobileView]);
+
 
   // Effect to handle window resize and determine view type
   useEffect(() => {
@@ -92,10 +122,6 @@ const Home = () => {
       }
     };
     window.addEventListener('resize', handleResize);
-    // Don't call handleResize() on every render, just setup
-    
-    // Initial check (only once)
-    // handleResize(); 
     
     return () => window.removeEventListener('resize', handleResize);
   }, [activeChat]); 
@@ -130,7 +156,7 @@ const Home = () => {
   const showPlaceholder = !activeChat && (!isMobileView); // Only show placeholder on desktop
 
   return (
-    <HomeContainer>
+    <HomeContainer ref={homeRef}>
       {/* Sidebar - Conditionally displayed based on mobile view and state */}
       <StyledSidebar $showChatWindow={showChatWindow}>
         <Sidebar onChatSelect={handleChatSelect} />
