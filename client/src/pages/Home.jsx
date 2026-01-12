@@ -76,10 +76,11 @@ const Home = () => {
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 900);
   const homeRef = useRef(null); // Ref for VisualViewport handling
 
-  // VisualViewport Handling for Mobile
+  // VisualViewport Handling for Mobile & Tablet
   useEffect(() => {
-    // Only run if visualViewport API is supported and we are on mobile
-    if (window.visualViewport && isMobileView) {
+    // Check if visualViewport API is supported.
+    // We remove the isMobileView check because Tablets (>900px) also have keyboards and need this fix.
+    if (window.visualViewport) {
       const handleResize = () => {
         if (homeRef.current) {
           // Force container height to match the VISUAL viewport height exactly
@@ -99,13 +100,8 @@ const Home = () => {
         window.visualViewport.removeEventListener('resize', handleResize);
         window.visualViewport.removeEventListener('scroll', handleResize);
       };
-    } else {
-        // Reset if not mobile or API not supported
-        if (homeRef.current) {
-             homeRef.current.style.height = '100dvh';
-        }
     }
-  }, [isMobileView]);
+  }, []); // Run once on mount, no dependencies on isMobileView
 
 
   // Effect to handle window resize and determine view type
