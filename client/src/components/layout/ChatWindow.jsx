@@ -101,7 +101,7 @@ const HeaderIcons = styled.div`
 
 // --- ChatWindow Component ---
 const ChatWindow = ({ onBack }) => {
-    const { activeChat, onlineUsers, selectedMessages, isSelectionMode, clearSelection, setReplyingTo, messages } = useChat();
+    const { activeChat, onlineUsers, selectedMessages, isSelectionMode, clearSelection, setReplyingTo, messages, deleteMessage } = useChat();
     const { user } = useAuth();
     const [showProfile, setShowProfile] = useState(false);
 
@@ -118,9 +118,7 @@ const ChatWindow = ({ onBack }) => {
 
     const handleDelete = () => {
         if (window.confirm(`Delete ${selectedMessages.length} messages?`)) {
-            // Call API delete here (mock for now)
-            console.log("Deleting:", selectedMessages);
-            clearSelection();
+            deleteMessage(selectedMessages);
         }
     };
 

@@ -56,6 +56,33 @@ const MessageBubble = styled.div`
   cursor: pointer; 
 `;
 
+// --- Quoted Message Styles ---
+const QuotedMessage = styled.div`
+  background-color: rgba(0, 0, 0, 0.1); /* Subtle overlay */
+  border-left: 4px solid ${props => props.theme.colors.primary || props.theme.colors.textBubbleMe};
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  opacity: 0.9;
+`;
+
+const QuotedSender = styled.span`
+  font-weight: 600;
+  color: inherit;
+  font-size: 0.75rem;
+  margin-bottom: 2px;
+`;
+
+const QuotedText = styled.span`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
 const MessageText = styled.p`
   font-size: 0.9rem; 
   line-height: 1.4;
@@ -229,6 +256,14 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
             onMouseLeave={handleTouchEnd}
         >
         <MessageBubble isMe={isMe}>
+            {/* --- Quoted Reply Block --- */}
+            {message.replyTo && (
+                <QuotedMessage>
+                    <QuotedSender>{message.replyTo.senderName || "User"}</QuotedSender>
+                    <QuotedText>{message.replyTo.content}</QuotedText>
+                </QuotedMessage>
+            )}
+            
             <MessageText>{message.content}</MessageText>
             <StatusContainer>
             <Timestamp isMe={isMe}>

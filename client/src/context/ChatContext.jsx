@@ -162,7 +162,7 @@ export const ChatProvider = ({ children }) => {
       chatId: activeChat._id,
       senderId: user._id, 
       content: text,
-      // Add replyTo info if needed by backend, for now handled in UI
+      replyTo: replyingTo ? { _id: replyingTo._id, content: replyingTo.content, senderName: replyingTo.senderId.name } : null
     };
     socket.emit('sendMessage', messageData);
     const optimisticMessage = {
@@ -180,6 +180,26 @@ export const ChatProvider = ({ children }) => {
       [activeChat._id]: [...(prev[activeChat._id] || []), optimisticMessage],
     }));
     setReplyingTo(null); // Clear reply after sending
+  };
+  
+  const deleteMessage = async (messageIds) => {
+      // Optimistic Update
+      setMessages(prev => {
+          const chatId = activeChat._id;
+          const currentMessages = prev[chatId] || [];
+          const updatedMessages = currentMessages.filter(msg => !messageIds.includes(msg._id));
+          return { ...prev, [chatId]: updatedMessages };
+      });
+      clearSelection();
+
+      // Server Call (Fire and forget style for UX speed, or handle error revert)
+      try {
+          // Assuming backend supports array or loop. For now, loop safe.
+          await Promise.all(messageIds.map(id => api.delete(`/messages/${id}`)));
+      } catch (e) {
+          console.error("Failed to delete messages", e);
+          // Ideally revert state here, but simple for now
+      }
   };
   
   const addNewChat = (chat) => {
@@ -214,6 +234,7 @@ export const ChatProvider = ({ children }) => {
     loading,
     selectChat,
     sendMessage,
+    deleteMessage, // Exposed
     addNewChat, 
     // New Context Values
     selectedMessages,
