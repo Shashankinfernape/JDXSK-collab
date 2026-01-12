@@ -5,10 +5,12 @@ import ChatWindow from '../components/layout/ChatWindow';
 import { useChat } from '../context/ChatContext';
 
 const HomeContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
-  height: 100vh; /* Fallback */
-  height: 100dvh; /* Mobile viewport fix */
-  width: 100%;
   background-color: ${({ theme }) => theme.colors.background};
   overflow: hidden; // Prevent body scrolling
 `;
