@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import { ThemeProvider } from 'styled-components'; // Import ThemeProvider
 import { themes } from '../theme/GlobalStyles';
-// --- FIX: Removed unused 'css' import ---
-// import { css } from 'styled-components';
 
 const ThemeContext = createContext();
 
@@ -49,7 +48,9 @@ export const AppThemeProvider = ({ children }) => {
 
   return (
     <ThemeContext.Provider value={value}>
-      {children}
+      <ThemeProvider theme={theme}>
+        {children}
+      </ThemeProvider>
     </ThemeContext.Provider>
   );
 };

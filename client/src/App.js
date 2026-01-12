@@ -17,16 +17,11 @@ const ProtectedRoute = ({ children }) => {
 
 function App() {
   const { user } = useAuth();
-  // --- This is the key change ---
-  // Last Updated: Final Layout & Persistence Fixes
-  // We get the active theme object from our custom hook
-  const { theme } = useTheme(); 
-
-  // We wrap the entire app in the styled-components ThemeProvider
-  // This makes the theme available to all styled components
+  
+  // ThemeProvider is now handled globally in index.js via AppThemeProvider
+  
   return (
-    <ThemeProvider theme={theme}>
-      {/* GlobalStyles MUST be rendered here to use the dynamic theme object */}
+    <>
       <GlobalStyles /> 
       <Routes>
         <Route
@@ -44,7 +39,7 @@ function App() {
           }
         />
       </Routes>
-    </ThemeProvider>
+    </>
   );
 }
 
