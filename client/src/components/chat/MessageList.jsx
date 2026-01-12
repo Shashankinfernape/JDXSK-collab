@@ -10,12 +10,7 @@ const MessageListContainer = styled.div`
   padding: 1rem 0; // Vertical padding only
   display: flex;
   flex-direction: column;
-  background-color: ${props => props.theme.colors.background}; 
-  
-  /* --- Real WhatsApp Background --- */
-  background-image: url('/whatsapp-bg.png'); // Assumes image is in public folder
-  background-repeat: repeat;
-  /* Consider adding overlay for dark themes */
+  background: ${props => props.theme.colors.chatBackground}; 
 `;
 
 // --- Date Separators ---

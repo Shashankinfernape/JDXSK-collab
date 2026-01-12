@@ -329,22 +329,12 @@ const Sidebar = ({ onChatSelect }) => {
               {renderThemeIcon()}
             </ThemeSwitcher>
             
-            {/* Dark Mode Toggle */}
+            {/* Single Theme Toggle Button */}
             <IconButton 
-                onClick={() => setMode('dark')} 
-                $active={getCurrentMode() === 'dark'}
-                title="Dark Mode"
+                onClick={() => setMode(getCurrentMode() === 'dark' ? 'light' : 'dark')}
+                title={getCurrentMode() === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
-                <BsMoonStars size={18} />
-            </IconButton>
-
-            {/* Light Mode Toggle */}
-            <IconButton 
-                onClick={() => setMode('light')} 
-                $active={getCurrentMode() === 'light'}
-                title="Light Mode"
-            >
-                <BsSun size={18} />
+                {getCurrentMode() === 'dark' ? <BsSun size={18} /> : <BsMoonStars size={18} />}
             </IconButton>
             
             <IconWrapper ref={notificationRef}>

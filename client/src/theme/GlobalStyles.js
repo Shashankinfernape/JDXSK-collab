@@ -239,6 +239,8 @@ export const GlobalStyles = createGlobalStyle`
     font-family: ${({ theme }) => theme.font};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Smooth Theme Transitions */
+    transition: background 0.3s ease, color 0.3s ease;
 
     /* --- Netflix Vignette (Dark Mode) --- */
     ${({ theme }) => theme.name === 'netflix' && theme.isDark && css`
