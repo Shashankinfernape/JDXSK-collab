@@ -14,6 +14,10 @@ export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState({}); 
   const [loading, setLoading] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  
+  // --- New State for Selection & Reply ---
+  const [selectedMessages, setSelectedMessages] = useState([]); // Array of message IDs
+  const [replyingTo, setReplyingTo] = useState(null); // Message object
 
   const { socket } = useSocket(); // Fix: destructure socket
   const { user } = useAuth();
@@ -125,6 +129,7 @@ export const ChatProvider = ({ children }) => {
   const selectChat = async (chat) => {
     let fullChat = chat;
     setActiveChat(fullChat); 
+    clearSelection(); // Clear selection when changing chat
     socket.emit('joinRoom', fullChat._id);
     
     let messageData = messages[fullChat._id];
@@ -157,6 +162,7 @@ export const ChatProvider = ({ children }) => {
       chatId: activeChat._id,
       senderId: user._id, 
       content: text,
+      // Add replyTo info if needed by backend, for now handled in UI
     };
     socket.emit('sendMessage', messageData);
     const optimisticMessage = {
@@ -173,6 +179,7 @@ export const ChatProvider = ({ children }) => {
       ...prev,
       [activeChat._id]: [...(prev[activeChat._id] || []), optimisticMessage],
     }));
+    setReplyingTo(null); // Clear reply after sending
   };
   
   const addNewChat = (chat) => {
@@ -184,6 +191,21 @@ export const ChatProvider = ({ children }) => {
      });
   }
 
+  // --- Selection Helpers ---
+  const toggleMessageSelection = (messageId) => {
+      setSelectedMessages(prev => {
+          if (prev.includes(messageId)) {
+              return prev.filter(id => id !== messageId);
+          } else {
+              return [...prev, messageId];
+          }
+      });
+  };
+
+  const clearSelection = () => {
+      setSelectedMessages([]);
+  };
+
   const value = {
     chats,
     activeChat,
@@ -193,6 +215,13 @@ export const ChatProvider = ({ children }) => {
     selectChat,
     sendMessage,
     addNewChat, 
+    // New Context Values
+    selectedMessages,
+    isSelectionMode: selectedMessages.length > 0,
+    toggleMessageSelection,
+    clearSelection,
+    replyingTo,
+    setReplyingTo,
   };
 
   return (

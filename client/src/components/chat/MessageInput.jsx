@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { IoMdSend } from 'react-icons/io';
+import { IoMdSend, IoMdClose } from 'react-icons/io';
 import { BsEmojiSmile, BsKeyboard } from 'react-icons/bs';
 import { useChat } from '../../context/ChatContext';
 import EmojiPicker from './EmojiPicker';
@@ -14,6 +14,40 @@ const Container = styled.div`
   background-color: ${props => props.theme.colors.panelBackground};
   border-top: ${props => subtleBorder(props.theme)};
   flex-shrink: 0;
+`;
+
+const ReplyPreviewContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: ${props => props.theme.colors.background};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  border-left: 4px solid ${props => props.theme.colors.primary};
+  margin: 0.5rem 1rem 0 1rem;
+  border-radius: 4px;
+`;
+
+const ReplyContent = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const ReplySender = styled.span`
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: ${props => props.theme.colors.primary};
+  margin-bottom: 2px;
+`;
+
+const ReplyText = styled.span`
+  font-size: 0.85rem;
+  color: ${props => props.theme.colors.textSecondary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const InputForm = styled.form`
@@ -66,7 +100,7 @@ const TextInput = styled.input`
 const MessageInput = () => {
   const [text, setText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
-  const { sendMessage } = useChat();
+  const { sendMessage, replyingTo, setReplyingTo } = useChat();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -83,6 +117,17 @@ const MessageInput = () => {
 
   return (
     <Container>
+      {replyingTo && (
+          <ReplyPreviewContainer>
+              <ReplyContent>
+                  <ReplySender>{replyingTo.senderId?.name || "User"}</ReplySender>
+                  <ReplyText>{replyingTo.content}</ReplyText>
+              </ReplyContent>
+              <IconButton onClick={() => setReplyingTo(null)} style={{ fontSize: '1.2rem' }}>
+                  <IoMdClose />
+              </IconButton>
+          </ReplyPreviewContainer>
+      )}
       <InputForm onSubmit={handleSubmit}>
         <IconButton type="button" onClick={() => setShowPicker(!showPicker)} title={showPicker ? "Keyboard" : "Emoji & Stickers"}> 
             {showPicker ? <BsKeyboard /> : <BsEmojiSmile />} 

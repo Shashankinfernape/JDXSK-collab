@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { TiTick } from 'react-icons/ti'; // Checkmark icon
@@ -6,82 +6,103 @@ import { TiTick } from 'react-icons/ti'; // Checkmark icon
 const MessageWrapper = styled.div`
   display: flex;
   justify-content: ${props => (props.isMe ? 'flex-end' : 'flex-start')};
-  margin-bottom: 0.2rem; // Reduced margin for denser look
-  padding: 0 5%; // Add horizontal padding to the container
+  margin-bottom: 0.2rem; 
+  padding: 4px 5%; /* Slight padding for selection highlight */
+  position: relative;
+  background-color: ${props => props.$isSelected ? 'rgba(66, 133, 244, 0.2)' : 'transparent'}; /* Selection Highlight */
+  transition: background-color 0.2s ease;
+  
+  /* Prevent text selection during message selection interaction */
+  user-select: ${props => props.$isSelectionMode ? 'none' : 'text'};
 `;
 
 const MessageBubble = styled.div`
-  max-width: 70%; // Allow slightly wider bubbles
-  padding: 0.4rem 0.7rem; // Adjust padding
-  border-radius: ${props => props.theme.bubbleBorderRadius}; // Use theme radius
+  max-width: 70%; 
+  padding: 0.4rem 0.7rem; 
+  border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
     props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
   color: ${props => 
     props.isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textBubbleOther};
   word-wrap: break-word; 
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); // Subtle shadow
-  position: relative; // Needed for potential tail or absolute positioning of status
-  min-width: 80px; // Ensure minimum width for status line
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); 
+  position: relative; 
+  min-width: 80px; 
+  cursor: pointer; /* Indicate clickable */
 `;
 
 const MessageText = styled.p`
-  font-size: 0.9rem; // Adjust font size
+  font-size: 0.9rem; 
   line-height: 1.4;
-  /* Remove margin-right, handle spacing with StatusContainer */
-  margin-bottom: 1.2rem; /* Add space below text for status line */
+  margin-bottom: 1.2rem; 
 `;
 
 const StatusContainer = styled.div`
-  position: absolute; // Position absolutely at the bottom right
+  position: absolute; 
   bottom: 4px;
   right: 7px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 0.25rem;
-  height: 1rem; // Explicit height for alignment
+  height: 1rem; 
 `;
 
 const Timestamp = styled.span`
-  font-size: 0.65rem; // Smaller timestamp
-  /* Dynamically set color based on bubble type and potentially theme properties */
+  font-size: 0.65rem; 
   color: ${props =>
     props.isMe
-      ? (props.theme.colors.textBubbleMeSecondary || props.theme.colors.textBubbleMe) // Allow override for bubble text
+      ? (props.theme.colors.textBubbleMeSecondary || props.theme.colors.textBubbleMe) 
       : props.theme.colors.textSecondary};
   opacity: 0.8;
-  white-space: nowrap; // Prevent wrapping
+  white-space: nowrap; 
 `;
 
 const Ticks = styled.div`
   display: flex;
   align-items: center;
-  font-size: 1rem; // Slightly smaller ticks
+  font-size: 1rem; 
 
-  /* Access theme colors for ticks */
   .tick-3 { color: ${props => props.theme.colors.tick_read}; }
   .tick-2 { color: ${props => props.theme.colors.tick_delivered}; }
   .tick-1 { color: ${props => props.theme.colors.tick_sent}; }
 `;
 
-const Message = ({ message }) => {
+const Message = ({ message, isSelected, isSelectionMode, onSelect }) => {
   const { user } = useAuth();
-  // Add checks for message and senderId existence
-  if (!message || !message.senderId) {
-      console.warn("Rendering empty message or message without senderId:", message);
-      return null;
-  }
-  const isMe = message.senderId._id === user?._id; // Check user existence
+  const longPressTimer = useRef(null);
+
+  if (!message || !message.senderId) return null;
+  const isMe = message.senderId._id === user?._id; 
+
+  // --- Interaction Handlers ---
+  const handleStart = () => {
+      longPressTimer.current = setTimeout(() => {
+          onSelect(message._id); // Trigger selection on long press
+      }, 500); // 500ms long press
+  };
+
+  const handleEnd = () => {
+      if (longPressTimer.current) {
+          clearTimeout(longPressTimer.current);
+      }
+  };
+
+  const handleClick = (e) => {
+      if (isSelectionMode || e.ctrlKey || e.metaKey) {
+          onSelect(message._id); // Toggle selection
+      }
+  };
+
+  const handleContextMenu = (e) => {
+      e.preventDefault(); // Prevent native menu
+      onSelect(message._id); // Enter selection
+  };
 
   const getTicks = () => {
-    if (!isMe || !message || message._id?.startsWith('temp-')) return null; // Don't show ticks for optimistic messages
+    if (!isMe || !message || message._id?.startsWith('temp-')) return null; 
 
-    // --- FIX: Removed unused variable ---
-    // const otherParticipantsCount = (message.deliveredTo?.length || 0) + (message.readBy?.length || 0) -1 ; 
-    // --- END FIX ---
-
-    // Check read status first (✓✓✓ or ✓✓ based on theme)
-    if (message.readBy && message.readBy.length > 1) { // Check if read by OTHERS (more than just the sender)
+    if (message.readBy && message.readBy.length > 1) { 
         return (
             <Ticks>
               <TiTick className="tick-1" />
@@ -90,8 +111,7 @@ const Message = ({ message }) => {
             </Ticks>
         );
     }
-    // Check delivered status (✓✓)
-    if (message.deliveredTo && message.deliveredTo.length > 1) { // Check if delivered to OTHERS
+    if (message.deliveredTo && message.deliveredTo.length > 1) { 
       return (
         <Ticks>
           <TiTick className="tick-1" />
@@ -99,7 +119,6 @@ const Message = ({ message }) => {
         </Ticks>
       );
     }
-    // Just sent (✓)
     return (
       <Ticks>
         <TiTick className="tick-1" />
@@ -108,7 +127,18 @@ const Message = ({ message }) => {
   };
 
   return (
-    <MessageWrapper isMe={isMe}>
+    <MessageWrapper 
+        isMe={isMe} 
+        $isSelected={isSelected} 
+        $isSelectionMode={isSelectionMode}
+        onClick={handleClick}
+        onContextMenu={handleContextMenu}
+        onTouchStart={handleStart}
+        onTouchEnd={handleEnd}
+        onMouseDown={handleStart} // Hybrid support
+        onMouseUp={handleEnd}
+        onMouseLeave={handleEnd}
+    >
       <MessageBubble isMe={isMe}>
         <MessageText>{message.content}</MessageText>
         <StatusContainer>

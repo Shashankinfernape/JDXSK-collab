@@ -6,9 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 import MessageList from '../chat/MessageList';
 import MessageInput from '../chat/MessageInput';
 import ProfileDrawer from '../profile/ProfileDrawer'; // Import ProfileDrawer
-import { HiDotsVertical } from 'react-icons/hi';
 import { AiOutlineSearch } from 'react-icons/ai';
-import { IoMdArrowBack } from 'react-icons/io'; // Back Arrow
+import { IoMdArrowBack, IoMdClose, IoMdTrash, IoMdShareAlt, IoMdUndo } from 'react-icons/io'; // Added Undo for Reply
 
 // Helper
 const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
@@ -23,7 +22,8 @@ const ChatWindowContainer = styled.div`
 
 const ChatHeader = styled.header`
   padding: 0.6rem 1rem;
-  background-color: ${props => props.theme.colors.headerBackground};
+  background-color: ${props => props.isSelectionMode ? props.theme.colors.primary : props.theme.colors.headerBackground}; /* Highlight in selection mode */
+  color: ${props => props.isSelectionMode ? '#FFF' : props.theme.colors.textPrimary};
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -31,30 +31,29 @@ const ChatHeader = styled.header`
   flex-shrink: 0; // Prevent header shrinking
   position: relative;
   z-index: 10; // Ensure it stays on top
+  height: 60px; // Fixed height for consistency
+  transition: background-color 0.2s ease;
 `;
 
-// --- FIX: Define IconButton *before* BackButton ---
 const IconButton = styled.button`
   background: none; border: none;
-  color: ${props => props.theme.colors.icon};
+  color: ${props => props.inheritColor ? 'inherit' : props.theme.colors.icon};
   cursor: pointer; font-size: 1.5rem; display: flex; align-items: center;
-  padding: 4px; border-radius: 50%;
+  padding: 8px; border-radius: 50%;
   transition: background-color 0.2s ease, color 0.2s ease;
   &:hover {
-    background-color: ${props => props.theme.colors.hoverBackground};
-    color: ${props => props.theme.colors.iconActive};
+    background-color: ${props => props.inheritColor ? 'rgba(255,255,255,0.2)' : props.theme.colors.hoverBackground};
+    color: ${props => props.inheritColor ? '#FFF' : props.theme.colors.iconActive};
   }
 `;
-// --- END FIX ---
 
-// Now BackButton can correctly extend IconButton
+// BackButton for Mobile
 const BackButton = styled(IconButton)`
-  display: none; // Hidden by default on larger screens
+  display: none; 
   margin-right: 0.5rem;
-  z-index: 20; // Ensure it's above other elements
   
   @media (max-width: 900px) { 
-    display: flex !important; // Force display on mobile
+    display: flex !important; 
   } 
 `;
 
@@ -83,7 +82,7 @@ const InfoTextContainer = styled.div`
 const ChatName = styled.h3`
   font-size: 1rem;
   font-weight: 500;
-  color: ${props => props.theme.colors.textPrimary};
+  color: inherit; /* Inherit from Header */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -91,25 +90,45 @@ const ChatName = styled.h3`
 
 const ChatStatus = styled.span`
   font-size: 0.75rem;
-  color: ${props => props.theme.colors.textSecondary};
+  color: ${props => props.isSelectionMode ? 'rgba(255,255,255,0.8)' : props.theme.colors.textSecondary};
 `;
 
 const HeaderIcons = styled.div`
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
 `;
 
 // --- ChatWindow Component ---
 const ChatWindow = ({ onBack }) => {
-    const { activeChat, onlineUsers } = useChat();
+    const { activeChat, onlineUsers, selectedMessages, isSelectionMode, clearSelection, setReplyingTo, messages } = useChat();
     const { user } = useAuth();
     const [showProfile, setShowProfile] = useState(false);
 
-    // Guard clause: If there's no active chat, render nothing
-    if (!activeChat) {
-        return null;
-    }
+    // Guard clause
+    if (!activeChat) return null;
+
+    // --- Action Handlers ---
+    const handleReply = () => {
+        const msgId = selectedMessages[0];
+        const msg = messages.find(m => m._id === msgId);
+        if (msg) setReplyingTo(msg);
+        clearSelection();
+    };
+
+    const handleDelete = () => {
+        if (window.confirm(`Delete ${selectedMessages.length} messages?`)) {
+            // Call API delete here (mock for now)
+            console.log("Deleting:", selectedMessages);
+            clearSelection();
+        }
+    };
+
+    const handleForward = () => {
+        alert("Forwarding feature coming soon!");
+        clearSelection();
+    };
+
 
     // Logic to find display info (remains the same)
     let displayName = 'Chat';
@@ -121,7 +140,6 @@ const ChatWindow = ({ onBack }) => {
     if (activeChat.isGroup) {
         displayName = activeChat.groupName || 'Group Chat';
         displayPicture = activeChat.groupIcon || `https://i.pravatar.cc/150?u=${activeChat._id}`;
-        // Map group info to user-like object for ProfileDrawer
         profileTarget = {
             _id: activeChat._id,
             name: activeChat.groupName,
@@ -143,35 +161,58 @@ const ChatWindow = ({ onBack }) => {
         }
     }
 
-
   return (
     <ChatWindowContainer>
-      <ChatHeader>
-        <ChatInfo onClick={() => setShowProfile(true)}>
-          <BackButton onClick={(e) => { e.stopPropagation(); onBack(); }}>
-            <IoMdArrowBack />
-          </BackButton>
-          <ChatAvatar src={displayPicture} alt={displayName} />
-          <InfoTextContainer>
-            <ChatName>{displayName}</ChatName>
-            {!activeChat.isGroup && (
-              <ChatStatus>{isOnline ? 'online' : 'offline'}</ChatStatus>
-            )}
-            {activeChat.isGroup && (
-               <ChatStatus>{activeChat.participants?.length || 0} members</ChatStatus>
-            )}
-          </InfoTextContainer>
-        </ChatInfo>
-        <HeaderIcons>
-          <IconButton><AiOutlineSearch /></IconButton>
-          <IconButton><HiDotsVertical /></IconButton>
-        </HeaderIcons>
-      </ChatHeader>
+      {isSelectionMode ? (
+        // --- Contextual Action Bar ---
+        <ChatHeader isSelectionMode>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <IconButton inheritColor onClick={clearSelection}><IoMdClose /></IconButton>
+                <ChatName>{selectedMessages.length} selected</ChatName>
+            </div>
+            <HeaderIcons>
+                {selectedMessages.length === 1 && (
+                    <IconButton inheritColor onClick={handleReply} title="Reply">
+                        <IoMdUndo /> {/* Using Undo as Reply Icon looks similar */}
+                    </IconButton>
+                )}
+                <IconButton inheritColor onClick={handleDelete} title="Delete">
+                    <IoMdTrash />
+                </IconButton>
+                <IconButton inheritColor onClick={handleForward} title="Forward">
+                    <IoMdShareAlt />
+                </IconButton>
+            </HeaderIcons>
+        </ChatHeader>
+      ) : (
+        // --- Normal Header ---
+        <ChatHeader>
+            <ChatInfo onClick={() => setShowProfile(true)}>
+            <BackButton onClick={(e) => { e.stopPropagation(); onBack(); }}>
+                <IoMdArrowBack />
+            </BackButton>
+            <ChatAvatar src={displayPicture} alt={displayName} />
+            <InfoTextContainer>
+                <ChatName>{displayName}</ChatName>
+                {!activeChat.isGroup && (
+                <ChatStatus>{isOnline ? 'online' : 'offline'}</ChatStatus>
+                )}
+                {activeChat.isGroup && (
+                <ChatStatus>{activeChat.participants?.length || 0} members</ChatStatus>
+                )}
+            </InfoTextContainer>
+            </ChatInfo>
+            <HeaderIcons>
+            <IconButton><AiOutlineSearch /></IconButton>
+            {/* Removed Three-Dots Menu */}
+            </HeaderIcons>
+        </ChatHeader>
+      )}
 
       <MessageList />
       <MessageInput />
 
-      {/* Profile Drawer for viewing contact/group info */}
+      {/* Profile Drawer */}
       <ProfileDrawer 
         isOpen={showProfile} 
         onClose={() => setShowProfile(false)} 
@@ -181,10 +222,4 @@ const ChatWindow = ({ onBack }) => {
   );
 };
 
-ChatWindow.propTypes = {
-  onBack: PropTypes.func.isRequired,
-};
-
-
 export default ChatWindow;
-

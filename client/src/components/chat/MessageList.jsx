@@ -30,7 +30,7 @@ const DateSeparator = styled.div`
 // --- MessageList Component ---
 const MessageList = () => {
   // --- FIX: Import activeChat ---
-  const { messages, loading, activeChat } = useChat(); 
+  const { messages, loading, activeChat, selectedMessages, toggleMessageSelection, isSelectionMode } = useChat(); 
   // --- END FIX ---
   const endOfMessagesRef = useRef(null);
   let lastDate = null;
@@ -79,6 +79,8 @@ const MessageList = () => {
         const showDateSeparator = messageDateStr !== lastDate;
         lastDate = messageDateStr;
 
+        const isSelected = selectedMessages.includes(msg._id);
+
         return (
           <React.Fragment key={msg._id || `temp-${index}`}>
             {showDateSeparator && (
@@ -86,7 +88,12 @@ const MessageList = () => {
                 <span>{formatDate(msg.createdAt)}</span>
               </DateSeparator>
             )}
-            <Message message={msg} />
+            <Message 
+                message={msg} 
+                isSelected={isSelected}
+                isSelectionMode={isSelectionMode}
+                onSelect={toggleMessageSelection}
+            />
           </React.Fragment>
         );
       })}
