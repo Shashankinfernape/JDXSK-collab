@@ -53,46 +53,38 @@ export const AuthProvider = ({ children }) => {
       // Check if we have redirect data in the URL
       const urlParams = new URLSearchParams(window.location.search);
       const redirectToken = urlParams.get('token');
-      const redirectUser = urlParams.get('user');
+      // We ignore 'user' param now to prevent 414 errors and ensure data freshness
 
-      if (redirectToken && redirectUser) {
+      let activeToken = redirectToken || localStorage.getItem('token');
+
+      if (activeToken) {
+        // 1. Set token immediately so API requests work
+        api.defaults.headers.common['Authorization'] = `Bearer ${activeToken}`;
+        
         try {
-          const userData = JSON.parse(decodeURIComponent(redirectUser));
-          // Call login to set state and local storage
-          login(userData, redirectToken); 
-          // Clean the URL *after* processing
-          window.history.replaceState(null, '', window.location.pathname);
-          // Now navigate AFTER state is likely set
-          if (isMounted) navigate('/'); 
-        } catch (e) {
-          console.error("Failed to parse user data from URL", e);
-          if (isMounted) logout(); // Log out if parsing failed
+          // 2. Fetch the FULL user profile (including profilePic) from the server
+          const { data: fullUser } = await api.get('/users/me');
+          
+          if (isMounted) {
+            // 3. Update State and Storage
+            // Note: login() sets state, localStorage, and headers again (redundant but safe)
+            login(fullUser, activeToken); 
+            
+            // 4. Handle URL cleanup if it was a redirect
+            if (redirectToken) {
+               window.history.replaceState(null, '', window.location.pathname);
+               navigate('/'); 
+            }
+          }
+        } catch (error) {
+          console.error("Auth Error (Profile Fetch):", error);
+          if (isMounted) logout(); 
         } finally {
            if (isMounted) setLoading(false);
         }
       } else {
-        // No redirect, check for stored token
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) {
-          setToken(storedToken);
-          api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-          try {
-            const { data: userData } = await api.get('/users/me'); 
-            if (isMounted) {
-              // Call login but don't navigate (already on correct page or loading home)
-              setUser(userData); // Directly set user after verification
-              localStorage.setItem('user', JSON.stringify(userData));
-            }
-          } catch (error) {
-            console.error("Auth Error (Token Check):", error);
-            if (isMounted) logout(); 
-          } finally {
-            if (isMounted) setLoading(false);
-          }
-        } else {
-          // No token found anywhere
-          if (isMounted) setLoading(false);
-        }
+        // No token found
+        if (isMounted) setLoading(false);
       }
     };
 

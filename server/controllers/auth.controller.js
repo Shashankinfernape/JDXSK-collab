@@ -27,13 +27,14 @@ const googleCallback = (req, res) => {
     const token = generateToken(user._id);
 
     // Prepare user data to send back to the client (remove sensitive fields if any)
+    // EXCLUDE profilePic because base64 strings are too large for URL headers (causes 414 URI Too Long)
+    // The frontend should fetch the full profile using the token.
     const userJson = JSON.stringify({
       _id: user._id,
       name: user.name,
       email: user.email,
-      profilePic: user.profilePic,
-      about: user.about
-      // DO NOT send back googleId or other sensitive info
+      // profilePic: user.profilePic, // Removed to fix 414 Error
+      // about: user.about // Removed to save space
     });
 
     // Redirect the user's browser back to the CLIENT application (Vercel URL)
