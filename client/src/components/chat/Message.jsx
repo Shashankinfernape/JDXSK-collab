@@ -158,7 +158,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
   const handleStartTimer = () => {
       isLongPress.current = false; 
       longPressTimer.current = setTimeout(() => {
-          if (!isSwiping.current) { 
+          if (!isSwiping.current) { // Only trigger if not swiping
               isLongPress.current = true; 
               onSelect(message._id); 
           }
@@ -173,7 +173,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
 
   // --- Swipe Logic ---
   const handleTouchStart = (e) => {
-      if (isSelectionMode) return; 
+      if (isSelectionMode) return; // Disable swipe in selection mode
       
       const touch = e.touches ? e.touches[0] : e;
       startX.current = touch.clientX;
@@ -191,11 +191,17 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
       const dx = touch.clientX - startX.current;
       const dy = touch.clientY - startY.current;
 
+      // Detect horizontal swipe vs vertical scroll
       if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
           isSwiping.current = true;
-          handleClearTimer(); 
+          handleClearTimer(); // Cancel long press immediately on move
           
-          if (dx > 0) { 
+          if (e.cancelable && e.type === 'touchmove') {
+             // e.preventDefault(); // Optional: prevent scroll on some browsers, but touch-action usually handles it
+          }
+
+          if (dx > 0) { // Only swipe right
+              // Resistance effect: log or square root for smooth drag
               const resistance = Math.min(dx, 100); 
               setTranslateX(resistance);
           }
@@ -207,19 +213,21 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
       setIsDragging(false);
       
       if (isSwiping.current) {
-          if (translateX > 50) { 
+          if (translateX > 50) { // Threshold to trigger reply
               if (onReply) onReply(message);
           }
-          setTranslateX(0); 
+          setTranslateX(0); // Snap back
           isSwiping.current = false;
       }
   };
 
+  // Click handler (only fires if not long press and not swiping)
   const handleClick = (e) => {
       if (isLongPress.current) {
           isLongPress.current = false;
           return;
       }
+      // If we were swiping, don't trigger click (though usually click doesn't fire if moved enough)
       if (isSwiping.current) return;
 
       if (isSelectionMode || e.ctrlKey || e.metaKey) {
@@ -254,9 +262,13 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
             $isDragging={isDragging}
             onClick={handleClick}
             onContextMenu={handleContextMenu}
+            
+            // Touch Events
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            
+            // Mouse Events (for desktop testing/usage)
             onMouseDown={handleTouchStart}
             onMouseMove={handleTouchMove}
             onMouseUp={handleTouchEnd}
