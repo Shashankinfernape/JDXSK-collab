@@ -1,9 +1,7 @@
 import React from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { IoMdClose } from 'react-icons/io';
-import { BsMoonStars, BsSun } from 'react-icons/bs';
 import BackupRestore from './BackupRestore';
-import { useTheme } from '../../context/ThemeContext';
 
 // Modal components
 const Overlay = styled.div`
@@ -72,62 +70,9 @@ const ModalContent = styled.div`
   overflow-y: auto;
 `;
 
-// Theme Picker Styles
-const SectionTitle = styled.h4`
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  color: ${props => props.theme.colors.primary};
-  margin-bottom: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-`;
-
-const ThemeRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 0;
-  border-bottom: 1px solid ${props => props.theme.colors.border};
-  &:last-child { border-bottom: none; }
-`;
-
-const BrandLabel = styled.span`
-  font-size: 1rem;
-  font-weight: 500;
-  text-transform: capitalize;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  background-color: ${props => props.theme.colors.inputBackground};
-  padding: 4px;
-  border-radius: 20px;
-`;
-
-const ThemeBtn = styled.button`
-  background: ${props => props.$active ? props.theme.colors.primary : 'transparent'};
-  color: ${props => props.$active ? '#FFF' : props.theme.colors.textSecondary};
-  border: none;
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  
-  &:hover {
-    color: ${props => props.$active ? '#FFF' : props.theme.colors.textPrimary};
-  }
-`;
-
-// End Modal components
-
 const SettingsModal = ({ isOpen, onClose }) => {
-  const { setTheme, themeName } = useTheme();
   // This stops the modal from closing when clicking inside it
   const handleModalClick = (e) => e.stopPropagation();
-
-  const brands = ['netflix', 'spotify', 'apple', 'google', 'instagram'];
 
   return (
     <Overlay isOpen={isOpen} onClick={onClose}>
@@ -139,32 +84,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
           </CloseButton>
         </ModalHeader>
         <ModalContent>
-          <SectionTitle>Appearance</SectionTitle>
-          <div style={{ marginBottom: '2rem' }}>
-            {brands.map(brand => (
-                <ThemeRow key={brand}>
-                    <BrandLabel>{brand}</BrandLabel>
-                    <ButtonGroup>
-                        <ThemeBtn 
-                            onClick={() => setTheme(`${brand}-light`)} 
-                            $active={themeName === `${brand}-light`}
-                            title={`${brand} Light`}
-                        >
-                            <BsSun />
-                        </ThemeBtn>
-                        <ThemeBtn 
-                            onClick={() => setTheme(`${brand}-dark`)} 
-                            $active={themeName === `${brand}-dark`}
-                            title={`${brand} Dark`}
-                        >
-                            <BsMoonStars />
-                        </ThemeBtn>
-                    </ButtonGroup>
-                </ThemeRow>
-            ))}
-          </div>
-
-          <SectionTitle>Data</SectionTitle>
+          {/* We can add more settings sections here later */}
           <BackupRestore />
         </ModalContent>
       </ModalContainer>

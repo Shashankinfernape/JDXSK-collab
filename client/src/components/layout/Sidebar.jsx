@@ -10,6 +10,11 @@ import userService from '../../services/user.service';
 import SearchResults from '../search/SearchResults';
 import { useTheme } from '../../context/ThemeContext';
 import Notifications from '../common/Notifications';
+// --- FIX: Add FaInstagram back ---
+import { TbBrandNetflix } from 'react-icons/tb';
+import { BsSpotify, BsApple, BsGoogle, BsSun, BsMoonStars } from 'react-icons/bs';
+import { FaInstagram } from 'react-icons/fa'; // Instagram Icon
+// --- END FIX ---
 // Icons for dropdown
 import { HiDotsVertical } from 'react-icons/hi';
 import { CgProfile } from 'react-icons/cg';
@@ -20,7 +25,6 @@ import { AiOutlineSearch } from 'react-icons/ai';
 const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
 
 // --- Styled components ---
-// Using 100vh height as reverted
 const SidebarContainer = styled.div`
   width: 100%;
   height: 100%;
@@ -80,7 +84,7 @@ const UserAvatar = styled.img`
 const HeaderIcons = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem; /* Reduced gap for tighter grouping */
 `;
 
 const IconWrapper = styled.div`
@@ -97,6 +101,11 @@ const IconButton = styled.button`
     background-color: ${props => props.theme.colors.hoverBackground};
     color: ${props => props.theme.colors.iconActive};
   }
+  
+  /* Active state for Light/Dark toggles */
+  ${props => props.$active && css`
+    color: ${props.theme.colors.primary};
+  `}
 `;
 
 const Badge = styled.span`
@@ -109,6 +118,20 @@ const Badge = styled.span`
   padding: 2px 5px;
   border-radius: 50%;
   border: 1px solid ${props => props.theme.colors.headerBackground};
+`;
+
+// --- Theme Switcher Button ---
+const ThemeSwitcher = styled(IconButton)`
+  font-size: 1.6rem;
+  color: ${props => props.theme.colors.icon};
+
+  ${({ theme }) => theme.name === 'netflix' && css` color: #E50914; `}
+  ${({ theme }) => theme.name === 'spotify' && css` color: #1DB954; `}
+  ${({ theme }) => theme.name === 'apple' && css` color: ${props => props.theme.colors.textPrimary}; `}
+  ${({ theme }) => theme.name === 'google' && css` color: #4285F4; `}
+  ${({ theme }) => theme.name === 'instagram' && css` color: #C13584; `}
+
+  &:hover { opacity: 0.8; }
 `;
 
 const DropdownMenu = styled.div`
@@ -153,7 +176,6 @@ const SearchInput = styled.input`
   &::placeholder { color: ${props => props.theme.colors.textSecondary}; }
 `;
 
-// Container for the scrollable list (reverted - no min-height)
 const ListContainer = styled.div`
   flex-grow: 1; /* Take remaining vertical space */
   overflow-y: auto; /* Make ONLY this part scrollable */
@@ -165,7 +187,7 @@ const ListContainer = styled.div`
 const Sidebar = ({ onChatSelect }) => {
   const { user, logout } = useAuth();
   const { socket } = useSocket();
-  const { theme } = useTheme();
+  const { themeName, setTheme, theme } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -202,11 +224,9 @@ const Sidebar = ({ onChatSelect }) => {
   // Socket Notification Listener
   useEffect(() => {
       if (!socket) return;
-      
       const handleNotification = (notif) => {
           setUnreadNotifications(prev => prev + 1);
       };
-      
       socket.on('newNotification', handleNotification);
       return () => socket.off('newNotification', handleNotification);
   }, [socket]);
@@ -251,6 +271,46 @@ const Sidebar = ({ onChatSelect }) => {
     setIsSearching(false);
   };
 
+  // --- Theme Logic ---
+  const brands = ['netflix', 'spotify', 'apple', 'google', 'instagram'];
+  
+  const getCurrentBrand = () => {
+      const parts = themeName.split('-');
+      return parts[0]; // e.g., 'netflix'
+  };
+  
+  const getCurrentMode = () => {
+      const parts = themeName.split('-');
+      return parts[1] || 'dark'; // e.g., 'dark' or 'light'
+  };
+
+  const cycleBrand = () => {
+      const currentBrand = getCurrentBrand();
+      const currentMode = getCurrentMode();
+      
+      const currentIndex = brands.indexOf(currentBrand);
+      const nextIndex = (currentIndex + 1) % brands.length;
+      const nextBrand = brands[nextIndex];
+      
+      setTheme(`${nextBrand}-${currentMode}`);
+  };
+
+  const setMode = (mode) => {
+      const currentBrand = getCurrentBrand();
+      setTheme(`${currentBrand}-${mode}`);
+  };
+
+  const renderThemeIcon = () => {
+    switch (getCurrentBrand()) {
+      case 'netflix': return <TbBrandNetflix />;
+      case 'spotify': return <BsSpotify />;
+      case 'apple': return <BsApple />;
+      case 'google': return <BsGoogle />;
+      case 'instagram': return <FaInstagram />;
+      default: return <TbBrandNetflix />;
+    }
+  };
+
   return (
     <>
       <SidebarContainer>
@@ -264,6 +324,28 @@ const Sidebar = ({ onChatSelect }) => {
             />
           </HeaderLeft>
           <HeaderIcons>
+             {/* Brand Cycle Button */}
+             <ThemeSwitcher onClick={cycleBrand} theme={theme} title="Switch UI Style">
+              {renderThemeIcon()}
+            </ThemeSwitcher>
+            
+            {/* Dark Mode Toggle */}
+            <IconButton 
+                onClick={() => setMode('dark')} 
+                $active={getCurrentMode() === 'dark'}
+                title="Dark Mode"
+            >
+                <BsMoonStars size={18} />
+            </IconButton>
+
+            {/* Light Mode Toggle */}
+            <IconButton 
+                onClick={() => setMode('light')} 
+                $active={getCurrentMode() === 'light'}
+                title="Light Mode"
+            >
+                <BsSun size={18} />
+            </IconButton>
             
             <IconWrapper ref={notificationRef}>
                 <IconButton onClick={toggleNotifications}>

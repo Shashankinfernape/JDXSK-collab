@@ -39,11 +39,6 @@ const brands = {
     font: "'Google Sans', Roboto, sans-serif",
     logo: '/google-logo.svg',
     bubbleBorderRadius: '16px',
-    accents: {
-      red: '#EA4335',
-      yellow: '#FBBC05',
-      green: '#34A853',
-    }
   },
   instagram: {
     primary: '#C13584',
@@ -54,141 +49,156 @@ const brands = {
   }
 };
 
-// --- Mode Palettes (Generic) ---
-const modes = {
-  dark: {
-    isDark: true,
-    colors: {
-      background: '#0b0b0b',
-      panelBackground: '#141414',
-      headerBackground: '#1F1F1F',
-      inputBackground: '#2A2A2A',
-      hoverBackground: '#2A2A2A',
-      chatBackground: '#0b0b0b',
-      textPrimary: '#E5E5E5',
-      textSecondary: '#808080',
-      border: '#2A2A2A',
-      icon: '#B3B3B3',
-      iconActive: '#FFFFFF',
-      bubbleOther: '#2A2A2A',
-      textBubbleOther: '#E5E5E5',
-      textBubbleMe: '#FFFFFF',
-      scrollbarTrack: '#1F1F1F',
-      scrollbarThumb: '#808080',
-    }
-  },
-  light: {
-    isDark: false,
-    colors: {
-      background: '#FFFFFF',
-      panelBackground: '#F0F2F5', // WhatsApp web style grey
-      headerBackground: '#F0F2F5',
-      inputBackground: '#FFFFFF',
-      hoverBackground: '#E9EDEF',
-      chatBackground: '#EFE7DD', // Warm subtle bg
-      textPrimary: '#111B21',
-      textSecondary: '#667781',
-      border: '#D1D7DB',
-      icon: '#54656F',
-      iconActive: '#111B21',
-      bubbleOther: '#FFFFFF',
-      textBubbleOther: '#111B21',
-      textBubbleMe: '#FFFFFF',
-      scrollbarTrack: '#F0F2F5',
-      scrollbarThumb: '#D1D7DB',
-    }
-  }
-};
-
 // --- Theme Generator ---
 const createTheme = (brandKey, modeKey) => {
   const brand = brands[brandKey];
-  const mode = modes[modeKey];
+  const isDark = modeKey === 'dark';
   
-  // Base theme construction
-  const theme = {
+  // Default Base Colors (Safe Fallback)
+  let colors = {
+    background: isDark ? '#121212' : '#F5F5F5',
+    panelBackground: isDark ? '#181818' : '#EDEDED',
+    headerBackground: isDark ? '#181818' : '#EDEDED',
+    inputBackground: isDark ? '#2A2A2A' : '#FFFFFF',
+    hoverBackground: isDark ? '#2A2A2A' : '#E0E0E0',
+    chatBackground: isDark ? '#121212' : '#F5F5F5',
+    textPrimary: isDark ? '#E5E5E5' : '#111B21',
+    textSecondary: isDark ? '#A0A0A0' : '#667781',
+    border: isDark ? '#2A2A2A' : '#D1D7DB',
+    icon: isDark ? '#B3B3B3' : '#54656F',
+    iconActive: isDark ? '#FFFFFF' : '#111B21',
+    bubbleOther: isDark ? '#2A2A2A' : '#FFFFFF',
+    textBubbleOther: isDark ? '#E5E5E5' : '#111B21',
+    textBubbleMe: '#FFFFFF',
+    scrollbarTrack: isDark ? '#1F1F1F' : '#F0F2F5',
+    scrollbarThumb: isDark ? '#808080' : '#D1D7DB',
+    primary: brand.primary,
+    bubbleMe: brand.primary,
+    scrollbarThumbHover: brand.primary,
+    tick_read: brand.primary,
+    tick_sent: isDark ? '#808080' : '#667781',
+    tick_delivered: isDark ? '#808080' : '#667781',
+  };
+
+  // --- Specific Overrides per Brand/Mode (per User Request) ---
+
+  // 🎬 Netflix UI
+  if (brandKey === 'netflix') {
+    if (isDark) {
+      colors.background = '#0E0E0F'; // Base
+      colors.chatBackground = '#0E0E0F';
+      colors.panelBackground = '#141414'; // Alt
+      colors.headerBackground = '#141414';
+      colors.inputBackground = '#1F1F1F';
+      colors.hoverBackground = '#1F1F1F';
+      colors.border = '#1F1F1F';
+      // Optional vignette effect handled in GlobalStyles via css
+    } else {
+      colors.background = '#F5F5F4'; // Base
+      colors.chatBackground = '#F5F5F4';
+      colors.panelBackground = '#EDEDED'; // Alt
+      colors.headerBackground = '#EDEDED';
+      colors.inputBackground = '#FFFFFF';
+      colors.hoverBackground = '#E0E0E0';
+      colors.border = '#E0E0E0';
+    }
+  }
+
+  // 🔎 Google UI
+  if (brandKey === 'google') {
+    if (isDark) {
+      colors.background = '#1F1F1F'; // Base
+      colors.chatBackground = '#1F1F1F';
+      colors.panelBackground = '#242424'; // Alt
+      colors.headerBackground = '#242424';
+      colors.inputBackground = '#303134';
+      colors.hoverBackground = '#303134';
+      colors.bubbleMe = '#8AB4F8'; // Lighter blue
+      colors.textBubbleMe = '#202124';
+    } else {
+      colors.background = '#FAFAFA'; // Base
+      colors.chatBackground = '#FAFAFA';
+      colors.panelBackground = '#F2F2F2'; // Alt
+      colors.headerBackground = '#F2F2F2';
+      colors.inputBackground = '#FFFFFF';
+      colors.hoverBackground = '#E8EAED';
+      colors.bubbleMe = '#D2E3FC'; // Light blue
+      colors.textBubbleMe = '#174EA6';
+      colors.primary = '#1A73E8';
+    }
+  }
+
+  // 🎵 Spotify UI
+  if (brandKey === 'spotify') {
+    if (isDark) {
+      colors.background = '#121212'; // Base
+      colors.chatBackground = '#121212';
+      colors.panelBackground = '#181818'; // Alt
+      colors.headerBackground = '#181818';
+      colors.inputBackground = '#282828';
+      colors.hoverBackground = '#282828';
+      colors.border = '#282828';
+    } else {
+      colors.background = '#F4F7F5'; // Base
+      colors.chatBackground = '#F4F7F5';
+      colors.panelBackground = '#EAF1EC'; // Alt
+      colors.headerBackground = '#EAF1EC';
+      colors.inputBackground = '#FFFFFF';
+      colors.hoverBackground = '#DDE5E0';
+    }
+  }
+
+  // 🍎 Apple UI
+  if (brandKey === 'apple') {
+    if (isDark) {
+      colors.background = '#0B0B0C'; // Base
+      colors.chatBackground = '#0B0B0C';
+      colors.panelBackground = '#111113'; // Alt
+      colors.headerBackground = '#111113';
+      colors.inputBackground = '#1C1C1E';
+      colors.hoverBackground = '#1C1C1E';
+      colors.border = '#1C1C1E';
+    } else {
+      colors.background = '#F9F9F7'; // Base
+      colors.chatBackground = '#F9F9F7';
+      colors.panelBackground = '#EFEFEA'; // Alt
+      colors.headerBackground = '#EFEFEA';
+      colors.inputBackground = '#FFFFFF';
+      colors.hoverBackground = '#E5E5E0';
+      colors.bubbleMe = '#007AFF';
+    }
+  }
+
+  // 📸 Instagram UI
+  if (brandKey === 'instagram') {
+    if (isDark) {
+      colors.background = '#0F1115'; // Base
+      colors.chatBackground = '#0F1115'; // Gradient handled in GlobalStyles
+      colors.panelBackground = '#151821'; // Alt
+      colors.headerBackground = '#151821';
+      colors.inputBackground = '#262626';
+      colors.hoverBackground = '#262626';
+      colors.border = '#262626';
+    } else {
+      colors.background = '#FFFFFF'; // Base
+      colors.chatBackground = '#FFFFFF';
+      colors.panelBackground = '#F3F4F6'; // Alt
+      colors.headerBackground = '#FFFFFF';
+      colors.inputBackground = '#EFEFEF';
+      colors.hoverBackground = '#FAFAFA';
+      colors.primary = '#C13584';
+    }
+  }
+
+  return {
     name: brandKey,
     mode: modeKey,
     id: `${brandKey}-${modeKey}`,
     ...layoutTokens,
-    ...brand, // Font, logo, specific radius overrides
-    isDark: mode.isDark,
-    colors: {
-      ...mode.colors,
-      primary: brand.primary, // Inject brand primary
-      bubbleMe: brand.primary, // Messages usually brand color
-      scrollbarThumbHover: brand.primary,
-      tick_read: brand.primary,
-      tick_sent: mode.colors.textSecondary,
-      tick_delivered: mode.colors.textSecondary,
-    }
+    ...brand,
+    isDark,
+    colors
   };
-
-  // --- Specific Overrides per Brand/Mode ---
-
-  // Netflix Dark (Cinematic)
-  if (brandKey === 'netflix' && modeKey === 'dark') {
-    theme.colors.background = '#000000';
-    theme.colors.chatBackground = '#000000';
-    theme.backgroundImage = '/whatsapp-bg.png';
-  }
-  // Netflix Light (Soft)
-  if (brandKey === 'netflix' && modeKey === 'light') {
-    theme.colors.chatBackground = '#FFFFFF';
-    theme.colors.panelBackground = '#F3F3F3';
-    theme.colors.headerBackground = '#FFFFFF';
-  }
-
-  // Spotify Dark (Deep)
-  if (brandKey === 'spotify' && modeKey === 'dark') {
-    theme.colors.background = '#121212';
-    theme.colors.panelBackground = '#000000';
-    theme.colors.headerBackground = '#181818';
-  }
-  
-  // Apple Dark (Midnight)
-  if (brandKey === 'apple' && modeKey === 'dark') {
-    theme.colors.background = '#000000';
-    theme.colors.panelBackground = '#1C1C1E';
-    theme.colors.inputBackground = '#2C2C2E';
-  }
-  // Apple Light (Airy)
-  if (brandKey === 'apple' && modeKey === 'light') {
-    theme.colors.panelBackground = '#F5F5F7'; // Apple grey
-    theme.colors.headerBackground = '#F5F5F7';
-    theme.colors.inputBackground = '#FFFFFF';
-    theme.colors.bubbleMe = '#007AFF';
-  }
-
-  // Google Light (Material)
-  if (brandKey === 'google' && modeKey === 'light') {
-     theme.colors.panelBackground = '#FFFFFF';
-     theme.colors.border = '#DADCE0';
-     theme.colors.bubbleMe = '#D2E3FC'; // Light blue
-     theme.colors.textBubbleMe = '#174EA6'; // Dark blue text
-     theme.colors.primary = '#1A73E8';
-  }
-  // Google Dark (Dark Mode)
-  if (brandKey === 'google' && modeKey === 'dark') {
-     theme.colors.background = '#202124';
-     theme.colors.panelBackground = '#202124';
-     theme.colors.chatBackground = '#202124';
-     theme.colors.headerBackground = '#202124';
-     theme.colors.inputBackground = '#303134';
-     theme.colors.bubbleMe = '#8AB4F8'; // Lighter blue
-     theme.colors.textBubbleMe = '#202124';
-  }
-
-  // Instagram Gradient Logic
-  if (brandKey === 'instagram') {
-     theme.gradient = brand.gradient;
-     if (modeKey === 'light') {
-         theme.colors.primary = '#C13584';
-         theme.colors.panelBackground = '#FFFFFF';
-     }
-  }
-
-  return theme;
 };
 
 
@@ -205,9 +215,6 @@ export const themes = {
   'instagram-dark': createTheme('instagram', 'dark'),
   'instagram-light': createTheme('instagram', 'light'),
 };
-
-// Fallback for ThemeContext initial load if logic assumes simple keys
-// We will update ThemeContext to handle IDs.
 
 // --- GlobalStyles ---
 export const GlobalStyles = createGlobalStyle`
@@ -231,12 +238,20 @@ export const GlobalStyles = createGlobalStyle`
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
-    /* Instagram Animation for Dark Mode Only typically, or both? */
-    /* Requirement: "expressive dark vs clean social light" */
+    /* --- Netflix Vignette (Dark Mode) --- */
+    ${({ theme }) => theme.name === 'netflix' && theme.isDark && css`
+      background: radial-gradient(circle, ${theme.colors.background} 60%, rgba(0,0,0,0.35) 100%);
+    `}
+
+    /* --- Spotify Accent Glow (Dark Mode) --- */
+    ${({ theme }) => theme.name === 'spotify' && theme.isDark && css`
+      background: radial-gradient(circle at top left, rgba(30,215,96,0.04), transparent 40%),
+                  ${theme.colors.background};
+    `}
+
+    /* --- Instagram Gradient Hint (Dark Mode) --- */
     ${({ theme }) => theme.name === 'instagram' && theme.isDark && css`
-      background: ${theme.gradient};
-      background-size: 400% 400%;
-      animation: ${instagramBgAnimation} 15s ease infinite;
+      background: linear-gradient(to bottom, #0F1115, #151821);
     `}
   }
 
