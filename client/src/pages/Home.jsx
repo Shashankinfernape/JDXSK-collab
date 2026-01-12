@@ -6,7 +6,8 @@ import { useChat } from '../context/ChatContext';
 
 const HomeContainer = styled.div`
   display: flex;
-  height: 100%;
+  height: 100vh; /* Fallback */
+  height: 100dvh; /* Mobile viewport fix */
   width: 100%;
   background-color: ${({ theme }) => theme.colors.background};
   overflow: hidden; // Prevent body scrolling

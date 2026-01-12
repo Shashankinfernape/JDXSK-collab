@@ -133,7 +133,7 @@ const ChatWindow = ({ onBack }) => {
 
 
   return (
-    <ChatWindowContainer style={{ height: '100%' }}>
+    <ChatWindowContainer>
       <ChatHeader>
         <ChatInfo>
           <BackButton onClick={onBack}>

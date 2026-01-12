@@ -193,11 +193,9 @@ export const instagramTheme = {
 export const GlobalStyles = createGlobalStyle`
   html, body, #root {
     height: 100%;
-    width: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden; /* Prevent scrolling on body */
-    position: fixed; /* Lock viewport to prevent mobile browser scroll shifting */
   }
 
   * {
