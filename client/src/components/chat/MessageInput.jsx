@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { IoMdSend } from 'react-icons/io';
 import { BsEmojiSmile, BsKeyboard } from 'react-icons/bs';
-import { ImAttachment } from 'react-icons/im';
 import { useChat } from '../../context/ChatContext';
 import EmojiPicker from './EmojiPicker';
 
@@ -88,7 +87,6 @@ const MessageInput = () => {
         <IconButton type="button" onClick={() => setShowPicker(!showPicker)} title={showPicker ? "Keyboard" : "Emoji & Stickers"}> 
             {showPicker ? <BsKeyboard /> : <BsEmojiSmile />} 
         </IconButton>
-        <IconButton type="button"> <ImAttachment /> </IconButton>
         <TextInput
             type="text"
             placeholder="Type a message"

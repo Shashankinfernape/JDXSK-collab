@@ -6,10 +6,8 @@ import { useChat } from '../context/ChatContext';
 
 const HomeContainer = styled.div`
   display: flex;
-  /* Use 100dvh for mobile browser address bar handling, fallback to 100vh */
-  height: 100vh;
-  height: 100dvh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   background-color: ${({ theme }) => theme.colors.background};
   overflow: hidden; // Prevent body scrolling
 `;
