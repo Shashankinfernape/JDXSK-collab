@@ -196,12 +196,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
           isSwiping.current = true;
           handleClearTimer(); // Cancel long press immediately on move
           
-          if (e.cancelable && e.type === 'touchmove') {
-             // e.preventDefault(); // Optional: prevent scroll on some browsers, but touch-action usually handles it
-          }
-
-          if (dx > 0) { // Only swipe right
-              // Resistance effect: log or square root for smooth drag
+          if (dx > 0) { 
               const resistance = Math.min(dx, 100); 
               setTranslateX(resistance);
           }
