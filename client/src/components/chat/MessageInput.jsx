@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { IoMdSend } from 'react-icons/io';
-import { BsEmojiSmile } from 'react-icons/bs';
+import { BsEmojiSmile, BsKeyboard } from 'react-icons/bs';
 import { ImAttachment } from 'react-icons/im';
 import { useChat } from '../../context/ChatContext';
+import EmojiPicker from './EmojiPicker';
 
 // Helper for subtle borders
 const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
 
-const InputContainer = styled.form`
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  background-color: ${props => props.theme.colors.panelBackground};
+  border-top: ${props => subtleBorder(props.theme)};
+  flex-shrink: 0;
+`;
+
+const InputForm = styled.form`
   padding: 0.5rem 1rem;
-  background-color: ${props => props.theme.colors.panelBackground}; // Use panel bg (like sidebar)
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  border-top: ${props => subtleBorder(props.theme)}; // Subtle top border
-  flex-shrink: 0; // Prevent input bar from shrinking
 `;
 
 const IconButton = styled.button`
@@ -60,6 +66,7 @@ const TextInput = styled.input`
 // --- Component ---
 const MessageInput = () => {
   const [text, setText] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
   const { sendMessage } = useChat();
 
   const handleSubmit = (e) => {
@@ -67,25 +74,34 @@ const MessageInput = () => {
     if (text.trim()) {
       sendMessage(text);
       setText('');
+      setShowPicker(false); // Optional: close picker on send
     }
   };
 
+  const handleEmojiClick = (emoji) => {
+    setText(prev => prev + emoji);
+  };
+
   return (
-    <InputContainer onSubmit={handleSubmit}>
-      <IconButton type="button"> <BsEmojiSmile /> </IconButton>
-      <IconButton type="button"> <ImAttachment /> </IconButton>
-      <TextInput
-        type="text"
-        placeholder="Type a message"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-      {text.trim() && (
-        <SendButton type="submit"> <IoMdSend /> </SendButton> // Use styled SendButton
-      )}
-      {/* Optional: Add microphone icon when text is empty */}
-      {/* {!text.trim() && ( <IconButton type="button"> <FaMicrophone /> </IconButton> )} */}
-    </InputContainer>
+    <Container>
+      <InputForm onSubmit={handleSubmit}>
+        <IconButton type="button" onClick={() => setShowPicker(!showPicker)} title={showPicker ? "Keyboard" : "Emoji & Stickers"}> 
+            {showPicker ? <BsKeyboard /> : <BsEmojiSmile />} 
+        </IconButton>
+        <IconButton type="button"> <ImAttachment /> </IconButton>
+        <TextInput
+            type="text"
+            placeholder="Type a message"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onFocus={() => setShowPicker(false)} // Optional: close picker when typing
+        />
+        {text.trim() && (
+            <SendButton type="submit"> <IoMdSend /> </SendButton>
+        )}
+      </InputForm>
+      {showPicker && <EmojiPicker onEmojiClick={handleEmojiClick} />}
+    </Container>
   );
 };
 

@@ -11,6 +11,7 @@ NETSAPP is a high-performance, real-time chat application inspired by WhatsApp. 
 - **Real-time:** Socket.io-client
 - **API Client:** Axios
 - **Routing:** React Router DOM
+- **Image Cropping:** `react-easy-crop`
 
 ### Backend
 - **Runtime:** Node.js
@@ -26,7 +27,7 @@ The project follows a modular and decoupled architecture to ensure scalability a
 
 ### Backend Structure (MVC-ish)
 - **`controllers/`**: Handles business logic and coordinates between models and routes.
-- **`models/`**: Defines MongoDB schemas (User, Message, Chat, Status).
+- **`models/`**: Defines MongoDB schemas (User, Message, Chat, Status, Notification).
 - **`routes/`**: Defines API endpoints and maps them to controllers.
 - **`socket/`**: Encapsulates all WebSocket event logic.
 - **`middleware/`**: Custom Express middleware for authentication and security.
@@ -38,6 +39,21 @@ The project follows a modular and decoupled architecture to ensure scalability a
 - **`theme/`**: Global styles and theme definitions.
 
 ## ✨ Key Features
+
+### 👥 Social & Friends (Instagram Style)
+- **User Search:** Search for users by name or email.
+- **Friend Requests:** Send "Follow" requests to other users.
+- **Instant Updates:** `ChatList` instantly updates when a friend request is accepted.
+- **Connection Status:** UI shows "Follow", "Requested", or "Following" based on user relationship.
+
+### 🔔 Notifications
+- **Real-time:** Receive instant notifications for new friend requests and acceptances via Socket.io.
+- **Professional UI:** Instagram-inspired notification panel with avatars, timestamps, and styled action buttons.
+- **Persistent State:** Accepted notifications are permanently marked as "Following".
+
+### 👤 Profile Customization
+- **Image Cropping:** Users can upload a profile picture, crop it to a 1:1 ratio, and save it.
+- **Editable Fields:** Update user `name` and `about` status.
 
 ### 💬 Messaging
 - **Real-time Delivery:** Instant message transmission via WebSockets.
@@ -55,9 +71,8 @@ The project follows a modular and decoupled architecture to ensure scalability a
 - **Session Management:** Secure cookie-based sessions.
 
 ### 🛠️ Utilities
-- **Backup & Restore:** Framework for synchronizing chat history with Google Drive.
 - **Dark Mode:** System-wide support for light and dark themes.
-- **Responsive Design:** Optimized for both mobile and desktop views.
+- **Responsive Design:** Optimized for both mobile and desktop views, including fixes for mobile browser viewport height (`100dvh`).
 
 ## 📂 Project Structure
 
@@ -92,3 +107,4 @@ NETSAPP/
 
 ---
 *Last updated: January 10, 2026*
+*Latest features: Friend System, Notifications, Profile Image Cropping*
