@@ -60,12 +60,12 @@ const MessageBubble = styled.div`
 // --- Quoted Message Styles ---
 const QuotedMessage = styled.div`
   background-color: rgba(0, 0, 0, 0.05);
-  border-left: 2px solid ${props => props.theme.colors.primary}; /* Thinner bar */
-  padding: 2px 8px; /* Minimal vertical padding */
+  border-left: 2px solid ${props => props.theme.colors.primary};
+  padding: 2px 8px;
   border-radius: 3px;
-  margin-bottom: 2px; /* Tight grouping */
+  margin-bottom: 1px; /* Minimal gap to text */
   cursor: pointer;
-  font-size: 0.68rem; /* Even smaller font */
+  font-size: 0.68rem;
   display: flex;
   flex-direction: column;
   opacity: 0.85;
@@ -80,7 +80,7 @@ const QuotedMessage = styled.div`
 const QuotedSender = styled.span`
   font-weight: 700;
   color: ${props => props.theme.colors.primary};
-  font-size: 0.65rem; /* Ultra compact */
+  font-size: 0.65rem;
   margin-bottom: 0px;
 `;
 
@@ -89,25 +89,22 @@ const QuotedText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: 0.65; /* Subtler text */
+  opacity: 0.65;
   display: block;
 `;
 
 const MessageText = styled.p`
-  font-size: 0.95rem; /* Standard size */
+  font-size: 0.95rem; 
   line-height: 1.4;
-  margin-bottom: 1.2rem; 
+  margin-bottom: 0px; /* Reset margin to pack status container closer */
 `;
 
 const StatusContainer = styled.div`
-  position: absolute; 
-  bottom: 4px;
-  right: 7px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 0.25rem;
-  height: 1rem; 
+  margin-top: 2px; /* Tight vertical gap under text */
 `;
 
 const Timestamp = styled.span`
@@ -116,7 +113,7 @@ const Timestamp = styled.span`
     props.isMe
       ? (props.theme.colors.textBubbleMeSecondary || props.theme.colors.textBubbleMe) 
       : props.theme.colors.textSecondary};
-  opacity: 0.8;
+  opacity: 0.7;
   white-space: nowrap; 
 `;
 
