@@ -37,9 +37,13 @@ const googleCallback = (req, res) => {
       // about: user.about // Removed to save space
     });
 
-    // Redirect the user's browser back to the CLIENT application (Vercel URL)
+    // Redirect the user's browser back to the CLIENT application
+    // HARDCODED LOCALHOST for testing
+    const CLIENT_URL = "http://localhost:3000"; 
+    // const CLIENT_URL = process.env.CLIENT_URL;
+
     // Pass the token and user data as URL query parameters
-    res.redirect(`${process.env.CLIENT_URL}?token=${token}&user=${encodeURIComponent(userJson)}`);
+    res.redirect(`${CLIENT_URL}?token=${token}&user=${encodeURIComponent(userJson)}`);
 
   } catch (err) {
     console.error("Error in googleCallback controller:", err);
