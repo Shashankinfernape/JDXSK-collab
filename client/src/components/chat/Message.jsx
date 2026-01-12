@@ -59,28 +59,28 @@ const MessageBubble = styled.div`
 
 // --- Quoted Message Styles ---
 const QuotedMessage = styled.div`
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'};
   border-left: 2px solid ${props => props.theme.colors.primary};
-  padding: 2px 8px;
-  border-radius: 3px;
-  margin-bottom: 1px; /* Minimal gap to text */
+  padding: 2px 6px; /* Ultra-thin padding */
+  border-radius: 4px;
+  margin-bottom: 2px; /* Tight grouping */
   cursor: pointer;
-  font-size: 0.68rem;
+  font-size: 0.65rem; /* Very small context hint */
   display: flex;
   flex-direction: column;
-  opacity: 0.85;
+  opacity: 0.8; /* Muted feel */
   max-width: 100%;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.08);
+    background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'};
   }
 `;
 
 const QuotedSender = styled.span`
   font-weight: 700;
   color: ${props => props.theme.colors.primary};
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   margin-bottom: 0px;
 `;
 
@@ -89,31 +89,32 @@ const QuotedText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: 0.65;
+  opacity: 0.6; /* Softer text */
   display: block;
 `;
 
 const MessageText = styled.p`
-  font-size: 0.95rem; 
-  line-height: 1.4;
-  margin-bottom: 0px; /* Reset margin to pack status container closer */
+  font-size: 0.92rem; 
+  line-height: 1.35;
+  margin-bottom: 0px;
 `;
 
 const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.25rem;
-  margin-top: 2px; /* Tight vertical gap under text */
+  gap: 0.2rem;
+  margin-top: 0px; /* Zero gap for maximum vertical density */
+  line-height: 1;
 `;
 
 const Timestamp = styled.span`
-  font-size: 0.65rem; 
+  font-size: 0.62rem; 
   color: ${props =>
     props.isMe
       ? (props.theme.colors.textBubbleMeSecondary || props.theme.colors.textBubbleMe) 
       : props.theme.colors.textSecondary};
-  opacity: 0.7;
+  opacity: 0.6; /* Subtler timestamp */
   white-space: nowrap; 
 `;
 
