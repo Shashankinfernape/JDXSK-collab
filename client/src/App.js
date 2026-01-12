@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   const { user } = useAuth();
   // --- This is the key change ---
-  // Last Updated: UI Layout & Reply Fixes
+  // Last Updated: Final Layout & Persistence Fixes
   // We get the active theme object from our custom hook
   const { theme } = useTheme(); 
 

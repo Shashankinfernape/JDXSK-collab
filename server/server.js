@@ -8,7 +8,7 @@ const passport = require('passport');
 const connectDB = require('./config/db');
 const { initSocket } = require('./socket/socket');
 
-// Last Updated: Fix Reply Persistence & Auth Revert
+// Last Updated: Final Layout & Persistence Fixes
 dotenv.config();
 connectDB();
 require('./config/passport');
