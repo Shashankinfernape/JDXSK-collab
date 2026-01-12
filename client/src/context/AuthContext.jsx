@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'; 
+import LoadingSpinner from '../components/common/LoadingSpinner'; // Import Spinner
 
 const AuthContext = createContext();
 
@@ -58,16 +59,25 @@ export const AuthProvider = ({ children }) => {
 
       if (redirectToken && redirectUser) {
         try {
-          const userData = JSON.parse(decodeURIComponent(redirectUser));
-          // Call login to set state and local storage
-          login(userData, redirectToken); 
-          // Clean the URL *after* processing
+          // 1. Immediate Login with data from URL (Fast, no Profile Pic yet)
+          const partialUser = JSON.parse(decodeURIComponent(redirectUser));
+          login(partialUser, redirectToken); 
+          
           window.history.replaceState(null, '', window.location.pathname);
-          // Now navigate AFTER state is likely set
-          if (isMounted) navigate('/'); 
+          if (isMounted) navigate('/');
+          
+          // 2. Background Fetch for Full Profile (Profile Pic)
+          // This happens AFTER the user is already "in" the app.
+          api.get('/users/me').then(({ data: fullUser }) => {
+              if (isMounted) {
+                  setUser(fullUser);
+                  localStorage.setItem('user', JSON.stringify(fullUser));
+              }
+          }).catch(err => console.error("Background profile fetch failed", err));
+
         } catch (e) {
           console.error("Failed to parse user data from URL", e);
-          if (isMounted) logout(); // Log out if parsing failed
+          if (isMounted) logout(); 
         } finally {
            if (isMounted) setLoading(false);
         }
@@ -125,11 +135,15 @@ export const AuthProvider = ({ children }) => {
 
   // Only render children when loading is complete AND (user exists OR no token exists)
   // This prevents rendering intermediate states during auth check
-  const shouldRenderChildren = !loading && (!!user || !token);
+  // const shouldRenderChildren = !loading && (!!user || !token);
+
+  if (loading) {
+      return <LoadingSpinner />;
+  }
 
   return (
     <AuthContext.Provider value={value}>
-      {shouldRenderChildren ? children : null /* Or show a loading spinner */}
+      {children}
     </AuthContext.Provider>
   );
 };
