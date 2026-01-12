@@ -59,29 +59,30 @@ const MessageBubble = styled.div`
 
 // --- Quoted Message Styles ---
 const QuotedMessage = styled.div`
-  background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'};
-  border-left: 2px solid ${props => props.theme.colors.primary};
-  padding: 2px 6px; /* Ultra-thin padding */
+  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.05)'};
+  border-left: 3px solid ${props => props.$isMe ? 'rgba(255, 255, 255, 0.5)' : props.theme.colors.primary};
+  padding: 3px 8px;
   border-radius: 4px;
-  margin-bottom: 2px; /* Tight grouping */
+  margin-bottom: 4px;
   cursor: pointer;
-  font-size: 0.65rem; /* Very small context hint */
+  font-size: 0.72rem;
   display: flex;
   flex-direction: column;
-  opacity: 0.8; /* Muted feel */
   max-width: 100%;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'};
+    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.08)'};
   }
 `;
 
 const QuotedSender = styled.span`
   font-weight: 700;
-  color: ${props => props.theme.colors.primary};
-  font-size: 0.62rem;
+  /* Ensure name is readable: use white on colored bubbles, primary on neutral ones */
+  color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.primary};
+  font-size: 0.68rem;
   margin-bottom: 0px;
+  opacity: ${props => props.$isMe ? 1 : 0.9};
 `;
 
 const QuotedText = styled.span`
@@ -89,14 +90,15 @@ const QuotedText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: 0.6; /* Softer text */
+  opacity: ${props => props.$isMe ? 0.85 : 0.65};
   display: block;
 `;
 
 const MessageText = styled.p`
-  font-size: 0.92rem; 
-  line-height: 1.35;
+  font-size: 0.94rem; 
+  line-height: 1.4;
   margin-bottom: 0px;
+  color: inherit;
 `;
 
 const StatusContainer = styled.div`
@@ -104,17 +106,14 @@ const StatusContainer = styled.div`
   align-items: center;
   justify-content: flex-end;
   gap: 0.2rem;
-  margin-top: 0px; /* Zero gap for maximum vertical density */
+  margin-top: 1px; /* Minimal gap */
   line-height: 1;
 `;
 
 const Timestamp = styled.span`
-  font-size: 0.62rem; 
-  color: ${props =>
-    props.isMe
-      ? (props.theme.colors.textBubbleMeSecondary || props.theme.colors.textBubbleMe) 
-      : props.theme.colors.textSecondary};
-  opacity: 0.6; /* Subtler timestamp */
+  font-size: 0.64rem; 
+  color: inherit;
+  opacity: 0.65;
   white-space: nowrap; 
 `;
 
@@ -122,10 +121,11 @@ const Ticks = styled.div`
   display: flex;
   align-items: center;
   font-size: 1rem; 
+  opacity: 0.9;
 
   .tick-3 { color: ${props => props.theme.colors.tick_read}; }
-  .tick-2 { color: ${props => props.theme.colors.tick_delivered}; }
-  .tick-1 { color: ${props => props.theme.colors.tick_sent}; }
+  .tick-2 { color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.tick_delivered}; }
+  .tick-1 { color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.tick_sent}; }
 `;
 
 const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) => {
@@ -150,7 +150,6 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
           const el = document.getElementById(`msg-${originalId}`);
           if (el) {
               el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              // Optional: Highlight effect could be added here
           }
       }
   };
@@ -159,7 +158,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
   const handleStartTimer = () => {
       isLongPress.current = false; 
       longPressTimer.current = setTimeout(() => {
-          if (!isSwiping.current) { // Only trigger if not swiping
+          if (!isSwiping.current) { 
               isLongPress.current = true; 
               onSelect(message._id); 
           }
@@ -172,8 +171,9 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
       }
   };
 
+  // --- Swipe Logic ---
   const handleTouchStart = (e) => {
-      if (isSelectionMode) return; // Disable swipe in selection mode
+      if (isSelectionMode) return; 
       
       const touch = e.touches ? e.touches[0] : e;
       startX.current = touch.clientX;
@@ -191,17 +191,11 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
       const dx = touch.clientX - startX.current;
       const dy = touch.clientY - startY.current;
 
-      // Detect horizontal swipe vs vertical scroll
       if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
           isSwiping.current = true;
-          handleClearTimer(); // Cancel long press immediately on move
+          handleClearTimer(); 
           
-          if (e.cancelable && e.type === 'touchmove') {
-             // e.preventDefault(); // Optional: prevent scroll on some browsers, but touch-action usually handles it
-          }
-
-          if (dx > 0) { // Only swipe right
-              // Resistance effect: log or square root for smooth drag
+          if (dx > 0) { 
               const resistance = Math.min(dx, 100); 
               setTranslateX(resistance);
           }
@@ -213,21 +207,19 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
       setIsDragging(false);
       
       if (isSwiping.current) {
-          if (translateX > 50) { // Threshold to trigger reply
+          if (translateX > 50) { 
               if (onReply) onReply(message);
           }
-          setTranslateX(0); // Snap back
+          setTranslateX(0); 
           isSwiping.current = false;
       }
   };
 
-  // Click handler (only fires if not long press and not swiping)
   const handleClick = (e) => {
       if (isLongPress.current) {
           isLongPress.current = false;
           return;
       }
-      // If we were swiping, don't trigger click (though usually click doesn't fire if moved enough)
       if (isSwiping.current) return;
 
       if (isSelectionMode || e.ctrlKey || e.metaKey) {
@@ -244,9 +236,9 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
 
   const getTicks = () => {
     if (!isMe || !message || message._id?.startsWith('temp-')) return null; 
-    if (message.readBy && message.readBy.length > 1) return <Ticks><TiTick className="tick-1" /><TiTick className="tick-2" style={{ marginLeft: '-6px' }}/><TiTick className="tick-3" style={{ marginLeft: '-6px' }}/></Ticks>;
-    if (message.deliveredTo && message.deliveredTo.length > 1) return <Ticks><TiTick className="tick-1" /><TiTick className="tick-2" style={{ marginLeft: '-6px' }}/></Ticks>;
-    return <Ticks><TiTick className="tick-1" /></Ticks>;
+    if (message.readBy && message.readBy.length > 1) return <Ticks $isMe={isMe}><TiTick className="tick-1" /><TiTick className="tick-2" style={{ marginLeft: '-6px' }}/><TiTick className="tick-3" style={{ marginLeft: '-6px' }}/></Ticks>;
+    if (message.deliveredTo && message.deliveredTo.length > 1) return <Ticks $isMe={isMe}><TiTick className="tick-1" /><TiTick className="tick-2" style={{ marginLeft: '-6px' }}/><TiTick className="tick-3" style={{ marginLeft: '-6px' }}/></Ticks>;
+    return <Ticks $isMe={isMe}><TiTick className="tick-1" /></Ticks>;
   };
 
   return (
@@ -262,13 +254,9 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
             $isDragging={isDragging}
             onClick={handleClick}
             onContextMenu={handleContextMenu}
-            
-            // Touch Events
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            
-            // Mouse Events (for desktop testing/usage)
             onMouseDown={handleTouchStart}
             onMouseMove={handleTouchMove}
             onMouseUp={handleTouchEnd}
@@ -277,9 +265,9 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
         <MessageBubble isMe={isMe}>
             {/* --- Quoted Reply Block --- */}
             {message.replyTo && message.replyTo.content && (
-                <QuotedMessage onClick={scrollToOriginal}>
-                    <QuotedSender>{message.replyTo.senderName || "User"}</QuotedSender>
-                    <QuotedText>{message.replyTo.content}</QuotedText>
+                <QuotedMessage $isMe={isMe} onClick={scrollToOriginal}>
+                    <QuotedSender $isMe={isMe}>{message.replyTo.senderName || "User"}</QuotedSender>
+                    <QuotedText $isMe={isMe}>{message.replyTo.content}</QuotedText>
                 </QuotedMessage>
             )}
             
