@@ -60,17 +60,25 @@ export const AuthProvider = ({ children }) => {
       if (redirectToken && redirectUser) {
         try {
           const userData = JSON.parse(decodeURIComponent(redirectUser));
-          // Call login to set state and local storage
+          
+          // 1. Immediate Login & Render
           login(userData, redirectToken); 
-          // Clean the URL *after* processing
+          setLoading(false); // Stop loading immediately
+          
           window.history.replaceState(null, '', window.location.pathname);
-          // Now navigate AFTER state is likely set
           if (isMounted) navigate('/'); 
+          
+          // 2. Background Fetch for Picture
+          api.get('/users/me').then(({ data }) => {
+              if (isMounted) {
+                  setUser(data);
+                  localStorage.setItem('user', JSON.stringify(data));
+              }
+          }).catch(e => console.warn("Background fetch failed", e));
+
         } catch (e) {
           console.error("Failed to parse user data from URL", e);
-          if (isMounted) logout(); // Log out if parsing failed
-        } finally {
-           if (isMounted) setLoading(false);
+          if (isMounted) logout(); 
         }
       } else {
         // No redirect, check for stored token
@@ -126,11 +134,15 @@ export const AuthProvider = ({ children }) => {
 
   // Only render children when loading is complete AND (user exists OR no token exists)
   // This prevents rendering intermediate states during auth check
-  const shouldRenderChildren = !loading && (!!user || !token);
+  // const shouldRenderChildren = !loading && (!!user || !token);
+
+  if (loading) {
+      return <LoadingSpinner />;
+  }
 
   return (
     <AuthContext.Provider value={value}>
-      {shouldRenderChildren ? children : null /* Or show a loading spinner */}
+      {children}
     </AuthContext.Provider>
   );
 };
