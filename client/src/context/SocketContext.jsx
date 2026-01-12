@@ -8,8 +8,7 @@ const useSocketHook = () => useContext(SocketContext);
 
 // --- Revert to using Environment Variable ---
 // Ensure REACT_APP_API_URL is correctly set in your Vercel/Render client environment
-// const SERVER_API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000"; // Fallback for local
-const SERVER_API_URL = "http://localhost:5000"; // Forced Local for Development Fix Testing
+const SERVER_API_URL = process.env.REACT_APP_API_URL || "https://jdxsk-collab.onrender.com"; // Fallback for production
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);

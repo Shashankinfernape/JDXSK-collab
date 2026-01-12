@@ -38,9 +38,7 @@ const googleCallback = (req, res) => {
     });
 
     // Redirect the user's browser back to the CLIENT application
-    // HARDCODED LOCALHOST for testing
-    const CLIENT_URL = "http://localhost:3000"; 
-    // const CLIENT_URL = process.env.CLIENT_URL;
+    const CLIENT_URL = process.env.CLIENT_URL;
 
     // Pass the token and user data as URL query parameters
     res.redirect(`${CLIENT_URL}?token=${token}&user=${encodeURIComponent(userJson)}`);
