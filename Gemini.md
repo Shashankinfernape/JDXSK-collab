@@ -52,11 +52,20 @@ The project follows a modular and decoupled architecture to ensure scalability a
 - **Persistent State:** Accepted notifications are permanently marked as "Following".
 
 ### 👤 Profile Customization
+- **Refined UI:** Polished layout with high-quality typography and improved spacing.
 - **Image Cropping:** Users can upload a profile picture, crop it to a 1:1 ratio, and save it.
 - **Editable Fields:** Update user `name` and `about` status.
+- **Contact View:** View other users' profiles in a clean, read-only mode directly from the chat.
 
-### 💬 Messaging
+### 💬 Advanced Messaging
 - **Real-time Delivery:** Instant message transmission via WebSockets.
+- **Message Interactions:**
+    - **Swipe-to-Reply:** Gesture-based shortcut to reply to specific messages.
+    - **Message Selection:** Multi-select mode via long-press or right-click.
+    - **Contextual Action Bar:** WhatsApp-Web-style top bar for Reply, Forward, and Delete actions.
+    - **Persistent Replies:** Full rehydration of reply context (quoted blocks) after reloads.
+- **Rich Media:** 
+    - **Emoji Picker:** Integrated tabbed picker for Emojis, GIFs, and Stickers.
 - **Disappearing Messages:** Automatic deletion of messages after 48 hours.
 - **Read Receipts:** Visual indicators for delivered and read statuses.
 - **Typing Indicators:** Real-time feedback when a user is typing.
@@ -66,13 +75,21 @@ The project follows a modular and decoupled architecture to ensure scalability a
 - **24h Expiry:** Text and image statuses that automatically expire.
 - **Status List:** View updates from all contacts in a dedicated panel.
 
+### 🎨 Premium Theming System
+- **Brand Modes:** Distinct UI personalities for **Netflix, Google, Spotify, Apple, and Instagram**.
+- **Dark & Light Variants:** Each brand mode features dedicated, intentionally designed Dark and Light variants (10 themes total).
+- **Visual Personality:** Unique backgrounds (vignettes, glows, gradients) and refined typography (Inter, Manrope) per brand.
+- **Header Controls:** Quick-access brand cycle and theme toggle icons in the sidebar.
+
 ### 🔒 Security & Authentication
 - **Google OAuth:** Secure third-party authentication.
-- **Session Management:** Secure cookie-based sessions.
+- **Session Management:** Secure token-based sessions with optimized payload to prevent URL-length errors.
 
 ### 🛠️ Utilities
-- **Dark Mode:** System-wide support for light and dark themes.
-- **Responsive Design:** Optimized for both mobile and desktop views, including fixes for mobile browser viewport height (`100dvh`).
+- **Responsive Design:** 
+    - **Locked Viewport:** Prevents layout shifting on mobile when the keyboard opens.
+    - **Dynamic Layout:** Single-pane navigation for phones and two-pane for tablets/desktops.
+    - **Stability Fixes:** Resolved "message squishing" and vertical compression issues in the message list.
 
 ## 📂 Project Structure
 
@@ -106,5 +123,5 @@ NETSAPP/
 3. Configure environment variables in `server/.env` and `client/.env`.
 
 ---
-*Last updated: January 10, 2026*
-*Latest features: Friend System, Notifications, Profile Image Cropping*
+*Last updated: January 12, 2026*
+*Latest features: Swipe-to-Reply, Selection Mode, Advanced Theming System, Mobile Layout Fixes*
