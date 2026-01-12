@@ -37,6 +37,7 @@ function initSocket(io) {
           senderId: messageData.senderId,
           content: messageData.content,
           contentType: 'text',
+          replyTo: messageData.replyTo, // Save reply context
           // Set the message to disappear in 2 days (48 hours)
           disappearAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
         });

@@ -62,12 +62,14 @@ const QuotedMessage = styled.div`
   border-left: 4px solid ${props => props.theme.colors.primary || props.theme.colors.textBubbleMe};
   padding: 4px 8px;
   border-radius: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   cursor: pointer;
   font-size: 0.8rem;
   display: flex;
   flex-direction: column;
   opacity: 0.9;
+  min-width: 120px; /* Prevent collapse */
+  max-width: 100%;
 `;
 
 const QuotedSender = styled.span`
@@ -81,6 +83,8 @@ const QuotedText = styled.span`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+  display: block; /* Ensure ellipsis works */
 `;
 
 const MessageText = styled.p`
@@ -257,7 +261,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
         >
         <MessageBubble isMe={isMe}>
             {/* --- Quoted Reply Block --- */}
-            {message.replyTo && (
+            {message.replyTo && message.replyTo.content && (
                 <QuotedMessage>
                     <QuotedSender>{message.replyTo.senderName || "User"}</QuotedSender>
                     <QuotedText>{message.replyTo.content}</QuotedText>

@@ -32,6 +32,12 @@ const messageSchema = new mongoose.Schema({
   // --- ADD THIS FIELD for disappearing messages ---
   disappearAt: {
     type: Date,
+  },
+  // --- Reply Context ---
+  replyTo: {
+    _id: String, // Original message ID
+    content: String, // Snapshot of content
+    senderName: String // Snapshot of sender name
   }
 }, {
   timestamps: true,
