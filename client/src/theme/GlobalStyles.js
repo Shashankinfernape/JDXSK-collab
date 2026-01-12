@@ -85,18 +85,18 @@ const createTheme = (brandKey, modeKey) => {
   // 🎬 Netflix UI
   if (brandKey === 'netflix') {
     if (isDark) {
-      colors.background = '#0E0E0F'; // Base
-      colors.chatBackground = '#0E0E0F';
-      colors.panelBackground = '#141414'; // Alt
+      colors.background = '#0E0E0F'; 
+      // Vignette directly in chatBackground
+      colors.chatBackground = 'radial-gradient(circle, #0E0E0F 60%, #000000 100%)'; 
+      colors.panelBackground = '#141414'; 
       colors.headerBackground = '#141414';
       colors.inputBackground = '#1F1F1F';
       colors.hoverBackground = '#1F1F1F';
       colors.border = '#1F1F1F';
-      // Optional vignette effect handled in GlobalStyles via css
     } else {
-      colors.background = '#F5F5F4'; // Base
+      colors.background = '#F5F5F4'; 
       colors.chatBackground = '#F5F5F4';
-      colors.panelBackground = '#EDEDED'; // Alt
+      colors.panelBackground = '#EDEDED'; 
       colors.headerBackground = '#EDEDED';
       colors.inputBackground = '#FFFFFF';
       colors.hoverBackground = '#E0E0E0';
@@ -107,22 +107,22 @@ const createTheme = (brandKey, modeKey) => {
   // 🔎 Google UI
   if (brandKey === 'google') {
     if (isDark) {
-      colors.background = '#1F1F1F'; // Base
+      colors.background = '#1F1F1F';
       colors.chatBackground = '#1F1F1F';
-      colors.panelBackground = '#242424'; // Alt
+      colors.panelBackground = '#242424';
       colors.headerBackground = '#242424';
       colors.inputBackground = '#303134';
       colors.hoverBackground = '#303134';
-      colors.bubbleMe = '#8AB4F8'; // Lighter blue
+      colors.bubbleMe = '#8AB4F8';
       colors.textBubbleMe = '#202124';
     } else {
-      colors.background = '#FAFAFA'; // Base
+      colors.background = '#FAFAFA';
       colors.chatBackground = '#FAFAFA';
-      colors.panelBackground = '#F2F2F2'; // Alt
+      colors.panelBackground = '#F2F2F2';
       colors.headerBackground = '#F2F2F2';
       colors.inputBackground = '#FFFFFF';
       colors.hoverBackground = '#E8EAED';
-      colors.bubbleMe = '#D2E3FC'; // Light blue
+      colors.bubbleMe = '#D2E3FC';
       colors.textBubbleMe = '#174EA6';
       colors.primary = '#1A73E8';
     }
@@ -131,17 +131,18 @@ const createTheme = (brandKey, modeKey) => {
   // 🎵 Spotify UI
   if (brandKey === 'spotify') {
     if (isDark) {
-      colors.background = '#121212'; // Base
-      colors.chatBackground = '#121212';
-      colors.panelBackground = '#181818'; // Alt
+      colors.background = '#121212';
+      // Glow directly in chatBackground
+      colors.chatBackground = 'radial-gradient(circle at top left, rgba(30,215,96,0.04), transparent 40%), #121212';
+      colors.panelBackground = '#181818';
       colors.headerBackground = '#181818';
       colors.inputBackground = '#282828';
       colors.hoverBackground = '#282828';
       colors.border = '#282828';
     } else {
-      colors.background = '#F4F7F5'; // Base
+      colors.background = '#F4F7F5';
       colors.chatBackground = '#F4F7F5';
-      colors.panelBackground = '#EAF1EC'; // Alt
+      colors.panelBackground = '#EAF1EC';
       colors.headerBackground = '#EAF1EC';
       colors.inputBackground = '#FFFFFF';
       colors.hoverBackground = '#DDE5E0';
@@ -151,17 +152,17 @@ const createTheme = (brandKey, modeKey) => {
   // 🍎 Apple UI
   if (brandKey === 'apple') {
     if (isDark) {
-      colors.background = '#0B0B0C'; // Base
+      colors.background = '#0B0B0C';
       colors.chatBackground = '#0B0B0C';
-      colors.panelBackground = '#111113'; // Alt
+      colors.panelBackground = '#111113';
       colors.headerBackground = '#111113';
       colors.inputBackground = '#1C1C1E';
       colors.hoverBackground = '#1C1C1E';
       colors.border = '#1C1C1E';
     } else {
-      colors.background = '#F9F9F7'; // Base
+      colors.background = '#F9F9F7';
       colors.chatBackground = '#F9F9F7';
-      colors.panelBackground = '#EFEFEA'; // Alt
+      colors.panelBackground = '#EFEFEA';
       colors.headerBackground = '#EFEFEA';
       colors.inputBackground = '#FFFFFF';
       colors.hoverBackground = '#E5E5E0';
@@ -172,17 +173,18 @@ const createTheme = (brandKey, modeKey) => {
   // 📸 Instagram UI
   if (brandKey === 'instagram') {
     if (isDark) {
-      colors.background = '#0F1115'; // Base
-      colors.chatBackground = '#0F1115'; // Gradient handled in GlobalStyles
-      colors.panelBackground = '#151821'; // Alt
+      colors.background = '#0F1115';
+      // Gradient directly in chatBackground
+      colors.chatBackground = 'linear-gradient(to bottom, #0F1115, #151821)';
+      colors.panelBackground = '#151821';
       colors.headerBackground = '#151821';
       colors.inputBackground = '#262626';
       colors.hoverBackground = '#262626';
       colors.border = '#262626';
     } else {
-      colors.background = '#FFFFFF'; // Base
+      colors.background = '#FFFFFF';
       colors.chatBackground = '#FFFFFF';
-      colors.panelBackground = '#F3F4F6'; // Alt
+      colors.panelBackground = '#F3F4F6';
       colors.headerBackground = '#FFFFFF';
       colors.inputBackground = '#EFEFEF';
       colors.hoverBackground = '#FAFAFA';

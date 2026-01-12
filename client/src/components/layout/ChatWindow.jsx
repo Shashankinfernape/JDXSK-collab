@@ -18,7 +18,7 @@ const ChatWindowContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%; // Take full height from parent (StyledChatWindow)
-  background-color: ${props => props.theme.colors.chatBackground}; // Use theme chat background
+  background: ${props => props.theme.colors.chatBackground}; // Use background to support gradients
 `;
 
 const ChatHeader = styled.header`
