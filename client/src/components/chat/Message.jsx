@@ -59,41 +59,38 @@ const MessageBubble = styled.div`
 
 // --- Quoted Message Styles ---
 const QuotedMessage = styled.div`
-  background-color: rgba(0, 0, 0, 0.05); /* Lighter contrast */
-  border-left: 3px solid ${props => props.theme.colors.primary}; /* Accent color */
-  padding: 6px 10px;
+  background-color: rgba(0, 0, 0, 0.06); /* Subtle depth */
+  border-left: 3px solid ${props => props.theme.colors.primary};
+  padding: 4px 8px; /* Thinner padding */
   border-radius: 4px;
-  margin-bottom: 6px; /* Reduced gap */
+  margin-bottom: 4px; /* Tighter spacing to text */
   cursor: pointer;
-  font-size: 0.75rem; /* Smaller hierarchy */
+  font-size: 0.72rem; /* Compact hierarchy */
   display: flex;
   flex-direction: column;
-  opacity: 0.95;
-  min-width: 120px;
+  opacity: 0.9;
   max-width: 100%;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.08);
+    background-color: rgba(0, 0, 0, 0.1);
   }
 `;
 
 const QuotedSender = styled.span`
   font-weight: 700;
-  color: ${props => props.theme.colors.primary}; /* Sender accent */
-  font-size: 0.75rem;
-  margin-bottom: 2px;
+  color: ${props => props.theme.colors.primary};
+  font-size: 0.7rem;
+  margin-bottom: 1px;
 `;
 
 const QuotedText = styled.span`
-  white-space: normal; /* Allow wrap for clamping */
-  display: -webkit-box;
-  -webkit-line-clamp: 2; /* Limit to 2 lines */
-  -webkit-box-orient: vertical;
+  white-space: nowrap; /* Single line for maximum compactness */
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: 0.8;
+  opacity: 0.7; /* Lighter feel */
+  display: block;
 `;
 
 const MessageText = styled.p`
