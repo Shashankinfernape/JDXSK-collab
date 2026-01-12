@@ -8,6 +8,7 @@ const SwipeContainer = styled.div`
   position: relative;
   width: 100%;
   overflow: hidden; /* Hide the icon when not swiping */
+  flex-shrink: 0; /* CRITICAL: Prevent messages from squishing */
 `;
 
 const ReplyIconWrapper = styled.div`
