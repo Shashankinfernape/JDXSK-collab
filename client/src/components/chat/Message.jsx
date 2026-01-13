@@ -43,39 +43,45 @@ const MessageWrapper = styled.div`
 `;
 
 const MessageBubble = styled.div`
-  max-width: 65%; 
+  max-width: 75%; 
   @media (min-width: 900px) {
-    max-width: 60%; /* Slightly narrower on very wide screens to keep readability */
+    max-width: 65%; /* Standard WhatsApp Web width */
   }
   
-  /* Compact but sufficient padding */
-  padding: 6px 8px 6px 9px; 
+  /* WhatsApp-like padding */
+  padding: 6px 7px 8px 9px; 
   
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
     props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
+  background: ${props => props.isMe && props.theme.name === 'instagram' ? props.theme.colors.bubbleMe : undefined}; /* Handle gradient */
+
   color: ${props => 
     props.isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textBubbleOther};
+  
   word-wrap: break-word; 
   box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13); 
   position: relative; 
-  min-width: 80px; /* Base min-width */
-  width: fit-content; /* Grow with content up to max-width */
+  min-width: 100px; 
+  width: fit-content; 
   cursor: pointer;
   
-  /* Flex Layout: Vertical stack for Reply + Text + Time */
+  /* Flex Layout */
   display: flex;
   flex-direction: column;
-  align-items: stretch; /* Ensure children like ReplyBox stretch */
+  align-items: stretch;
   gap: 2px;
 `;
 
 // --- Quoted Reply Block ---
 const QuotedMessage = styled.div`
-  /* Translucent dark overlay style */
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.05)'};
-  border-left: 4px solid ${props => props.$isMe ? 'rgba(255, 255, 255, 0.7)' : props.theme.colors.primary};
-  padding: 6px 10px;
+  /* Translucent dark overlay style - distinct from main bubble */
+  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.06)'};
+  border-left: 4px solid ${props => props.theme.colors.primary};
+  /* Override border color for "Me" if needed, but primary is usually good. WhatsApp uses sender color. */
+  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.8)' : props.theme.colors.primary};
+
+  padding: 4px 8px; /* Compact padding */
   border-radius: 6px;
   cursor: pointer;
   
@@ -84,21 +90,22 @@ const QuotedMessage = styled.div`
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  margin-bottom: 2px; /* Small separation from main text */
+  margin-bottom: 2px; 
   
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.08)'};
+    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.1)'};
   }
 `;
 
 const QuotedSender = styled.span`
   font-weight: 700;
   color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.primary};
-  font-size: 0.72rem;
-  margin-bottom: 2px;
+  font-size: 0.75rem;
+  margin-bottom: 0px;
   opacity: 0.95;
+  line-height: 1.2;
 `;
 
 const QuotedText = styled.span`
@@ -108,6 +115,7 @@ const QuotedText = styled.span`
   color: inherit;
   opacity: 0.8;
   font-size: 0.8rem;
+  line-height: 1.3;
   display: block;
 `;
 
@@ -116,20 +124,19 @@ const MessageText = styled.div`
   line-height: 1.45;
   color: inherit;
   width: 100%;
-  padding: 0 2px; /* Slight horizontal padding for text */
+  padding: 0 2px;
 `;
 
 const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.2rem;
-  align-self: flex-end; /* Keep strictly bottom-right */
-  margin-top: -4px; /* Pull it up slightly if text ends early, or sit below */
-  position: relative;
-  float: right; /* Use float/flow logic for "wrapping" feel if possible, but flex col makes it hard. Keep flex-end for safety. */
-  padding-left: 8px; /* Separation from text if on same line logic was used, but here it is separate block. */
-  height: 16px; 
+  gap: 0.25rem;
+  align-self: flex-end; /* Strictly bottom-right */
+  margin-top: -3px; /* Pull closer to text line height */
+  margin-bottom: -2px;
+  height: 15px; 
+  line-height: 1;
 `;
 
 const Timestamp = styled.span`
