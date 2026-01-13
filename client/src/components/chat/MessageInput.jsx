@@ -46,9 +46,9 @@ const ReplyPanel = styled.div`
 const ReplyWrapper = styled.div`
   flex: 1;
   background-color: ${props => props.theme.colors.inputBackground};
-  border-radius: 6px;
-  border-left: 4px solid ${props => props.theme.colors.primary};
-  padding: 6px 12px;
+  border-radius: 8px;
+  border-left: 5px solid ${props => props.theme.colors.primary};
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -56,25 +56,25 @@ const ReplyWrapper = styled.div`
   overflow: hidden;
   margin-left: 12px;
   margin-right: 0px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 `;
 
 const ReplyHeader = styled.div`
   display: flex;
   align-items: baseline;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 `;
 
 const ReplySender = styled.span`
   color: ${props => props.theme.colors.primary};
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   margin-right: 8px;
 `;
 
 const ReplyText = styled.span`
   color: ${props => props.theme.colors.textSecondary};
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -87,11 +87,11 @@ const CloseButton = styled.button`
   border: none;
   color: ${props => props.theme.colors.textSecondary};
   cursor: pointer;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 50%;
   transition: all 0.2s ease;
 
   &:hover {
@@ -99,14 +99,14 @@ const CloseButton = styled.button`
     color: ${props => props.theme.colors.textPrimary};
   }
   
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 `;
 
 const InputForm = styled.form`
-  padding: 10px 16px;
+  padding: 0.5rem 1rem;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.8rem;
 `;
 
 const IconButton = styled.button`
@@ -114,15 +114,14 @@ const IconButton = styled.button`
   border: none;
   color: ${props => props.theme.colors.icon};
   cursor: pointer;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   display: flex;
   align-items: center;
-  padding: 6px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.2s ease;
 
   &:hover {
-    background-color: ${props => props.theme.colors.hoverBackground};
     color: ${props => props.theme.colors.iconActive};
   }
 `;
@@ -130,28 +129,19 @@ const IconButton = styled.button`
 const SendButton = styled(IconButton)`
   color: ${props => props.theme.colors.primary};
    &:hover {
-    color: ${props => props.theme.colors.primary};
-    background-color: transparent;
-    opacity: 0.8;
+    color: ${props => props.theme.colors.iconActive};
   }
 `;
 
 const TextInput = styled.input`
   flex: 1;
   background-color: ${props => props.theme.colors.inputBackground};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 8px;
-  padding: 10px 14px;
+  border: none;
+  border-radius: 20px;
+  padding: 0.7rem 1.2rem;
   color: ${props => props.theme.colors.textPrimary};
   font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &:focus {
-    border-color: ${props => props.theme.colors.primary};
-    box-shadow: 0 0 0 2px ${props => props.theme.colors.primary}20;
-  }
-
   &::placeholder {
     color: ${props => props.theme.colors.textSecondary};
   }

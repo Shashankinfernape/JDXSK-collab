@@ -11,41 +11,41 @@ const instagramBgAnimation = keyframes`
 const layoutTokens = {
   panel_width: '30%',
   max_panel_width: '400px',
-  bubbleBorderRadius: '10px', // Standardized for professional look
+  bubbleBorderRadius: '7px', // Fallback
 };
 
 // --- Brand Palettes ---
 const brands = {
   netflix: {
-    primary: '#B9090B', // Muted, professional red
-    font: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    primary: '#E50914', // Brand Red
+    font: "'Helvetica Neue', Helvetica, Arial, sans-serif",
     logo: '/netflix-logo.svg',
-    bubbleBorderRadius: '8px', 
+    bubbleBorderRadius: '4px', // Boxy, Cinematic
   },
   spotify: {
     primary: '#1DB954',
-    font: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    font: "'Circular', 'Helvetica Neue', Helvetica, Arial, sans-serif",
     logo: '/spotify-logo.svg',
-    bubbleBorderRadius: '10px',
+    bubbleBorderRadius: '16px', // Friendly
   },
   apple: {
     primary: '#007AFF',
     font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     logo: '/apple-logo.svg',
-    bubbleBorderRadius: '12px',
+    bubbleBorderRadius: '18px', // iOS Standard
   },
   google: {
     primary: '#1A73E8',
-    font: "'Google Sans', 'Inter', sans-serif",
+    font: "'Google Sans', Roboto, sans-serif",
     logo: '/google-logo.svg',
-    bubbleBorderRadius: '10px',
+    bubbleBorderRadius: '16px',
   },
   instagram: {
-    primary: '#E1306C',
+    primary: '#E1306C', // Brand Pink/Purple for accents
     gradient: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-    font: "'Inter', -apple-system, sans-serif",
+    font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     logo: '/instagram-logo.svg',
-    bubbleBorderRadius: '12px',
+    bubbleBorderRadius: '22px', // Super Round (Messenger style)
   }
 };
 
@@ -54,79 +54,84 @@ const createTheme = (brandKey, modeKey) => {
   const brand = brands[brandKey];
   const isDark = modeKey === 'dark';
   
-  // Base Colors - Professional / Minimalist Defaults
+  // Base Colors - Softer, balanced approach
   let colors = {
-    background: isDark ? '#0B0D0E' : '#FFFFFF',
-    panelBackground: isDark ? '#16191B' : '#F9F9F9',
-    headerBackground: isDark ? '#16191B' : '#FFFFFF',
-    inputBackground: isDark ? '#202327' : '#FFFFFF',
-    hoverBackground: isDark ? '#2C3036' : '#F0F2F5',
-    chatBackground: isDark ? '#0B0D0E' : '#F4F4F7',
-    textPrimary: isDark ? '#ECECEC' : '#1F2937',
-    textSecondary: isDark ? '#9CA3AF' : '#6B7280',
-    border: isDark ? '#26292D' : '#E5E7EB',
-    icon: isDark ? '#9CA3AF' : '#6B7280',
-    iconActive: isDark ? '#FFFFFF' : '#111827',
-    bubbleOther: isDark ? '#202327' : '#FFFFFF',
-    textBubbleOther: isDark ? '#ECECEC' : '#1F2937',
+    background: isDark ? '#121212' : '#F5F5F5',
+    panelBackground: isDark ? '#181818' : '#EDEDED',
+    headerBackground: isDark ? '#181818' : '#EDEDED',
+    inputBackground: isDark ? '#2A2A2A' : '#FFFFFF',
+    hoverBackground: isDark ? '#2A2A2A' : '#E0E0E0',
+    chatBackground: isDark ? '#121212' : '#F5F5F5',
+    textPrimary: isDark ? '#E5E5E5' : '#111B21',
+    textSecondary: isDark ? '#A0A0A0' : '#667781',
+    border: isDark ? '#2A2A2A' : '#D1D7DB',
+    icon: isDark ? '#B3B3B3' : '#54656F',
+    iconActive: isDark ? '#FFFFFF' : '#111B21',
+    bubbleOther: isDark ? '#2A2A2A' : '#FFFFFF',
+    textBubbleOther: isDark ? '#E5E5E5' : '#111B21',
     textBubbleMe: '#FFFFFF',
-    scrollbarTrack: isDark ? '#0B0D0E' : '#F9F9F9',
-    scrollbarThumb: isDark ? '#374151' : '#D1D5DB',
+    scrollbarTrack: isDark ? '#1F1F1F' : '#F0F2F5',
+    scrollbarThumb: isDark ? '#808080' : '#D1D7DB',
     primary: brand.primary,
     bubbleMe: brand.primary,
     scrollbarThumbHover: brand.primary,
     tick_read: brand.primary,
-    tick_sent: isDark ? '#4B5563' : '#9CA3AF',
-    tick_delivered: isDark ? '#4B5563' : '#9CA3AF',
+    tick_sent: isDark ? '#808080' : '#667781',
+    tick_delivered: isDark ? '#808080' : '#667781',
   };
 
   // --- Brand Refinements ---
 
+  // 🎬 Netflix UI
   if (brandKey === 'netflix') {
     if (isDark) {
       colors.background = '#000000';
-      colors.chatBackground = '#000000';
+      colors.chatBackground = 'radial-gradient(circle, #101010 60%, #000000 100%)'; // Restored Vignette
       colors.panelBackground = '#141414';
-      colors.headerBackground = '#141414';
-      colors.inputBackground = '#222222';
-      colors.bubbleOther = '#262626';
-      colors.border = '#262626';
+      colors.headerBackground = 'rgba(20, 20, 20, 0.95)';
+      colors.inputBackground = '#262626';
+      colors.hoverBackground = '#333333';
+      colors.border = '#333333';
+      colors.bubbleOther = '#2F2F2F'; // Softer Dark Grey
     } else {
       colors.background = '#FFFFFF';
-      colors.panelBackground = '#F5F5F1';
-      colors.bubbleOther = '#E5E5E1';
+      colors.panelBackground = '#F3F3F3';
+      colors.headerBackground = '#F3F3F3';
+      colors.bubbleOther = '#E5E5E5';
     }
   }
 
+  // 📸 Instagram UI
   if (brandKey === 'instagram') {
     if (isDark) {
       colors.background = '#000000';
       colors.chatBackground = '#000000';
-      colors.panelBackground = '#121212';
+      colors.panelBackground = '#000000';
       colors.headerBackground = '#000000';
-      colors.inputBackground = '#1A1A1A';
-      colors.bubbleMe = '#0095F6'; // Professional Instagram Blue
+      colors.inputBackground = '#262626';
+      colors.bubbleMe = '#3797F0'; // Messenger Blue (High Visibility)
       colors.bubbleOther = '#262626';
       colors.border = '#262626';
     } else {
       colors.background = '#FFFFFF';
       colors.chatBackground = '#FFFFFF';
-      colors.panelBackground = '#FAFAFA';
+      colors.panelBackground = '#FFFFFF';
       colors.headerBackground = '#FFFFFF';
-      colors.inputBackground = '#FFFFFF';
-      colors.bubbleMe = '#0095F6';
+      colors.inputBackground = '#EFEFEF';
+      colors.bubbleMe = '#3797F0';
       colors.bubbleOther = '#EFEFEF';
-      colors.border = '#DBDBDB';
     }
   }
 
+  // 🎵 Spotify UI
   if (brandKey === 'spotify') {
     if (isDark) {
       colors.background = '#121212';
+      colors.chatBackground = 'linear-gradient(180deg, #181818 0%, #121212 100%)'; // Player Gradient
       colors.panelBackground = '#000000';
+      colors.inputBackground = '#282828';
       colors.bubbleMe = '#1DB954';
       colors.bubbleOther = '#282828';
-      colors.textBubbleMe = '#FFFFFF';
     }
   }
 
