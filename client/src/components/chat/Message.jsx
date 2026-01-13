@@ -71,7 +71,7 @@ const MessageBubble = styled.div`
   gap: 2px;
 `;
 
-// --- Quoted Reply Block (Premium Thin Style) ---
+// --- Quoted Reply Block (Synchronized Style) ---
 const QuotedMessage = styled.div`
   /* Precise thin spacing for premium feel */
   margin-top: -3px;
@@ -86,13 +86,14 @@ const QuotedMessage = styled.div`
   border-left: 3px solid ${props => props.theme.colors.primary};
   border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.85)' : props.theme.colors.primary};
 
-  padding: 4px 10px; /* Thinner vertical padding */
-  border-radius: 6px; /* Elegant rounded look */
+  padding: 5px 10px; 
+  /* Synchronize rounding with the main bubble */
+  border-radius: ${props => props.theme.bubbleBorderRadius}; 
   
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  margin-bottom: 5px; 
+  margin-bottom: 2px; /* Closer to the replying message */
   
   font-size: 0.82rem;
   line-height: 1.25;
@@ -107,10 +108,9 @@ const QuotedMessage = styled.div`
 const QuotedSender = styled.span`
   font-weight: 700;
   color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.primary};
-  font-size: 0.7rem;
-  margin-bottom: 0px;
+  font-size: 0.75rem;
+  margin-bottom: 1px;
   opacity: 0.98;
-  line-height: 1.1;
 `;
 
 const QuotedText = styled.span`
@@ -118,18 +118,18 @@ const QuotedText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: 0.8;
-  font-size: 0.75rem;
+  opacity: 0.85;
+  font-size: 0.8rem;
   line-height: 1.3;
   display: block;
 `;
 
 const MessageText = styled.div`
   font-size: 0.95rem; 
-  line-height: 1.35;
+  line-height: 1.4;
   color: inherit;
   width: 100%;
-  padding: 0 1px;
+  padding: 2px 1px 0 1px; /* Added slight top padding */
   margin-bottom: 0px;
 `;
 
@@ -138,10 +138,10 @@ const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 2px;
-  margin-right: -2px; /* Visual alignment fix */
+  margin-top: 1px; /* Tight spacing under message */
+  margin-right: -2px;
   
-  height: 15px; 
+  height: 14px; 
   line-height: 1;
 `;
 
