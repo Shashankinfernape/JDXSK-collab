@@ -71,41 +71,36 @@ const MessageBubble = styled.div`
   gap: 2px;
 `;
 
-// --- Quoted Reply Block (Edge-to-Edge "Header" Style) ---
+// --- Quoted Reply Block (Premium Thin Style) ---
 const QuotedMessage = styled.div`
-  /* Offsets to fill the "Upper Space" completely (Edge-to-Edge) */
-  margin-top: -5px;
-  margin-left: -9px;
-  margin-right: -8px;
-  width: calc(100% + 17px);
+  /* Precise thin spacing for premium feel */
+  margin-top: -3px;
+  margin-left: -6px;
+  margin-right: -5px;
+  width: calc(100% + 11px);
   
   /* Visuals */
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)'};
-  ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.1);`}
+  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.04)'};
+  ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.08);`}
   
-  border-left: 4px solid ${props => props.theme.colors.primary};
-  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.9)' : props.theme.colors.primary};
+  border-left: 3px solid ${props => props.theme.colors.primary};
+  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.85)' : props.theme.colors.primary};
 
-  padding: 6px 10px; /* Internal padding for the reply content */
-  
-  /* Radius: Match top corners of parent, square-ish bottom */
-  border-top-left-radius: ${props => props.theme.bubbleBorderRadius};
-  border-top-right-radius: ${props => props.theme.bubbleBorderRadius};
-  border-bottom-left-radius: 2px;
-  border-bottom-right-radius: 2px;
+  padding: 4px 10px; /* Thinner vertical padding */
+  border-radius: 6px; /* Elegant rounded look */
   
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  margin-bottom: 4px; /* Push main text down */
+  margin-bottom: 5px; 
   
-  font-size: 0.85rem;
-  line-height: 1.2;
+  font-size: 0.82rem;
+  line-height: 1.25;
   cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.08)'};
+    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.22)' : 'rgba(0, 0, 0, 0.07)'};
   }
 `;
 
