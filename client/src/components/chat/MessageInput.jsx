@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { IoMdSend, IoMdClose } from 'react-icons/io';
 import { BsEmojiSmile, BsKeyboard } from 'react-icons/bs';
 import { useChat } from '../../context/ChatContext';
@@ -14,40 +14,92 @@ const Container = styled.div`
   background-color: ${props => props.theme.colors.panelBackground};
   border-top: ${props => subtleBorder(props.theme)};
   flex-shrink: 0;
+  z-index: 20; /* Ensure it stays above chat list if needed */
 `;
 
-const ReplyPreviewContainer = styled.div`
+const slideUp = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const ReplyPanel = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
-  background-color: ${props => props.theme.colors.background};
-  border-bottom: 1px solid ${props => props.theme.colors.border};
-  border-left: 4px solid ${props => props.theme.colors.primary};
-  margin: 0.5rem 1rem 0 1rem;
-  border-radius: 4px;
+  padding: 8px 12px;
+  background-color: ${props => props.theme.colors.panelBackground}; /* Match footer background */
+  animation: ${slideUp} 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  position: relative;
+  
+  /* Create a visual separation from the messages area if needed, though usually the footer bg is enough */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: ${props => props.theme.colors.border};
+    opacity: 0.5;
+  }
 `;
 
-const ReplyContent = styled.div`
+const ReplyWrapper = styled.div`
   flex: 1;
+  background-color: ${props => props.theme.colors.inputBackground}; /* Distinct box color */
+  border-radius: 8px;
+  border-left: 5px solid ${props => props.theme.colors.primary};
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  position: relative;
   overflow: hidden;
+  margin-right: 12px;
+  /* WhatsApp often has a very subtle shadow or just the contrast */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+`;
+
+const ReplyHeader = styled.div`
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 4px;
 `;
 
 const ReplySender = styled.span`
-  font-size: 0.8rem;
-  font-weight: 600;
   color: ${props => props.theme.colors.primary};
-  margin-bottom: 2px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-right: 8px;
 `;
 
 const ReplyText = styled.span`
-  font-size: 0.85rem;
   color: ${props => props.theme.colors.textSecondary};
+  font-size: 0.85rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
+  line-height: 1.2;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: ${props => props.theme.colors.textSecondary};
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${props => props.theme.colors.hoverBackground};
+    color: ${props => props.theme.colors.textPrimary};
+  }
+  
+  font-size: 1.2rem;
 `;
 
 const InputForm = styled.form`
@@ -87,7 +139,7 @@ const TextInput = styled.input`
   background-color: ${props => props.theme.colors.inputBackground}; // Use theme input bg
   border: none;
   border-radius: 20px;
-  padding: 0.6rem 1rem;
+  padding: 0.7rem 1.2rem; /* slightly taller for better feel */
   color: ${props => props.theme.colors.textPrimary}; // Use primary text color
   font-size: 0.95rem;
   outline: none;
@@ -118,15 +170,17 @@ const MessageInput = () => {
   return (
     <Container>
       {replyingTo && (
-          <ReplyPreviewContainer>
-              <ReplyContent>
-                  <ReplySender>{replyingTo.senderId?.name || "User"}</ReplySender>
+          <ReplyPanel>
+              <ReplyWrapper>
+                  <ReplyHeader>
+                    <ReplySender>{replyingTo.senderId?.name || "User"}</ReplySender>
+                  </ReplyHeader>
                   <ReplyText>{replyingTo.content}</ReplyText>
-              </ReplyContent>
-              <IconButton onClick={() => setReplyingTo(null)} style={{ fontSize: '1.2rem' }}>
+              </ReplyWrapper>
+              <CloseButton onClick={() => setReplyingTo(null)}>
                   <IoMdClose />
-              </IconButton>
-          </ReplyPreviewContainer>
+              </CloseButton>
+          </ReplyPanel>
       )}
       <InputForm onSubmit={handleSubmit}>
         <IconButton type="button" onClick={() => setShowPicker(!showPicker)} title={showPicker ? "Keyboard" : "Emoji & Stickers"}> 
