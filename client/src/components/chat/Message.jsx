@@ -44,7 +44,7 @@ const MessageWrapper = styled.div`
 
 const MessageBubble = styled.div`
   max-width: 70%; 
-  padding: 0.4rem 0.7rem; 
+  padding: 0.4rem 0.6rem 0.3rem 0.6rem; /* Tighter padding */
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
     props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
@@ -54,7 +54,10 @@ const MessageBubble = styled.div`
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); 
   position: relative; 
   min-width: 80px; 
-  cursor: pointer; 
+  cursor: pointer;
+  
+  /* Ensure children can flow naturally */
+  display: block; 
 `;
 
 // --- Quoted Message Styles ---
@@ -94,19 +97,24 @@ const QuotedText = styled.span`
   display: block;
 `;
 
-const MessageText = styled.p`
+const MessageText = styled.span`
   font-size: 0.94rem; 
   line-height: 1.4;
   margin-bottom: 0px;
   color: inherit;
+  word-break: break-word;
 `;
 
 const StatusContainer = styled.div`
+  float: right;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 0.2rem;
-  margin-top: 1px; /* Minimal gap */
+  margin-left: 8px;
+  margin-top: 6px; /* Push it down slightly to align with text baseline or sit below */
+  position: relative;
+  top: 4px; /* Fine-tune vertical alignment */
+  height: 14px; /* Enforce height to prevent layout shifts */
   line-height: 1;
 `;
 
@@ -115,6 +123,7 @@ const Timestamp = styled.span`
   color: inherit;
   opacity: 0.65;
   white-space: nowrap; 
+  vertical-align: middle;
 `;
 
 const Ticks = styled.div`
@@ -122,6 +131,7 @@ const Ticks = styled.div`
   align-items: center;
   font-size: 1rem; 
   opacity: 0.9;
+  vertical-align: middle;
 
   .tick-3 { color: ${props => props.theme.colors.tick_read}; }
   .tick-2 { color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.tick_delivered}; }

@@ -25,7 +25,7 @@ const slideUp = keyframes`
 const ReplyPanel = styled.div`
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 8px 8px 8px 12px; /* Reduced right padding */
   background-color: ${props => props.theme.colors.panelBackground}; /* Match footer background */
   animation: ${slideUp} 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
   position: relative;
@@ -54,7 +54,7 @@ const ReplyWrapper = styled.div`
   justify-content: center;
   position: relative;
   overflow: hidden;
-  margin-right: 12px;
+  margin-right: 8px; /* Reduced margin */
   /* WhatsApp often has a very subtle shadow or just the contrast */
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 `;
