@@ -19,6 +19,7 @@ const ChatWindowContainer = styled.div`
   flex-direction: column;
   height: 100%; // Take full height from parent (StyledChatWindow)
   background: ${props => props.theme.colors.chatBackground}; // Use background to support gradients
+  position: relative; /* Constrain absolute positioning of MessageInput */
 `;
 
 const ChatHeader = styled.header`
