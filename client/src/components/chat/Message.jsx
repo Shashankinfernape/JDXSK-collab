@@ -141,7 +141,7 @@ const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 3px;
-  margin-top: 1px; /* Tight spacing under message */
+  margin-top: 2px; /* Safe gap below text */
   margin-right: -2px;
   margin-bottom: -2px;
   
