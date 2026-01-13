@@ -68,7 +68,7 @@ const MessageBubble = styled.div`
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 2px;
+  gap: 0px; /* Force tight packing */
 `;
 
 // --- Quoted Reply Block (Synchronized Style) ---
@@ -86,7 +86,7 @@ const QuotedMessage = styled.div`
   border-left: 3px solid ${props => props.theme.colors.primary};
   border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.85)' : props.theme.colors.primary};
 
-  padding: 4px 10px; /* Thinner vertical padding */
+  padding: 5px 10px; 
   /* Synchronize rounding with the main bubble */
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   border-bottom-left-radius: 4px;
@@ -95,7 +95,7 @@ const QuotedMessage = styled.div`
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  margin-bottom: 2px; /* Very tight gap to main message */
+  margin-bottom: 4px; /* WhatsApp strip spacing */
   
   font-size: 0.82rem;
   line-height: 1.25;
@@ -128,10 +128,10 @@ const QuotedText = styled.span`
 
 const MessageText = styled.div`
   font-size: 0.95rem; 
-  line-height: 1.35;
+  line-height: 1.4;
   color: inherit;
   width: 100%;
-  padding: 2px 1px 0 1px; 
+  padding: 0px 1px 0 1px; /* No top padding to start immediately */
   margin-bottom: 0px;
 `;
 
@@ -139,15 +139,14 @@ const StatusContainer = styled.div`
   align-self: flex-end;
   display: flex;
   align-items: center;
-  gap: 3px;
-  margin-top: -2px; /* Pull timestamp closer to text line */
+  gap: 4px;
+  margin-top: 2px; /* Fixed small gap below text */
   margin-right: -2px;
-  margin-bottom: -3px; /* Reduce bottom padding effect */
+  margin-bottom: -2px;
   
   height: 14px; 
   line-height: 1;
 `;
-
 const Timestamp = styled.span`
   font-size: 0.68rem; /* Slightly larger for readability */
   color: inherit;
