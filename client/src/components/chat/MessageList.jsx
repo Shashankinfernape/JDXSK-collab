@@ -7,7 +7,8 @@ import LoadingSpinner from '../common/LoadingSpinner';
 const MessageListContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 0 100px 0; // Increased bottom padding to clear floating input
+  /* Dynamic padding to account for Input Pill + Reply Preview height */
+  padding: 1rem 0 ${props => props.$replyingTo ? '160px' : '90px'} 0; 
   display: flex;
   flex-direction: column;
   background: ${props => props.theme.colors.chatBackground}; 
@@ -30,7 +31,7 @@ const DateSeparator = styled.div`
 // --- MessageList Component ---
 const MessageList = () => {
   // --- FIX: Import activeChat ---
-  const { messages, loading, activeChat, selectedMessages, toggleMessageSelection, isSelectionMode, setReplyingTo } = useChat(); 
+  const { messages, loading, activeChat, selectedMessages, toggleMessageSelection, isSelectionMode, replyingTo, setReplyingTo } = useChat(); 
   // --- END FIX ---
   const endOfMessagesRef = useRef(null);
   let lastDate = null;
@@ -66,7 +67,7 @@ const MessageList = () => {
   };
 
   return (
-    <MessageListContainer>
+    <MessageListContainer $replyingTo={replyingTo}>
       <div style={{ height: '10px' }} /> 
 
       {messages && messages.map((msg, index) => {
