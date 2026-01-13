@@ -53,43 +53,43 @@ const MessageBubble = styled.div`
   word-wrap: break-word; 
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); 
   position: relative; 
-  min-width: 90px; 
+  min-width: 100px; 
   cursor: pointer;
   
-  /* Flex Layout */
+  /* Flex Layout: Force children to stretch to full bubble width */
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: stretch;
+  gap: 4px;
 `;
 
 // --- Quoted Reply Block ---
 const QuotedMessage = styled.div`
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.05)'};
-  border-left: 4px solid ${props => props.$isMe ? 'rgba(255, 255, 255, 0.6)' : props.theme.colors.primary};
+  /* Translucent dark overlay style */
+  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.05)'};
+  border-left: 4px solid ${props => props.$isMe ? 'rgba(255, 255, 255, 0.7)' : props.theme.colors.primary};
   padding: 6px 10px;
   border-radius: 6px;
-  margin-bottom: 4px;
   cursor: pointer;
-  font-size: 0.75rem;
+  
+  /* Force full width inside the parent bubble's padding */
+  width: 100%;
   display: flex;
   flex-direction: column;
-  
-  /* WhatsApp specific: Full Width inside bubble */
-  width: 100%;
-  align-self: stretch;
+  box-sizing: border-box;
   
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.08)'};
+    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.08)'};
   }
 `;
 
 const QuotedSender = styled.span`
   font-weight: 700;
   color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.primary};
-  font-size: 0.7rem;
-  margin-bottom: 1px;
+  font-size: 0.72rem;
+  margin-bottom: 2px;
   opacity: 0.95;
 `;
 
@@ -98,24 +98,25 @@ const QuotedText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: 0.75;
+  opacity: 0.8;
+  font-size: 0.8rem;
   display: block;
 `;
 
 const MessageText = styled.div`
-  font-size: 0.94rem; 
-  line-height: 1.45;
+  font-size: 0.95rem; 
+  line-height: 1.5;
   color: inherit;
   width: 100%;
-  padding-bottom: 2px;
+  padding: 2px 0;
 `;
 
 const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.25rem;
-  align-self: flex-end; /* Push to the bottom right */
+  gap: 0.3rem;
+  align-self: flex-end; /* Keeps timestamp on the right */
   margin-top: 1px;
   height: 14px;
   line-height: 1;
