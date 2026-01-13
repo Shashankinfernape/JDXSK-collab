@@ -55,9 +55,8 @@ const ReplyPreview = styled.div`
   /* Subtle variation for reply box */
   background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};
   
-  /* Straight line cut edge for the stripe */
+  /* Straight solid stripe */
   border-left: 4px solid ${props => props.theme.colors.primary};
-  border-image: linear-gradient(to bottom, ${props => props.theme.colors.primary} 100%, transparent 0) 1 100%;
   
   padding: 6px 10px;
   border-radius: 8px;
