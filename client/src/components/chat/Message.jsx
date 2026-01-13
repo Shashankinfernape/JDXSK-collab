@@ -66,7 +66,10 @@ const MessageBubble = styled.div`
   width: fit-content; 
   cursor: pointer;
   
-  display: block; /* Changed for float layout */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0px; 
 `;
 
 // --- Quoted Reply Block (Synchronized Style) ---
@@ -84,7 +87,8 @@ const QuotedMessage = styled.div`
   border-left: 3px solid ${props => props.theme.colors.primary};
   border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.85)' : props.theme.colors.primary};
 
-  padding: 4px 10px; 
+  padding: 5px 10px; 
+  /* Synchronize rounding with the main bubble */
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   border-bottom-left-radius: 4px;
   border-bottom-right-radius: 4px;
@@ -92,7 +96,7 @@ const QuotedMessage = styled.div`
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  margin-bottom: 4px; /* Minimal gap before text */
+  margin-bottom: 2px; 
   
   font-size: 0.82rem;
   line-height: 1.25;
@@ -123,24 +127,25 @@ const QuotedText = styled.span`
   display: block;
 `;
 
-const MessageText = styled.span`
+const MessageText = styled.div`
   font-size: 0.95rem; 
-  line-height: 1.35;
+  line-height: 1.4;
   color: inherit;
-  /* Inline behavior to allow float wrapping */
+  width: 100%;
+  padding: 0 1px;
   margin-bottom: 0px;
 `;
 
-const StatusContainer = styled.span`
-  float: right;
-  display: inline-flex;
+const StatusContainer = styled.div`
+  align-self: flex-end;
+  display: flex;
   align-items: center;
   gap: 3px;
-  margin-left: 8px;
-  margin-top: 6px; /* Push down slightly to align bottom */
-  vertical-align: bottom;
+  margin-top: 1px; /* Tight spacing under message */
+  margin-right: -2px;
+  margin-bottom: -2px;
   
-  height: 16px; 
+  height: 14px; 
   line-height: 1;
 `;
 const Timestamp = styled.span`
@@ -321,18 +326,13 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
                 </QuotedMessage>
             )}
             
-            {/* Float Layout: Timestamp wraps into text */}
-            <div>
-                <MessageText>
-                    {message.content}
-                    <StatusContainer>
-                        <Timestamp isMe={isMe}>
-                            {new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
-                        </Timestamp>
-                        {getTicks()}
-                    </StatusContainer>
-                </MessageText>
-            </div>
+            <MessageText>{message.content}</MessageText>
+            <StatusContainer>
+            <Timestamp isMe={isMe}>
+                {new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+            </Timestamp>
+            {getTicks()}
+            </StatusContainer>
         </MessageBubble>
         </MessageWrapper>
     </SwipeContainer>
