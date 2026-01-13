@@ -41,20 +41,17 @@ const MessageWrapper = styled.div`
 `;
 
 const MessageBubble = styled.div`
-  /* CRITICAL: Wider bubbles like WhatsApp */
   max-width: 90%; 
   @media (min-width: 900px) {
     max-width: 80%; 
   }
   
-  /* Compact WhatsApp-like padding */
-  padding: 5px 8px 5px 9px; 
+  padding: 6px 8px 6px 9px;
   
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
     props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
   
-  /* Gradient support for Instagram */
   background: ${props => props.isMe && props.theme.name === 'instagram' ? props.theme.colors.bubbleMe : undefined}; 
   background-color: ${props => props.isMe && props.theme.name !== 'instagram' ? props.theme.colors.bubbleMe : (props.isMe ? undefined : props.theme.colors.bubbleOther)};
 
@@ -68,31 +65,34 @@ const MessageBubble = styled.div`
   width: fit-content; 
   cursor: pointer;
   
-  /* Vertical stack with minimal gaps */
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0px; /* Tightest possible packing */
+  gap: 2px;
 `;
 
-// --- Quoted Reply Block (Compact) ---
+// --- Quoted Reply Block (Exact WhatsApp) ---
 const QuotedMessage = styled.div`
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.04)'};
-  ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.1);`}
-  
-  border-left: 4px solid ${props => props.theme.colors.primary};
-  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.9)' : props.theme.colors.primary};
-
-  padding: 4px 6px; /* Very compact */
-  border-radius: 4px; 
-  cursor: pointer;
-  
   width: 100%;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+
+  border-left: 3px solid ${props => props.theme.colors.primary};
+  /* Ensure correct border color for different message types */
+  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.8)' : props.theme.colors.primary};
+  
+  /* WhatsApp-like translucent overlay */
+  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)'};
+  ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.1);`}
+
+  border-radius: 6px;
+  
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
-  margin-bottom: 3px; 
+  font-size: 0.85rem;
+  line-height: 1.2;
   
+  cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
@@ -122,7 +122,7 @@ const QuotedText = styled.span`
 
 const MessageText = styled.div`
   font-size: 0.95rem; 
-  line-height: 1.4;
+  line-height: 1.35;
   color: inherit;
   width: 100%;
   padding: 0 1px;
@@ -130,33 +130,32 @@ const MessageText = styled.div`
 `;
 
 const StatusContainer = styled.div`
+  align-self: flex-end;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 3px;
-  align-self: flex-end; /* Strictly bottom-right */
-  margin-top: -2px; 
-  margin-right: -2px; /* Pull slightly right to align with padding edge */
+  gap: 4px;
+  margin-top: 2px;
+  margin-right: -2px; /* Visual alignment fix */
+  
   height: 15px; 
   line-height: 1;
 `;
 
 const Timestamp = styled.span`
-  font-size: 0.62rem; 
+  font-size: 0.68rem; /* Slightly larger for readability */
   color: inherit;
-  opacity: 0.6;
+  opacity: 0.75;
   white-space: nowrap; 
-  margin-top: 1px;
 `;
 
 const Ticks = styled.div`
   display: flex;
   align-items: center;
-  font-size: 0.85rem; /* Smaller, cleaner size */
+  font-size: 0.9rem; /* Clean size */
   opacity: 0.9;
   
   /* WhatsApp Ticks Colors */
-  .tick-read { color: ${props => props.theme.colors.tick_read || '#53bdeb'}; } /* Blue for read */
+  .tick-read { color: ${props => props.theme.colors.tick_read || '#53bdeb'}; } /* Accent/Blue */
   .tick-delivered { color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : '#8696a0'}; } /* Gray */
   .tick-sent { color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : '#8696a0'}; } /* Gray */
 `;

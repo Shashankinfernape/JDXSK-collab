@@ -164,6 +164,18 @@ const SendFab = styled.button`
   }
 `;
 
+const PreviewText = styled.div`
+  padding: 8px 16px;
+  background-color: ${props => props.theme.colors.background};
+  color: ${props => props.theme.colors.textSecondary};
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  font-style: italic;
+`;
+
 const ForwardModal = ({ isOpen, onClose, messageToForward }) => {
   const { chats, sendMessageToChat, user } = useChat();
   const [selectedChats, setSelectedChats] = useState([]);
@@ -208,6 +220,12 @@ const ForwardModal = ({ isOpen, onClose, messageToForward }) => {
           <Title>Forward message to...</Title>
           <div style={{width: 24}}></div> {/* Spacer */}
         </Header>
+        
+        {messageToForward && (
+            <PreviewText>
+                "{messageToForward.content}"
+            </PreviewText>
+        )}
         
         <SearchInput 
           placeholder="Search..." 
