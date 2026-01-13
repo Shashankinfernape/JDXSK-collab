@@ -56,7 +56,8 @@ function initSocket(io) {
             
             if (socketId) {
               if (participantId.toString() === messageData.senderId) {
-                // SENDER: Just update their chat list
+                // SENDER: Receive confirmation (to replace temp ID) + update list
+                io.to(socketId).emit('receiveMessage', populatedMessage);
                 io.to(socketId).emit('updateChatList', populatedMessage);
               } else {
                 // RECIPIENT: Receive message, update list, and send delivery receipt

@@ -43,11 +43,38 @@ export const ChatProvider = ({ children }) => {
     if (!socket) return;
 
     socket.on('receiveMessage', (message) => {
-      console.log('Socket: Received message', message);
-      setMessages(prev => ({
-        ...prev,
-        [message.chatId]: [...(prev[message.chatId] || []), message],
-      }));
+      setMessages(prev => {
+        const chatId = message.chatId;
+        const currentMessages = prev[chatId] || [];
+        
+        // Check if this is a confirmation of our own message
+        const isMyMessage = user && message.senderId._id === user._id;
+        
+        if (isMyMessage) {
+            // Find a temp message to replace. 
+            // We find the *last* temp message to be safe, or just findIndex.
+            const tempIndex = currentMessages.findIndex(m => m._id.toString().startsWith('temp-'));
+            
+            if (tempIndex !== -1) {
+                const updatedMessages = [...currentMessages];
+                updatedMessages[tempIndex] = message;
+                return {
+                    ...prev,
+                    [chatId]: updatedMessages
+                };
+            }
+        }
+        
+        // Deduplication check
+        if (currentMessages.some(m => m._id === message._id)) {
+            return prev;
+        }
+
+        return {
+          ...prev,
+          [chatId]: [...currentMessages, message],
+        };
+      });
     });
     
     socket.on('updateChatList', (lastMessage) => {
@@ -122,7 +149,7 @@ export const ChatProvider = ({ children }) => {
       socket.off('messageReadByRecipient');
       socket.off('friendRequestAccepted'); // Clean up
     };
-  }, [socket]);
+  }, [socket, user]); // Added user to dependencies
 
   // --- UPDATED selectChat ---
   // We'll add logic to mark messages as read when a chat is opened
