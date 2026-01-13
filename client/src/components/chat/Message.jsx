@@ -44,48 +44,53 @@ const MessageWrapper = styled.div`
 
 const MessageBubble = styled.div`
   max-width: 75%; 
-  @media (min-width: 900px) {
-    max-width: 65%; /* Standard WhatsApp Web width */
+  @media (min-width: 1000px) {
+    max-width: 65%; /* Optimal reading width on desktop */
   }
   
-  /* WhatsApp-like padding */
-  padding: 6px 7px 8px 9px; 
+  /* Refined, professional padding */
+  padding: 6px 10px 6px 10px; 
   
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
     props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
-  background: ${props => props.isMe && props.theme.name === 'instagram' ? props.theme.colors.bubbleMe : undefined}; /* Handle gradient */
+  
+  /* Handle Gradient backgrounds for Instagram/Special themes */
+  background: ${props => props.isMe && props.theme.name === 'instagram' ? props.theme.colors.bubbleMe : undefined}; 
+  background-color: ${props => props.isMe && props.theme.name !== 'instagram' ? props.theme.colors.bubbleMe : (props.isMe ? undefined : props.theme.colors.bubbleOther)};
 
   color: ${props => 
     props.isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textBubbleOther};
   
   word-wrap: break-word; 
-  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13); 
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.1); 
   position: relative; 
   min-width: 100px; 
   width: fit-content; 
   cursor: pointer;
   
-  /* Flex Layout */
+  /* Layout: Vertical stack */
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 2px;
+  gap: 3px;
 `;
 
 // --- Quoted Reply Block ---
 const QuotedMessage = styled.div`
-  /* Translucent dark overlay style - distinct from main bubble */
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.06)'};
+  /* Professional Translucent Overlay */
+  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)'};
+  /* For dark mode "Other" bubbles, we need a lighter overlay */
+  ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.1);`}
+  
   border-left: 4px solid ${props => props.theme.colors.primary};
-  /* Override border color for "Me" if needed, but primary is usually good. WhatsApp uses sender color. */
-  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.8)' : props.theme.colors.primary};
+  /* Ensure contrast for the border on "Me" bubbles if needed */
+  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.9)' : props.theme.colors.primary};
 
-  padding: 4px 8px; /* Compact padding */
-  border-radius: 6px;
+  padding: 4px 8px; 
+  border-radius: 4px; /* Tighter radius for internal content */
   cursor: pointer;
   
-  /* Force full width inside the parent bubble's padding */
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -101,10 +106,11 @@ const QuotedMessage = styled.div`
 
 const QuotedSender = styled.span`
   font-weight: 700;
+  /* High contrast sender name */
   color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.primary};
   font-size: 0.75rem;
-  margin-bottom: 0px;
-  opacity: 0.95;
+  margin-bottom: 1px;
+  opacity: 0.98;
   line-height: 1.2;
 `;
 
@@ -113,7 +119,7 @@ const QuotedText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: 0.8;
+  opacity: 0.85; /* Improved readability */
   font-size: 0.8rem;
   line-height: 1.3;
   display: block;
@@ -121,7 +127,7 @@ const QuotedText = styled.span`
 
 const MessageText = styled.div`
   font-size: 0.95rem; 
-  line-height: 1.45;
+  line-height: 1.5; /* Cleaner reading height */
   color: inherit;
   width: 100%;
   padding: 0 2px;
@@ -131,11 +137,11 @@ const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.25rem;
-  align-self: flex-end; /* Strictly bottom-right */
-  margin-top: -3px; /* Pull closer to text line height */
+  gap: 0.3rem;
+  align-self: flex-end; 
+  margin-top: -3px; 
   margin-bottom: -2px;
-  height: 15px; 
+  height: 16px; 
   line-height: 1;
 `;
 
