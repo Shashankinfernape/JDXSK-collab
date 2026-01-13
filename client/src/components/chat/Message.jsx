@@ -66,10 +66,7 @@ const MessageBubble = styled.div`
   width: fit-content; 
   cursor: pointer;
   
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0px; 
+  display: block; /* Changed for float layout */
 `;
 
 // --- Quoted Reply Block (Synchronized Style) ---
@@ -126,27 +123,24 @@ const QuotedText = styled.span`
   display: block;
 `;
 
-const MessageText = styled.div`
+const MessageText = styled.span`
   font-size: 0.95rem; 
   line-height: 1.35;
   color: inherit;
-  width: 100%;
-  padding: 0 1px;
+  /* Inline behavior to allow float wrapping */
   margin-bottom: 0px;
-  padding-right: 10px; /* Slight padding to avoid tight timestamp look */
 `;
 
-const StatusContainer = styled.div`
-  align-self: flex-end;
-  display: flex;
+const StatusContainer = styled.span`
+  float: right;
+  display: inline-flex;
   align-items: center;
   gap: 3px;
-  /* Pull it up to sit just under the text */
-  margin-top: 2px; 
-  margin-right: -2px;
-  margin-bottom: -2px;
+  margin-left: 8px;
+  margin-top: 6px; /* Push down slightly to align bottom */
+  vertical-align: bottom;
   
-  height: 14px; 
+  height: 16px; 
   line-height: 1;
 `;
 const Timestamp = styled.span`
@@ -327,13 +321,18 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
                 </QuotedMessage>
             )}
             
-            <MessageText>{message.content}</MessageText>
-            <StatusContainer>
-            <Timestamp isMe={isMe}>
-                {new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
-            </Timestamp>
-            {getTicks()}
-            </StatusContainer>
+            {/* Float Layout: Timestamp wraps into text */}
+            <div>
+                <MessageText>
+                    {message.content}
+                    <StatusContainer>
+                        <Timestamp isMe={isMe}>
+                            {new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </Timestamp>
+                        {getTicks()}
+                    </StatusContainer>
+                </MessageText>
+            </div>
         </MessageBubble>
         </MessageWrapper>
     </SwipeContainer>

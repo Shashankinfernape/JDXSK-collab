@@ -7,7 +7,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 const MessageListContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 0; // Vertical padding only
+  padding: 1rem 0 70px 0; // Added bottom padding for floating input
   display: flex;
   flex-direction: column;
   background: ${props => props.theme.colors.chatBackground}; 
