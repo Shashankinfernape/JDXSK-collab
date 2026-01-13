@@ -10,33 +10,29 @@ const slideUp = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
-/* Container: Transparent, Fixed/Absolute at bottom */
+// Helper for subtle borders
+const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
+
 const Container = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: transparent; /* No solid background */
-  padding-bottom: 8px; /* Spacing from bottom edge */
   display: flex;
   flex-direction: column;
+  background-color: ${props => props.theme.colors.panelBackground};
+  border-top: ${props => subtleBorder(props.theme)};
+  flex-shrink: 0;
+  position: relative; /* Standard flow */
   z-index: 20;
-  pointer-events: none; /* Let clicks pass through empty areas */
 `;
 
 const ReplyPanel = styled.div`
   display: flex;
   align-items: center;
-  padding: 6px 12px; 
-  background-color: ${props => props.theme.colors.panelBackground}; /* Reply needs bg */
-  border-radius: 12px;
-  margin: 0 10px 6px 10px; /* Floating look */
+  padding: 8px 12px; 
+  background-color: ${props => props.theme.colors.panelBackground}; 
   animation: ${slideUp} 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
   position: relative;
-  pointer-events: auto;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   
   border-left: 4px solid ${props => props.theme.colors.primary};
+  margin-bottom: 0; /* Connected to input */
 `;
 
 const ReplyWrapper = styled.div`
@@ -87,29 +83,11 @@ const CloseButton = styled.button`
   font-size: 1.1rem;
 `;
 
-/* The Pill: Floating input bar */
-const InputBarWrapper = styled.div`
-  display: flex;
-  align-items: flex-end; /* Align rounded button with pill */
-  padding: 0 8px;
-  pointer-events: auto;
-  gap: 6px;
-`;
-
-const InputPill = styled.form`
-  flex: 1;
-  background-color: ${props => props.theme.colors.panelBackground}; /* Standard panel bg (white/dark) */
-  border-radius: 24px;
-  min-height: 45px;
+const InputForm = styled.form`
+  padding: 10px 16px;
   display: flex;
   align-items: center;
-  padding: 4px 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-  transition: box-shadow 0.2s;
-  
-  &:focus-within {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
+  gap: 12px;
 `;
 
 const IconButton = styled.button`
@@ -117,13 +95,12 @@ const IconButton = styled.button`
   border: none;
   color: ${props => props.theme.colors.icon};
   cursor: pointer;
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   display: flex;
   align-items: center;
   padding: 8px;
   border-radius: 50%;
   transition: color 0.2s ease;
-  margin: 0 2px;
 
   &:hover {
     color: ${props => props.theme.colors.iconActive};
@@ -131,23 +108,15 @@ const IconButton = styled.button`
   }
 `;
 
-/* Send Button: Separate floating circle usually, or inside if requested. 
-   Prompt: "Input field should be a floating rounded pill... Emoji, plus, and mic icons must be inside the pill" 
-   But usually Send/Mic is the action button. I'll put Send/Mic inside for strict compliance, 
-   OR keep the "Floating Pill" look where the pill contains the text and the button is next to it? 
-   Ref: "Only the pill has background, shadow...". 
-   Let's put everything inside the pill as requested: "icons must be inside the pill".
-*/
-
 const TextInput = styled.input`
   flex: 1;
-  background: transparent;
+  background-color: ${props => props.theme.colors.inputBackground};
   border: none;
-  padding: 8px 4px;
+  border-radius: 24px;
+  padding: 10px 16px;
   color: ${props => props.theme.colors.textPrimary};
   font-size: 0.95rem;
   outline: none;
-  margin: 0 4px;
   
   &::placeholder {
     color: ${props => props.theme.colors.textSecondary};
@@ -188,30 +157,26 @@ const MessageInput = () => {
           </ReplyPanel>
       )}
       
-      <InputBarWrapper>
-        <InputPill onSubmit={handleSubmit}>
-            <IconButton type="button" onClick={() => {}}> <IoMdAdd /> </IconButton>
-            <IconButton type="button" onClick={() => setShowPicker(!showPicker)}> 
-                {showPicker ? <BsKeyboard /> : <BsEmojiSmile />} 
-            </IconButton>
-            
-            <TextInput
-                type="text"
-                placeholder="Message"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onFocus={() => setShowPicker(false)}
-            />
-            
-            <IconButton type="button"> <BsCamera /> </IconButton>
-            
-            {text.trim() ? (
-                <IconButton type="submit" style={{color: '#007AFF'}}> <IoMdSend /> </IconButton>
-            ) : (
-                <IconButton type="button"> <BsMic /> </IconButton>
-            )}
-        </InputPill>
-      </InputBarWrapper>
+      <InputForm onSubmit={handleSubmit}>
+        <IconButton type="button" onClick={() => {}}> <IoMdAdd /> </IconButton>
+        <IconButton type="button" onClick={() => setShowPicker(!showPicker)}> 
+            {showPicker ? <BsKeyboard /> : <BsEmojiSmile />} 
+        </IconButton>
+        
+        <TextInput
+            type="text"
+            placeholder="Type a message"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onFocus={() => setShowPicker(false)}
+        />
+        
+        {text.trim() ? (
+            <IconButton type="submit" style={{color: '#007AFF'}}> <IoMdSend /> </IconButton>
+        ) : (
+            <IconButton type="button"> <BsMic /> </IconButton>
+        )}
+      </InputForm>
       
       {showPicker && <EmojiPicker onEmojiClick={handleEmojiClick} />}
     </Container>

@@ -7,9 +7,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 const MessageListContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  /* Dynamic padding with smooth transition for "push up" effect */
-  padding: 1rem 0 ${props => props.$replyingTo ? '140px' : '80px'} 0; 
-  transition: padding-bottom 0.25s ease-out; /* Slightly faster for snappier feel */
+  padding: 1rem 0; 
   display: flex;
   flex-direction: column;
   background: ${props => props.theme.colors.chatBackground}; 
@@ -41,16 +39,6 @@ const MessageList = () => {
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' }); 
   }, [messages]);
-
-  // Effect to push messages up when replying
-  useEffect(() => {
-    if (replyingTo) {
-        // Slight delay to allow padding transition to start
-        setTimeout(() => {
-            endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 50);
-    }
-  }, [replyingTo]);
 
   // Effect for instant scrolling when the chat changes
    useEffect(() => {
