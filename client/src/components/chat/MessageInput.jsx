@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { IoMdSend, IoMdClose, IoMdAdd } from 'react-icons/io';
-import { BsEmojiSmile, BsMic, BsCamera, BsKeyboard } from 'react-icons/bs';
+import { IoMdSend, IoMdClose } from 'react-icons/io';
+import { BsEmojiSmile } from 'react-icons/bs';
 import { useChat } from '../../context/ChatContext';
 import EmojiPicker from './EmojiPicker';
 
@@ -10,32 +10,29 @@ const slideUp = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
-// Helper for subtle borders - Removed or unused if transparent
-// const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
+// Helper for subtle borders
+const subtleBorder = (theme) => `1px solid ${theme.colors.border || theme.colors.hoverBackground}`;
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  background-color: transparent; /* Transperatize */
-  /* border-top: ... removed */
+  background-color: ${props => props.theme.colors.panelBackground};
+  border-top: ${props => subtleBorder(props.theme)};
   flex-shrink: 0;
-  position: relative; 
+  position: relative; /* Standard flow */
   z-index: 20;
-  padding-bottom: 8px; /* Bottom spacing */
 `;
 
 const ReplyPanel = styled.div`
   display: flex;
   align-items: center;
   padding: 8px 12px; 
-  background-color: ${props => props.theme.colors.inputBackground}; /* Card background */
-  border-radius: 16px; /* Rounded Layout */
-  margin: 0 12px 8px 12px; /* Floating margins */
+  background-color: ${props => props.theme.colors.panelBackground}; 
   animation: ${slideUp} 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
   position: relative;
   
   border-left: 4px solid ${props => props.theme.colors.primary};
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Lift it up */
+  margin-bottom: 0; /* Connected to input */
 `;
 
 const ReplyWrapper = styled.div`
@@ -61,7 +58,7 @@ const ReplySender = styled.span`
 `;
 
 const ReplyText = styled.span`
-  color: ${props => props.theme.colors.textPrimary}; /* Better contrast on inputBg */
+  color: ${props => props.theme.colors.textSecondary};
   font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
@@ -87,30 +84,27 @@ const CloseButton = styled.button`
 `;
 
 const InputForm = styled.form`
-  padding: 0 12px;
+  padding: 10px 16px;
   display: flex;
-  align-items: flex-end; /* Align icons with bottom if multiline, or center */
   align-items: center;
   gap: 8px;
 `;
 
 const IconButton = styled.button`
-  background: ${props => props.theme.colors.inputBackground}; /* Bubble background for icons? Or transparent? User said "transperatize icons"? No, "transperatize background... and icons". Assume transparent bg for icons. */
-  background: transparent; 
+  background: none;
   border: none;
-  color: ${props => props.theme.colors.icon}; /* Ensure visible against wallpaper */
+  color: ${props => props.theme.colors.icon};
   cursor: pointer;
   font-size: 1.5rem;
   display: flex;
   align-items: center;
-  padding: 10px;
+  padding: 8px;
   border-radius: 50%;
-  transition: all 0.2s ease;
-  
-  /* Add text-shadow or subtle bg on hover to ensure visibility */
+  transition: color 0.2s ease;
+
   &:hover {
     color: ${props => props.theme.colors.iconActive};
-    background-color: rgba(128, 128, 128, 0.1);
+    background-color: ${props => props.theme.colors.hoverBackground};
   }
 `;
 
@@ -118,22 +112,43 @@ const TextInput = styled.input`
   flex: 1;
   background-color: ${props => props.theme.colors.inputBackground};
   border: none;
-  border-radius: 24px; /* Fully rounded pill */
-  padding: 12px 18px;
+  border-radius: 24px;
+  padding: 10px 16px;
   color: ${props => props.theme.colors.textPrimary};
   font-size: 0.95rem;
   outline: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Subtle depth */
   
   &::placeholder {
     color: ${props => props.theme.colors.textSecondary};
   }
 `;
 
+const InputBar = styled.div`
+  flex: 1;
+  background-color: ${props => props.theme.colors.inputBackground};
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+`;
+
+const TransparentInput = styled(TextInput)`
+  background-color: transparent;
+  padding: 10px 8px;
+`;
+
 const MessageInput = () => {
   const [text, setText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const { sendMessage, replyingTo, setReplyingTo } = useChat();
+  const inputRef = useRef(null);
+
+  // Auto-focus on reply
+  useEffect(() => {
+    if (replyingTo && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [replyingTo]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -165,23 +180,22 @@ const MessageInput = () => {
       )}
       
       <InputForm onSubmit={handleSubmit}>
-        <IconButton type="button" onClick={() => {}}> <IoMdAdd /> </IconButton>
-        <IconButton type="button" onClick={() => setShowPicker(!showPicker)}> 
-            {showPicker ? <BsKeyboard /> : <BsEmojiSmile />} 
-        </IconButton>
+        <InputBar>
+            <IconButton type="button" onClick={() => setShowPicker(!showPicker)}> 
+                <BsEmojiSmile /> 
+            </IconButton>
+            <TransparentInput
+                ref={inputRef}
+                type="text"
+                placeholder="Type a message"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onFocus={() => setShowPicker(false)}
+            />
+        </InputBar>
         
-        <TextInput
-            type="text"
-            placeholder="Type a message"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onFocus={() => setShowPicker(false)}
-        />
-        
-        {text.trim() ? (
-            <IconButton type="submit" style={{color: '#007AFF'}}> <IoMdSend /> </IconButton>
-        ) : (
-            <IconButton type="button"> <BsMic /> </IconButton>
+        {text.trim() && (
+            <IconButton type="submit" style={{color: '#007AFF', marginLeft: '4px'}}> <IoMdSend /> </IconButton>
         )}
       </InputForm>
       
@@ -191,4 +205,3 @@ const MessageInput = () => {
 };
 
 export default MessageInput;
-
