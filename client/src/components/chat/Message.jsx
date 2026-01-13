@@ -84,9 +84,10 @@ const QuotedMessage = styled.div`
   background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.04)'};
   ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.08);`}
   
-  border-left: 3px solid ${props => props.theme.colors.primary};
-  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.85)' : props.theme.colors.primary};
-
+  /* Straight line cut edge for the stripe */
+  border-left: 4px solid ${props => props.theme.colors.primary};
+  border-image: linear-gradient(to bottom, ${props => props.$isMe ? 'rgba(255,255,255,0.85)' : props.theme.colors.primary} 100%, transparent 0) 1 100%;
+  
   padding: 5px 10px; 
   /* Synchronize rounding with the main bubble */
   border-radius: ${props => props.theme.bubbleBorderRadius}; 

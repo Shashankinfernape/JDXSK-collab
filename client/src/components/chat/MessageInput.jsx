@@ -55,9 +55,11 @@ const ReplyPreview = styled.div`
   /* Subtle variation for reply box */
   background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};
   
-  border-left: 3px solid ${props => props.theme.colors.primary};
-  padding: 6px 10px;
+  /* Straight line cut edge for the stripe */
+  border-left: 4px solid ${props => props.theme.colors.primary};
+  border-image: linear-gradient(to bottom, ${props => props.theme.colors.primary} 100%, transparent 0) 1 100%;
   
+  padding: 6px 10px;
   border-radius: 8px;
   
   display: flex;
@@ -138,14 +140,33 @@ const IconButton = styled.button`
   }
 `;
 
-const SendButton = styled(IconButton)`
-  color: ${props => props.theme.colors.primary};
-  margin-right: 0;
+const SendButton = styled.button`
+  background-color: #25D366; /* WhatsApp Green */
+  color: #000000; /* Black Icon */
+  border: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
   margin-left: 4px;
-  
+  flex-shrink: 0;
+
   &:hover {
-    color: ${props => props.theme.colors.primary};
-    background-color: ${props => props.theme.colors.hoverBackground};
+    background-color: #20ba5a;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    margin-left: 2px; /* Center adjustment for the send icon */
   }
 `;
 
