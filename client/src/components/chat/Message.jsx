@@ -43,24 +43,31 @@ const MessageWrapper = styled.div`
 `;
 
 const MessageBubble = styled.div`
-  max-width: 70%; 
-  padding: 0.5rem 0.6rem 0.3rem 0.6rem; 
+  max-width: 65%; 
+  @media (min-width: 900px) {
+    max-width: 60%; /* Slightly narrower on very wide screens to keep readability */
+  }
+  
+  /* Compact but sufficient padding */
+  padding: 6px 8px 6px 9px; 
+  
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
     props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
   color: ${props => 
     props.isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textBubbleOther};
   word-wrap: break-word; 
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); 
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13); 
   position: relative; 
-  min-width: 100px; 
+  min-width: 80px; /* Base min-width */
+  width: fit-content; /* Grow with content up to max-width */
   cursor: pointer;
   
-  /* Flex Layout: Force children to stretch to full bubble width */
+  /* Flex Layout: Vertical stack for Reply + Text + Time */
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
+  align-items: stretch; /* Ensure children like ReplyBox stretch */
+  gap: 2px;
 `;
 
 // --- Quoted Reply Block ---
@@ -77,6 +84,7 @@ const QuotedMessage = styled.div`
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  margin-bottom: 2px; /* Small separation from main text */
   
   transition: background-color 0.2s;
 
@@ -105,21 +113,23 @@ const QuotedText = styled.span`
 
 const MessageText = styled.div`
   font-size: 0.95rem; 
-  line-height: 1.5;
+  line-height: 1.45;
   color: inherit;
   width: 100%;
-  padding: 2px 0;
+  padding: 0 2px; /* Slight horizontal padding for text */
 `;
 
 const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.3rem;
-  align-self: flex-end; /* Keeps timestamp on the right */
-  margin-top: 1px;
-  height: 14px;
-  line-height: 1;
+  gap: 0.2rem;
+  align-self: flex-end; /* Keep strictly bottom-right */
+  margin-top: -4px; /* Pull it up slightly if text ends early, or sit below */
+  position: relative;
+  float: right; /* Use float/flow logic for "wrapping" feel if possible, but flex col makes it hard. Keep flex-end for safety. */
+  padding-left: 8px; /* Separation from text if on same line logic was used, but here it is separate block. */
+  height: 16px; 
 `;
 
 const Timestamp = styled.span`
