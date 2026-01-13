@@ -86,14 +86,16 @@ const QuotedMessage = styled.div`
   border-left: 3px solid ${props => props.theme.colors.primary};
   border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.85)' : props.theme.colors.primary};
 
-  padding: 5px 10px; 
+  padding: 4px 10px; /* Thinner vertical padding */
   /* Synchronize rounding with the main bubble */
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
   
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  margin-bottom: 2px; /* Closer to the replying message */
+  margin-bottom: 2px; /* Very tight gap to main message */
   
   font-size: 0.82rem;
   line-height: 1.25;
@@ -126,10 +128,10 @@ const QuotedText = styled.span`
 
 const MessageText = styled.div`
   font-size: 0.95rem; 
-  line-height: 1.4;
+  line-height: 1.35;
   color: inherit;
   width: 100%;
-  padding: 2px 1px 0 1px; /* Added slight top padding */
+  padding: 2px 1px 0 1px; 
   margin-bottom: 0px;
 `;
 
@@ -137,9 +139,10 @@ const StatusContainer = styled.div`
   align-self: flex-end;
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 1px; /* Tight spacing under message */
+  gap: 3px;
+  margin-top: -2px; /* Pull timestamp closer to text line */
   margin-right: -2px;
+  margin-bottom: -3px; /* Reduce bottom padding effect */
   
   height: 14px; 
   line-height: 1;
