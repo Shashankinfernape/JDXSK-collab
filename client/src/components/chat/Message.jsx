@@ -43,65 +43,61 @@ const MessageWrapper = styled.div`
 `;
 
 const MessageBubble = styled.div`
-  max-width: 70%; 
-  padding: 0.4rem 0.6rem 0.3rem 0.6rem; /* Tighter padding */
+  max-width: 75%; 
+  padding: 8px 12px; 
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
     props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
   color: ${props => 
     props.isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textBubbleOther};
   word-wrap: break-word; 
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); 
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); 
   position: relative; 
-  min-width: 80px; 
+  min-width: 60px; 
   cursor: pointer;
-  
-  /* Ensure children can flow naturally */
-  display: block; 
+  display: block;
 `;
 
-// --- Quoted Message Styles ---
+// --- Quoted Reply Block ---
 const QuotedMessage = styled.div`
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.05)'};
-  border-left: 3px solid ${props => props.$isMe ? 'rgba(255, 255, 255, 0.5)' : props.theme.colors.primary};
-  padding: 3px 8px;
-  border-radius: 4px;
-  margin-bottom: 4px;
+  background-color: rgba(0, 0, 0, 0.06);
+  border-left: 3px solid ${props => props.theme.colors.primary};
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 6px;
   cursor: pointer;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   display: flex;
   flex-direction: column;
   max-width: 100%;
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.08)'};
+    background-color: rgba(0, 0, 0, 0.1);
   }
 `;
 
 const QuotedSender = styled.span`
-  font-weight: 700;
-  /* Ensure name is readable: use white on colored bubbles, primary on neutral ones */
-  color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.primary};
-  font-size: 0.68rem;
-  margin-bottom: 0px;
-  opacity: ${props => props.$isMe ? 1 : 0.9};
+  font-weight: 600;
+  color: ${props => props.theme.colors.primary};
+  font-size: 0.75rem;
+  margin-bottom: 2px;
 `;
 
 const QuotedText = styled.span`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: inherit;
-  opacity: ${props => props.$isMe ? 0.85 : 0.65};
+  color: ${props => props.theme.colors.textSecondary};
+  font-size: 0.8rem;
   display: block;
 `;
 
 const MessageText = styled.span`
-  font-size: 0.94rem; 
-  line-height: 1.4;
-  margin-bottom: 0px;
+  font-size: 0.95rem; 
+  line-height: 1.5;
   color: inherit;
+  display: inline;
   word-break: break-word;
 `;
 
@@ -109,33 +105,29 @@ const StatusContainer = styled.div`
   float: right;
   display: flex;
   align-items: center;
-  gap: 0.2rem;
-  margin-left: 8px;
-  margin-top: 6px; /* Push it down slightly to align with text baseline or sit below */
-  position: relative;
-  top: 4px; /* Fine-tune vertical alignment */
-  height: 14px; /* Enforce height to prevent layout shifts */
+  gap: 4px;
+  margin-left: 10px;
+  margin-top: 4px;
+  height: 16px;
   line-height: 1;
 `;
 
 const Timestamp = styled.span`
-  font-size: 0.64rem; 
+  font-size: 0.65rem; 
   color: inherit;
-  opacity: 0.65;
+  opacity: 0.7;
   white-space: nowrap; 
-  vertical-align: middle;
 `;
 
 const Ticks = styled.div`
   display: flex;
   align-items: center;
-  font-size: 1rem; 
-  opacity: 0.9;
-  vertical-align: middle;
+  font-size: 0.9rem; 
+  opacity: 0.8;
 
   .tick-3 { color: ${props => props.theme.colors.tick_read}; }
-  .tick-2 { color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.tick_delivered}; }
-  .tick-1 { color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.tick_sent}; }
+  .tick-2 { color: ${props => props.theme.colors.tick_delivered}; }
+  .tick-1 { color: ${props => props.theme.colors.tick_sent}; }
 `;
 
 const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) => {

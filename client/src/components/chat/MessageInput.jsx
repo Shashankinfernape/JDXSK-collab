@@ -46,36 +46,35 @@ const ReplyPanel = styled.div`
 const ReplyWrapper = styled.div`
   flex: 1;
   background-color: ${props => props.theme.colors.inputBackground};
-  border-radius: 8px;
-  border-left: 5px solid ${props => props.theme.colors.primary};
-  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 4px solid ${props => props.theme.colors.primary};
+  padding: 6px 12px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  margin-left: 12px; /* Add margin left to space from screen edge */
-  margin-right: 0px; /* Touching the close button area */
-  
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  margin-left: 12px;
+  margin-right: 0px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 `;
 
 const ReplyHeader = styled.div`
   display: flex;
   align-items: baseline;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 `;
 
 const ReplySender = styled.span`
   color: ${props => props.theme.colors.primary};
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   margin-right: 8px;
 `;
 
 const ReplyText = styled.span`
   color: ${props => props.theme.colors.textSecondary};
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -88,11 +87,11 @@ const CloseButton = styled.button`
   border: none;
   color: ${props => props.theme.colors.textSecondary};
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 4px;
   transition: all 0.2s ease;
 
   &:hover {
@@ -100,52 +99,61 @@ const CloseButton = styled.button`
     color: ${props => props.theme.colors.textPrimary};
   }
   
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 `;
 
 const InputForm = styled.form`
-  padding: 0.5rem 1rem;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 12px;
 `;
 
 const IconButton = styled.button`
   background: none;
   border: none;
-  color: ${props => props.theme.colors.icon}; // Use theme icon color
+  color: ${props => props.theme.colors.icon};
   cursor: pointer;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   display: flex;
   align-items: center;
-  padding: 4px;
-  border-radius: 50%;
-  transition: color 0.2s ease;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 
   &:hover {
-    color: ${props => props.theme.colors.iconActive}; // Use active icon color on hover
+    background-color: ${props => props.theme.colors.hoverBackground};
+    color: ${props => props.theme.colors.iconActive};
   }
 `;
 
-// Specific style for Send button to use primary color
 const SendButton = styled(IconButton)`
-  color: ${props => props.theme.colors.primary}; // Use primary color
+  color: ${props => props.theme.colors.primary};
    &:hover {
-    color: ${props => props.theme.colors.iconActive}; // Still use hover effect if desired
+    color: ${props => props.theme.colors.primary};
+    background-color: transparent;
+    opacity: 0.8;
   }
 `;
 
 const TextInput = styled.input`
   flex: 1;
-  background-color: ${props => props.theme.colors.inputBackground}; // Use theme input bg
-  border: none;
-  border-radius: 20px;
-  padding: 0.7rem 1.2rem; /* slightly taller for better feel */
-  color: ${props => props.theme.colors.textPrimary}; // Use primary text color
+  background-color: ${props => props.theme.colors.inputBackground};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: ${props => props.theme.colors.textPrimary};
   font-size: 0.95rem;
   outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    border-color: ${props => props.theme.colors.primary};
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primary}20;
+  }
+
   &::placeholder {
-    color: ${props => props.theme.colors.textSecondary}; // Use secondary text for placeholder
+    color: ${props => props.theme.colors.textSecondary};
   }
 `;
 
