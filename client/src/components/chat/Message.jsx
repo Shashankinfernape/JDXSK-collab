@@ -44,7 +44,7 @@ const MessageWrapper = styled.div`
 
 const MessageBubble = styled.div`
   max-width: 70%; 
-  padding: 0.4rem 0.7rem; 
+  padding: 0.5rem 0.6rem 0.3rem 0.6rem; 
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
     props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
@@ -53,24 +53,31 @@ const MessageBubble = styled.div`
   word-wrap: break-word; 
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1); 
   position: relative; 
-  min-width: 80px; 
+  min-width: 90px; 
   cursor: pointer;
   
-  display: block; 
-`;
-
-// --- Quoted Message Styles ---
-const QuotedMessage = styled.div`
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.05)'};
-  border-left: 3px solid ${props => props.$isMe ? 'rgba(255, 255, 255, 0.5)' : props.theme.colors.primary};
-  padding: 3px 8px;
-  border-radius: 4px;
-  margin-bottom: 4px;
-  cursor: pointer;
-  font-size: 0.72rem;
+  /* Flex Layout */
   display: flex;
   flex-direction: column;
-  max-width: 100%;
+  gap: 2px;
+`;
+
+// --- Quoted Reply Block ---
+const QuotedMessage = styled.div`
+  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.05)'};
+  border-left: 4px solid ${props => props.$isMe ? 'rgba(255, 255, 255, 0.6)' : props.theme.colors.primary};
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  
+  /* WhatsApp specific: Full Width inside bubble */
+  width: 100%;
+  align-self: stretch;
+  
   transition: background-color 0.2s;
 
   &:hover {
@@ -80,11 +87,10 @@ const QuotedMessage = styled.div`
 
 const QuotedSender = styled.span`
   font-weight: 700;
-  /* Ensure name is readable: use white on colored bubbles, primary on neutral ones */
   color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.primary};
-  font-size: 0.68rem;
-  margin-bottom: 0px;
-  opacity: ${props => props.$isMe ? 1 : 0.9};
+  font-size: 0.7rem;
+  margin-bottom: 1px;
+  opacity: 0.95;
 `;
 
 const QuotedText = styled.span`
@@ -92,27 +98,26 @@ const QuotedText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: ${props => props.$isMe ? 0.85 : 0.65};
+  opacity: 0.75;
   display: block;
 `;
 
-const MessageText = styled.p`
+const MessageText = styled.div`
   font-size: 0.94rem; 
-  line-height: 1.4;
-  margin-bottom: 0px;
+  line-height: 1.45;
   color: inherit;
+  width: 100%;
+  padding-bottom: 2px;
 `;
 
 const StatusContainer = styled.div`
-  float: right;
   display: flex;
   align-items: center;
-  gap: 0.2rem;
-  margin-left: 8px;
-  margin-top: 6px; /* Push it down slightly to align with text baseline or sit below */
-  position: relative;
-  top: 4px; /* Fine-tune vertical alignment */
-  height: 14px; /* Enforce height to prevent layout shifts */
+  justify-content: flex-end;
+  gap: 0.25rem;
+  align-self: flex-end; /* Push to the bottom right */
+  margin-top: 1px;
+  height: 14px;
   line-height: 1;
 `;
 
