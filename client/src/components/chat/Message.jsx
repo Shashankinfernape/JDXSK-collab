@@ -282,12 +282,12 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
     if (!isMe) return null; // Recipients don't see ticks on incoming messages
 
     // Read (Blue Double Tick)
-    if (message.readBy && message.readBy.length > 1) {
+    if (message.readBy && message.readBy.length > 0) {
         return <Ticks $isMe={isMe}><BsCheckAll className="tick-read" /></Ticks>;
     }
     
     // Delivered (Gray Double Tick)
-    if (message.deliveredTo && message.deliveredTo.length > 1) {
+    if (message.deliveredTo && message.deliveredTo.length > 0) {
         return <Ticks $isMe={isMe}><BsCheckAll className="tick-delivered" /></Ticks>;
     }
     

@@ -47,13 +47,15 @@ export const ChatProvider = ({ children }) => {
         const chatId = message.chatId;
         const currentMessages = prev[chatId] || [];
         
-        // Check if this is a confirmation of our own message
-        const isMyMessage = user && message.senderId._id === user._id;
+        // Robust Sender Check
+        const msgSenderId = message.senderId?._id || message.senderId;
+        const isMyMessage = user && msgSenderId && msgSenderId.toString() === user._id.toString();
         
         if (isMyMessage) {
-            // Find a temp message to replace. 
-            // We find the *last* temp message to be safe, or just findIndex.
-            const tempIndex = currentMessages.findIndex(m => m._id.toString().startsWith('temp-'));
+            // Find specific temp message by content match (more accurate)
+            const tempIndex = currentMessages.findIndex(m => 
+                m._id.toString().startsWith('temp-') && m.content === message.content
+            );
             
             if (tempIndex !== -1) {
                 const updatedMessages = [...currentMessages];
