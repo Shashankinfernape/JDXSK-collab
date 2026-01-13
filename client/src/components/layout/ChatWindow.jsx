@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import MessageList from '../chat/MessageList';
 import MessageInput from '../chat/MessageInput';
 import ProfileDrawer from '../profile/ProfileDrawer'; // Import ProfileDrawer
+import ForwardModal from '../chat/ForwardModal'; // Import ForwardModal
 import { AiOutlineSearch } from 'react-icons/ai';
 import { IoMdArrowBack, IoMdClose, IoMdTrash, IoMdShareAlt, IoMdUndo } from 'react-icons/io'; // Added Undo for Reply
 
@@ -104,6 +105,7 @@ const ChatWindow = ({ onBack }) => {
     const { activeChat, onlineUsers, selectedMessages, isSelectionMode, clearSelection, setReplyingTo, messages, deleteMessage } = useChat();
     const { user } = useAuth();
     const [showProfile, setShowProfile] = useState(false);
+    const [isForwarding, setIsForwarding] = useState(false);
 
     // Guard clause
     if (!activeChat) return null;
@@ -123,7 +125,11 @@ const ChatWindow = ({ onBack }) => {
     };
 
     const handleForward = () => {
-        alert("Forwarding feature coming soon!");
+        setIsForwarding(true);
+    };
+
+    const handleCloseForward = () => {
+        setIsForwarding(false);
         clearSelection();
     };
 
@@ -158,6 +164,9 @@ const ChatWindow = ({ onBack }) => {
              displayPicture = `https://i.pravatar.cc/150?u=unknown`;
         }
     }
+
+    // Determine message to forward (take the first one for now)
+    const msgToForward = selectedMessages.length > 0 ? messages.find(m => m._id === selectedMessages[0]) : null;
 
   return (
     <ChatWindowContainer>
@@ -215,6 +224,13 @@ const ChatWindow = ({ onBack }) => {
         isOpen={showProfile} 
         onClose={() => setShowProfile(false)} 
         targetUser={profileTarget} 
+      />
+      
+      {/* Forward Modal */}
+      <ForwardModal
+        isOpen={isForwarding}
+        onClose={handleCloseForward}
+        messageToForward={msgToForward}
       />
     </ChatWindowContainer>
   );

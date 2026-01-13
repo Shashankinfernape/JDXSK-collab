@@ -1,20 +1,20 @@
 import React, { useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
-import { TiTick } from 'react-icons/ti';
+import { BsCheck, BsCheckAll } from 'react-icons/bs'; // Thinner, cleaner ticks
 import { IoMdUndo } from 'react-icons/io'; // Reply Icon
 
 const SwipeContainer = styled.div`
   position: relative;
   width: 100%;
-  overflow: hidden; /* Hide the icon when not swiping */
-  flex-shrink: 0; /* CRITICAL: Prevent messages from squishing */
+  overflow: hidden; 
+  flex-shrink: 0; 
 `;
 
 const ReplyIconWrapper = styled.div`
   position: absolute;
   top: 50%;
-  left: 0; /* Positioned on the left for right-swipe reveal */
+  left: 0; 
   transform: translateY(-50%) scale(${props => props.$visible ? 1 : 0.5});
   opacity: ${props => props.$visible ? 1 : 0};
   transition: all 0.2s ease;
@@ -27,35 +27,34 @@ const ReplyIconWrapper = styled.div`
 const MessageWrapper = styled.div`
   display: flex;
   justify-content: ${props => (props.isMe ? 'flex-end' : 'flex-start')};
-  margin-bottom: 0.2rem; 
-  padding: 4px 5%; 
+  margin-bottom: 2px; /* Tight spacing between messages */
+  padding: 0 5%; 
   position: relative;
   background-color: ${props => props.$isSelected ? 'rgba(66, 133, 244, 0.2)' : 'transparent'}; 
-  transition: background-color 0.2s ease, transform 0.2s ease; /* Default transition */
+  transition: background-color 0.2s ease;
   
   user-select: ${props => props.$isSelectionMode ? 'none' : 'text'};
-  touch-action: pan-y; /* Allow vertical scroll, we handle horizontal manually */
+  touch-action: pan-y;
   
-  /* Apply swipe transform */
   transform: translateX(${props => props.$translateX}px);
-  /* Disable transition during drag for responsiveness */
   ${props => props.$isDragging && `transition: none;`} 
 `;
 
 const MessageBubble = styled.div`
-  max-width: 75%; 
-  @media (min-width: 1000px) {
-    max-width: 65%; /* Optimal reading width on desktop */
+  /* CRITICAL: Wider bubbles like WhatsApp */
+  max-width: 90%; 
+  @media (min-width: 900px) {
+    max-width: 80%; 
   }
   
-  /* Refined, professional padding */
-  padding: 6px 10px 6px 10px; 
+  /* Compact WhatsApp-like padding */
+  padding: 5px 8px 5px 9px; 
   
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
     props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
   
-  /* Handle Gradient backgrounds for Instagram/Special themes */
+  /* Gradient support for Instagram */
   background: ${props => props.isMe && props.theme.name === 'instagram' ? props.theme.colors.bubbleMe : undefined}; 
   background-color: ${props => props.isMe && props.theme.name !== 'instagram' ? props.theme.colors.bubbleMe : (props.isMe ? undefined : props.theme.colors.bubbleOther)};
 
@@ -63,55 +62,51 @@ const MessageBubble = styled.div`
     props.isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textBubbleOther};
   
   word-wrap: break-word; 
-  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.1); 
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13); 
   position: relative; 
   min-width: 100px; 
   width: fit-content; 
   cursor: pointer;
   
-  /* Layout: Vertical stack */
+  /* Vertical stack with minimal gaps */
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 3px;
+  gap: 0px; /* Tightest possible packing */
 `;
 
-// --- Quoted Reply Block ---
+// --- Quoted Reply Block (Compact) ---
 const QuotedMessage = styled.div`
-  /* Professional Translucent Overlay */
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)'};
-  /* For dark mode "Other" bubbles, we need a lighter overlay */
+  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.04)'};
   ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.1);`}
   
   border-left: 4px solid ${props => props.theme.colors.primary};
-  /* Ensure contrast for the border on "Me" bubbles if needed */
   border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.9)' : props.theme.colors.primary};
 
-  padding: 4px 8px; 
-  border-radius: 4px; /* Tighter radius for internal content */
+  padding: 4px 6px; /* Very compact */
+  border-radius: 4px; 
   cursor: pointer;
   
   width: 100%;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  margin-bottom: 2px; 
+  margin-bottom: 3px; 
   
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.1)'};
+    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.08)'};
   }
 `;
 
 const QuotedSender = styled.span`
   font-weight: 700;
-  /* High contrast sender name */
   color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.primary};
-  font-size: 0.75rem;
-  margin-bottom: 1px;
+  font-size: 0.7rem;
+  margin-bottom: 0px;
   opacity: 0.98;
-  line-height: 1.2;
+  line-height: 1.1;
 `;
 
 const QuotedText = styled.span`
@@ -119,48 +114,51 @@ const QuotedText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   color: inherit;
-  opacity: 0.85; /* Improved readability */
-  font-size: 0.8rem;
+  opacity: 0.8;
+  font-size: 0.75rem;
   line-height: 1.3;
   display: block;
 `;
 
 const MessageText = styled.div`
   font-size: 0.95rem; 
-  line-height: 1.5; /* Cleaner reading height */
+  line-height: 1.4;
   color: inherit;
   width: 100%;
-  padding: 0 2px;
+  padding: 0 1px;
+  margin-bottom: 0px;
 `;
 
 const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.3rem;
-  align-self: flex-end; 
-  margin-top: -3px; 
-  margin-bottom: -2px;
-  height: 16px; 
+  gap: 3px;
+  align-self: flex-end; /* Strictly bottom-right */
+  margin-top: -2px; 
+  margin-right: -2px; /* Pull slightly right to align with padding edge */
+  height: 15px; 
   line-height: 1;
 `;
 
 const Timestamp = styled.span`
-  font-size: 0.64rem; 
+  font-size: 0.62rem; 
   color: inherit;
-  opacity: 0.65;
+  opacity: 0.6;
   white-space: nowrap; 
+  margin-top: 1px;
 `;
 
 const Ticks = styled.div`
   display: flex;
   align-items: center;
-  font-size: 1rem; 
+  font-size: 0.85rem; /* Smaller, cleaner size */
   opacity: 0.9;
-
-  .tick-3 { color: ${props => props.theme.colors.tick_read}; }
-  .tick-2 { color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.tick_delivered}; }
-  .tick-1 { color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.tick_sent}; }
+  
+  /* WhatsApp Ticks Colors */
+  .tick-read { color: ${props => props.theme.colors.tick_read || '#53bdeb'}; } /* Blue for read */
+  .tick-delivered { color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : '#8696a0'}; } /* Gray */
+  .tick-sent { color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : '#8696a0'}; } /* Gray */
 `;
 
 const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) => {
@@ -193,7 +191,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
   const handleStartTimer = () => {
       isLongPress.current = false; 
       longPressTimer.current = setTimeout(() => {
-          if (!isSwiping.current) { // Only trigger if not swiping
+          if (!isSwiping.current) { 
               isLongPress.current = true; 
               onSelect(message._id); 
           }
@@ -208,7 +206,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
 
   // --- Swipe Logic ---
   const handleTouchStart = (e) => {
-      if (isSelectionMode) return; // Disable swipe in selection mode
+      if (isSelectionMode) return; 
       
       const touch = e.touches ? e.touches[0] : e;
       startX.current = touch.clientX;
@@ -226,10 +224,9 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
       const dx = touch.clientX - startX.current;
       const dy = touch.clientY - startY.current;
 
-      // Detect horizontal swipe vs vertical scroll
       if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
           isSwiping.current = true;
-          handleClearTimer(); // Cancel long press immediately on move
+          handleClearTimer(); 
           
           if (dx > 0) { 
               const resistance = Math.min(dx, 100); 
@@ -243,21 +240,19 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
       setIsDragging(false);
       
       if (isSwiping.current) {
-          if (translateX > 50) { // Threshold to trigger reply
+          if (translateX > 50) { 
               if (onReply) onReply(message);
           }
-          setTranslateX(0); // Snap back
+          setTranslateX(0); 
           isSwiping.current = false;
       }
   };
 
-  // Click handler (only fires if not long press and not swiping)
   const handleClick = (e) => {
       if (isLongPress.current) {
           isLongPress.current = false;
           return;
       }
-      // If we were swiping, don't trigger click (though usually click doesn't fire if moved enough)
       if (isSwiping.current) return;
 
       if (isSelectionMode || e.ctrlKey || e.metaKey) {
@@ -273,10 +268,20 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
   };
 
   const getTicks = () => {
-    if (!isMe || !message || message._id?.startsWith('temp-')) return null; 
-    if (message.readBy && message.readBy.length > 1) return <Ticks $isMe={isMe}><TiTick className="tick-1" /><TiTick className="tick-2" style={{ marginLeft: '-6px' }}/><TiTick className="tick-3" style={{ marginLeft: '-6px' }}/></Ticks>;
-    if (message.deliveredTo && message.deliveredTo.length > 1) return <Ticks $isMe={isMe}><TiTick className="tick-1" /><TiTick className="tick-2" style={{ marginLeft: '-6px' }}/><TiTick className="tick-3" style={{ marginLeft: '-6px' }}/></Ticks>;
-    return <Ticks $isMe={isMe}><TiTick className="tick-1" /></Ticks>;
+    if (!isMe || !message || message._id?.startsWith('temp-')) return <Ticks $isMe={isMe}><span style={{fontSize:'0.7rem', opacity:0.6}}>🕒</span></Ticks>; 
+    
+    // Read (Blue Double Tick)
+    if (message.readBy && message.readBy.length > 1) {
+        return <Ticks $isMe={isMe}><BsCheckAll className="tick-read" /></Ticks>;
+    }
+    
+    // Delivered (Gray Double Tick)
+    if (message.deliveredTo && message.deliveredTo.length > 1) {
+        return <Ticks $isMe={isMe}><BsCheckAll className="tick-delivered" /></Ticks>;
+    }
+    
+    // Sent (Gray Single Tick)
+    return <Ticks $isMe={isMe}><BsCheck className="tick-sent" /></Ticks>;
   };
 
   return (
@@ -293,19 +298,16 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
             onClick={handleClick}
             onContextMenu={handleContextMenu}
             
-            // Touch Events
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             
-            // Mouse Events (for desktop testing/usage)
             onMouseDown={handleTouchStart}
             onMouseMove={handleTouchMove}
             onMouseUp={handleTouchEnd}
             onMouseLeave={handleTouchEnd}
         >
         <MessageBubble isMe={isMe}>
-            {/* --- Quoted Reply Block --- */}
             {message.replyTo && message.replyTo.content && (
                 <QuotedMessage $isMe={isMe} onClick={scrollToOriginal}>
                     <QuotedSender $isMe={isMe}>{message.replyTo.senderName || "User"}</QuotedSender>

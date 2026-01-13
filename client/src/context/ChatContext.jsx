@@ -181,6 +181,18 @@ export const ChatProvider = ({ children }) => {
     }));
     setReplyingTo(null); // Clear reply after sending
   };
+
+  const sendMessageToChat = (targetChatId, text) => {
+      if (!user || !socket) return;
+      const messageData = {
+          chatId: targetChatId,
+          senderId: user._id,
+          content: text,
+          // Forwarded messages typically don't carry reply context to the new chat
+          replyTo: null 
+      };
+      socket.emit('sendMessage', messageData);
+  };
   
   const deleteMessage = async (messageIds) => {
       // Optimistic Update
@@ -234,7 +246,8 @@ export const ChatProvider = ({ children }) => {
     loading,
     selectChat,
     sendMessage,
-    deleteMessage, // Exposed
+    sendMessageToChat, // Exposed for Forwarding
+    deleteMessage, 
     addNewChat, 
     // New Context Values
     selectedMessages,
