@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { BsCheck, BsCheckAll } from 'react-icons/bs'; // Thinner, cleaner ticks
+import { BiTime } from 'react-icons/bi'; // Clock icon
 import { IoMdUndo } from 'react-icons/io'; // Reply Icon
 
 const SwipeContainer = styled.div`
@@ -86,7 +87,7 @@ const QuotedMessage = styled.div`
   border-left: 3px solid ${props => props.theme.colors.primary};
   border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.85)' : props.theme.colors.primary};
 
-  padding: 5px 10px; 
+  padding: 4px 10px; /* Thinner vertical padding */
   /* Synchronize rounding with the main bubble */
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   border-bottom-left-radius: 4px;
@@ -95,7 +96,7 @@ const QuotedMessage = styled.div`
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  margin-bottom: 4px; /* WhatsApp strip spacing */
+  margin-bottom: 2px; 
   
   font-size: 0.82rem;
   line-height: 1.25;
@@ -139,10 +140,10 @@ const StatusContainer = styled.div`
   align-self: flex-end;
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 2px; /* Fixed small gap below text */
+  gap: 3px;
+  margin-top: -4px; /* Pull closer to text line height */
   margin-right: -2px;
-  margin-bottom: -2px;
+  margin-bottom: -3px; 
   
   height: 14px; 
   line-height: 1;
@@ -273,8 +274,13 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
   };
 
   const getTicks = () => {
-    if (!isMe || !message || message._id?.startsWith('temp-')) return <Ticks $isMe={isMe}><span style={{fontSize:'0.7rem', opacity:0.6}}>🕒</span></Ticks>; 
+    // Sending (Clock) - Prioritize this check
+    if (isMe && message._id?.startsWith('temp-')) {
+        return <Ticks $isMe={isMe}><BiTime style={{fontSize: '0.85rem', opacity: 0.7}} /></Ticks>;
+    }
     
+    if (!isMe) return null; // Recipients don't see ticks on incoming messages
+
     // Read (Blue Double Tick)
     if (message.readBy && message.readBy.length > 1) {
         return <Ticks $isMe={isMe}><BsCheckAll className="tick-read" /></Ticks>;
@@ -285,7 +291,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
         return <Ticks $isMe={isMe}><BsCheckAll className="tick-delivered" /></Ticks>;
     }
     
-    // Sent (Gray Single Tick)
+    // Sent (Gray Single Tick) - Default fallback
     return <Ticks $isMe={isMe}><BsCheck className="tick-sent" /></Ticks>;
   };
 
