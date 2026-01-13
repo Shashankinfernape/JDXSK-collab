@@ -20,13 +20,13 @@ const brands = {
     primary: '#E50914',
     font: "'Helvetica Neue', Helvetica, Arial, sans-serif",
     logo: '/netflix-logo.svg',
-    bubbleBorderRadius: '4px', // Boxier, cinematic feel
+    bubbleBorderRadius: '12px', // Restored to a friendlier curve
   },
   spotify: {
     primary: '#1DB954',
     font: "'Circular', 'Helvetica Neue', Helvetica, Arial, sans-serif",
     logo: '/spotify-logo.svg',
-    bubbleBorderRadius: '16px', // Rounder, friendly
+    bubbleBorderRadius: '16px',
   },
   apple: {
     primary: '#0A84FF',
@@ -43,9 +43,9 @@ const brands = {
   instagram: {
     primary: '#C13584',
     gradient: 'linear-gradient(135deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D, #F77737, #FCAF45, #FFDC80)',
-    font: "'Poppins', 'Roboto', sans-serif",
+    font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif", // Instagram uses system fonts mostly now
     logo: '/instagram-logo.svg',
-    bubbleBorderRadius: '14px',
+    bubbleBorderRadius: '22px', // Very round, distinct Messenger style
   }
 };
 

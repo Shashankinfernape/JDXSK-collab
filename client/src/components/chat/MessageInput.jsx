@@ -25,12 +25,12 @@ const slideUp = keyframes`
 const ReplyPanel = styled.div`
   display: flex;
   align-items: center;
-  padding: 8px 8px 8px 12px; /* Reduced right padding */
-  background-color: ${props => props.theme.colors.panelBackground}; /* Match footer background */
+  padding: 6px 0px 6px 0px; /* Zero horizontal padding */
+  background-color: ${props => props.theme.colors.panelBackground};
   animation: ${slideUp} 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
   position: relative;
+  width: 100%; /* Ensure full width */
   
-  /* Create a visual separation from the messages area if needed, though usually the footer bg is enough */
   &::before {
     content: '';
     position: absolute;
@@ -45,7 +45,7 @@ const ReplyPanel = styled.div`
 
 const ReplyWrapper = styled.div`
   flex: 1;
-  background-color: ${props => props.theme.colors.inputBackground}; /* Distinct box color */
+  background-color: ${props => props.theme.colors.inputBackground};
   border-radius: 8px;
   border-left: 5px solid ${props => props.theme.colors.primary};
   padding: 8px 12px;
@@ -54,8 +54,9 @@ const ReplyWrapper = styled.div`
   justify-content: center;
   position: relative;
   overflow: hidden;
-  margin-right: 8px; /* Reduced margin */
-  /* WhatsApp often has a very subtle shadow or just the contrast */
+  margin-left: 12px; /* Add margin left to space from screen edge */
+  margin-right: 0px; /* Touching the close button area */
+  
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 `;
 
