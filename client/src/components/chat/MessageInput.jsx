@@ -52,7 +52,9 @@ const ReplyPreview = styled.div`
   margin: 0 6px 4px 6px; /* Internal margins */
   width: calc(100% - 12px);
   
-  background-color: ${props => props.theme.colors.panelBackground}; /* Slightly darker/lighter */
+  /* Subtle variation for reply box */
+  background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};
+  
   border-left: 3px solid ${props => props.theme.colors.primary};
   padding: 6px 10px;
   
