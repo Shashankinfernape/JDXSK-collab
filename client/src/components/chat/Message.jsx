@@ -71,27 +71,36 @@ const MessageBubble = styled.div`
   gap: 2px;
 `;
 
-// --- Quoted Reply Block (Exact WhatsApp) ---
+// --- Quoted Reply Block (Edge-to-Edge "Header" Style) ---
 const QuotedMessage = styled.div`
-  width: 100%;
-  padding: 4px 8px;
-  margin-bottom: 4px;
-
-  border-left: 3px solid ${props => props.theme.colors.primary};
-  /* Ensure correct border color for different message types */
-  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.8)' : props.theme.colors.primary};
+  /* Offsets to fill the "Upper Space" completely (Edge-to-Edge) */
+  margin-top: -5px;
+  margin-left: -9px;
+  margin-right: -8px;
+  width: calc(100% + 17px);
   
-  /* WhatsApp-like translucent overlay */
+  /* Visuals */
   background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)'};
   ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.1);`}
+  
+  border-left: 4px solid ${props => props.theme.colors.primary};
+  border-left-color: ${props => props.$isMe ? 'rgba(255,255,255,0.9)' : props.theme.colors.primary};
 
-  border-radius: 6px;
+  padding: 6px 10px; /* Internal padding for the reply content */
+  
+  /* Radius: Match top corners of parent, square-ish bottom */
+  border-top-left-radius: ${props => props.theme.bubbleBorderRadius};
+  border-top-right-radius: ${props => props.theme.bubbleBorderRadius};
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
   
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  margin-bottom: 4px; /* Push main text down */
+  
   font-size: 0.85rem;
   line-height: 1.2;
-  
   cursor: pointer;
   transition: background-color 0.2s;
 
