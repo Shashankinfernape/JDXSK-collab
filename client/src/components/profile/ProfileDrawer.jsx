@@ -7,6 +7,7 @@ import { MdModeEditOutline, MdCheck, MdPhotoCamera } from 'react-icons/md';
 import Input from '../common/Input';
 import Cropper from 'react-easy-crop';
 import api from '../../services/api';
+import UserListModal from './UserListModal';
 
 // --- Styled Components ---
 
@@ -278,7 +279,7 @@ async function getCroppedImg(imageSrc, pixelCrop, rotation = 0) {
 
 
 // --- Main Component ---
-const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat }) => {
+const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser }) => {
   const { user: currentUser, updateUser } = useAuth();
   
   // Determine mode
@@ -293,6 +294,32 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [localFollowers, setLocalFollowers] = useState(0);
   const [localFollowing, setLocalFollowing] = useState(0);
+
+  // List Modal State
+  const [listModalOpen, setListModalOpen] = useState(false);
+  const [listTitle, setListTitle] = useState('');
+  const [listUsers, setListUsers] = useState([]);
+
+  const fetchSocialList = async (type) => {
+      try {
+          const { data } = await api.get(`/users/social/${displayUser._id}`);
+          if (type === 'followers') {
+              setListUsers(data.followers);
+              setListTitle('Followers');
+          } else {
+              setListUsers(data.following);
+              setListTitle('Following');
+          }
+          setListModalOpen(true);
+      } catch (e) {
+          console.error("Failed to fetch list", e);
+      }
+  };
+
+  const handleUserClickFromList = (user) => {
+      setListModalOpen(false);
+      if (onSwitchUser) onSwitchUser(user);
+  };
 
   // Sync state when user changes
   useEffect(() => {
@@ -441,11 +468,11 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat }) => {
                 </UserStatus>
 
                 <StatsRow>
-                    <StatItem>
+                    <StatItem onClick={() => fetchSocialList('followers')}>
                         <StatValue>{localFollowers}</StatValue>
                         <StatLabel>Followers</StatLabel>
                     </StatItem>
-                    <StatItem>
+                    <StatItem onClick={() => fetchSocialList('following')}>
                         <StatValue>{localFollowing}</StatValue>
                         <StatLabel>Following</StatLabel>
                     </StatItem>
@@ -534,6 +561,14 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat }) => {
               </CropControls>
           </CropModal>
       )}
+      {/* User List Modal */}
+      <UserListModal
+        isOpen={listModalOpen}
+        onClose={() => setListModalOpen(false)}
+        title={listTitle}
+        users={listUsers}
+        onUserClick={handleUserClickFromList}
+      />
     </>
   );
 };

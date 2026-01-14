@@ -316,6 +316,25 @@ const getFriends = async (req, res) => {
     }
 };
 
+const getSocialConnections = async (req, res) => {
+    try {
+        // Use params.userId if provided (to view others' lists), otherwise current user
+        const targetId = req.params.userId || req.user._id;
+        const user = await User.findById(targetId)
+            .populate('followers', 'name email profilePic about')
+            .populate('following', 'name email profilePic about');
+            
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        
+        res.json({
+            followers: user.followers,
+            following: user.following
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 module.exports = {
   getUserProfile,
   updateUserProfile,
@@ -326,5 +345,6 @@ module.exports = {
   getNotifications,
   getFriends,
   followUser,
-  unfollowUser
+  unfollowUser,
+  getSocialConnections
 };

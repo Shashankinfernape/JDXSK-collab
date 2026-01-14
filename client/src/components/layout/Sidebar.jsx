@@ -392,7 +392,8 @@ const Sidebar = ({ onChatSelect }) => {
         isOpen={!!profileTarget} 
         onClose={() => setProfileTarget(null)} 
         targetUser={profileTarget} 
-        onStartChat={onChatSelect} // Pass onChatSelect to ProfileDrawer
+        onStartChat={onChatSelect} 
+        onSwitchUser={setProfileTarget} // Allow switching profile
       />
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </>

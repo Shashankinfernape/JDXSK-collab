@@ -39,6 +39,10 @@ router.put('/friend-request/:requestId/reject', authMiddleware, userController.r
 // @route   GET /api/users/notifications
 router.get('/notifications', authMiddleware, userController.getNotifications);
 
+// @desc    Get social connections
+// @route   GET /api/users/social/:userId?
+router.get('/social/:userId?', authMiddleware, userController.getSocialConnections);
+
 // @desc    Get friends list
 // @route   GET /api/users/friends
 router.get('/friends', authMiddleware, userController.getFriends);

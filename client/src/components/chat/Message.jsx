@@ -75,7 +75,7 @@ const MessageBubble = styled.div`
 // --- Quoted Reply Block (Synchronized Style) ---
 const QuotedMessage = styled.div`
   /* Standard margin within bubble padding - Contained */
-  margin: 0 0 4px 0;
+  margin: 0 0 2px 0;
   width: 100%;
   
   /* Visuals */

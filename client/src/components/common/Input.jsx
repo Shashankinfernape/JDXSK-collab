@@ -18,10 +18,10 @@ const StyledLabel = styled.label`
 
 const StyledInput = styled.input`
   font-size: 1rem;
-  color: ${props => props.theme.colors.text};
+  color: ${props => props.theme.colors.textPrimary};
   background: none;
   border: none;
-  border-bottom: 2px solid ${props => props.theme.colors.grey};
+  border-bottom: 2px solid ${props => props.theme.colors.border || '#ccc'};
   width: 100%;
   padding: 0.5rem 0.25rem;
   outline: none;
