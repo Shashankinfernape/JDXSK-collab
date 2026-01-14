@@ -38,48 +38,45 @@ const searchUsers = async (req, res) => {
   }
 
   try {
-    // 1. Strict Prefix Match (Highest Relevance)
-    // Matches names starting with the query (e.g., "San" -> "Sangeetha")
-    const regexStart = new RegExp(`^${query}`, 'i');
+    // Single Aggregation Query for Best Performance
+    const users = await User.aggregate([
+      {
+        $match: {
+          _id: { $ne: req.user._id },
+          $or: [
+            { name: { $regex: query, $options: 'i' } },
+            { email: { $regex: query, $options: 'i' } }
+          ]
+        }
+      },
+      {
+        $addFields: {
+          // Assign score: 2 for Starts With, 1 for Contains
+          priority: {
+            $cond: {
+              if: { $regexMatch: { input: "$name", regex: `^${query}`, options: "i" } },
+              then: 2,
+              else: 1
+            }
+          }
+        }
+      },
+      { $sort: { priority: -1, name: 1 } }, // Highest priority first
+      { $limit: 10 }
+    ]);
     
-    const startMatches = await User.find({
-      $and: [
-        { _id: { $ne: req.user._id } },
-        { $or: [{ name: { $regex: regexStart } }, { email: { $regex: regexStart } }] }
-      ]
-    }).limit(10).lean();
+    const currentUser = await User.findById(req.user._id); 
 
-    let results = startMatches;
-
-    // 2. Loose Contains Match (Fill remaining slots if needed)
-    // Only run if we don't have enough results, ensuring speed.
-    if (results.length < 10) {
-        const regexContains = new RegExp(query, 'i');
-        const idsToExclude = results.map(u => u._id);
-        idsToExclude.push(req.user._id);
-
-        const containMatches = await User.find({
-            _id: { $nin: idsToExclude },
-            $or: [{ name: { $regex: regexContains } }, { email: { $regex: regexContains } }]
-        }).limit(10 - results.length).lean();
-        
-        results = [...results, ...containMatches];
-    }
-    
-    const currentUser = await User.findById(req.user._id); // Refresh user to get latest following
-
-    const usersWithStatus = results.map(user => {
+    const usersWithStatus = users.map(user => {
       let status = 'none';
-      // Check Following (Instagram Style)
       if (currentUser.following && currentUser.following.some(id => id.toString() === user._id.toString())) {
         status = 'following';
       } else if (currentUser.followers && currentUser.followers.some(id => id.toString() === user._id.toString())) {
-        status = 'follows_you'; // Optional: Show if they follow you but you don't follow back
+        status = 'follows_you'; 
       }
       
-      // Fallback to legacy 'friends' if needed, or just replace logic
       if (status === 'none' && currentUser.friends && currentUser.friends.some(id => id.toString() === user._id.toString())) {
-          status = 'following'; // Treat legacy friends as following
+          status = 'following'; 
       }
 
       return { ...user, connectionStatus: status };
