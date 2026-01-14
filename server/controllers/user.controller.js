@@ -1,5 +1,6 @@
 const User = require('../models/user.model');
 const Notification = require('../models/notification.model');
+const Chat = require('../models/chat.model'); // Import Chat model
 const { getIo, getSocketId } = require('../socket/socket');
 
 // Get current user's profile
@@ -49,17 +50,22 @@ const searchUsers = async (req, res) => {
       ]
     }).limit(10).lean();
     
-    const currentUser = req.user;
+    const currentUser = await User.findById(req.user._id); // Refresh user to get latest following
 
     const usersWithStatus = users.map(user => {
       let status = 'none';
-      if (currentUser.friends && currentUser.friends.some(id => id.toString() === user._id.toString())) {
-        status = 'friend';
-      } else if (currentUser.sentRequests && currentUser.sentRequests.some(id => id.toString() === user._id.toString())) {
-        status = 'pending_sent';
-      } else if (currentUser.pendingRequests && currentUser.pendingRequests.some(id => id.toString() === user._id.toString())) {
-        status = 'pending_received';
+      // Check Following (Instagram Style)
+      if (currentUser.following && currentUser.following.some(id => id.toString() === user._id.toString())) {
+        status = 'following';
+      } else if (currentUser.followers && currentUser.followers.some(id => id.toString() === user._id.toString())) {
+        status = 'follows_you'; // Optional: Show if they follow you but you don't follow back
       }
+      
+      // Fallback to legacy 'friends' if needed, or just replace logic
+      if (status === 'none' && currentUser.friends && currentUser.friends.some(id => id.toString() === user._id.toString())) {
+          status = 'following'; // Treat legacy friends as following
+      }
+
       return { ...user, connectionStatus: status };
     });
 
@@ -70,7 +76,91 @@ const searchUsers = async (req, res) => {
   }
 };
 
+// --- Follow System (Instagram Style) ---
+const followUser = async (req, res) => {
+  const { recipientId } = req.params; // The user to follow
+  const senderId = req.user._id;
+
+  try {
+    if (senderId.toString() === recipientId) return res.status(400).json({ message: 'Cannot follow yourself' });
+
+    // 1. Add to My Following
+    await User.findByIdAndUpdate(senderId, {
+       $addToSet: { following: recipientId }
+    });
+
+    // 2. Add to Their Followers
+    await User.findByIdAndUpdate(recipientId, {
+       $addToSet: { followers: senderId }
+    });
+
+    // 3. Ensure Chat Exists (So they appear in "Name Page"/ChatList)
+    let chat = await Chat.findOne({
+        isGroup: false,
+        $and: [
+            { participants: { $elemMatch: { $eq: senderId } } },
+            { participants: { $elemMatch: { $eq: recipientId } } }
+        ]
+    });
+
+    if (!chat) {
+        chat = await Chat.create({
+            participants: [senderId, recipientId],
+            isGroup: false
+        });
+    }
+
+    // 4. Notification
+    const notification = await Notification.create({
+        recipient: recipientId,
+        sender: senderId,
+        type: 'follow', // New type
+        message: `${req.user.name} started following you`
+    });
+
+    // Real-time notification
+    try {
+        const socketId = getSocketId(recipientId);
+        if (socketId) {
+            const populatedNotif = await notification.populate('sender', 'name profilePic');
+            getIo().to(socketId).emit('newNotification', populatedNotif);
+            getIo().to(socketId).emit('newFollower', {
+                 _id: req.user._id, name: req.user.name, profilePic: req.user.profilePic
+            });
+        }
+    } catch (e) { console.error("Socket emit error:", e); }
+
+    res.json({ message: 'Followed successfully', chat });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const unfollowUser = async (req, res) => {
+  const { recipientId } = req.params;
+  const senderId = req.user._id;
+
+  try {
+     await User.findByIdAndUpdate(senderId, {
+         $pull: { following: recipientId }
+     });
+     await User.findByIdAndUpdate(recipientId, {
+         $pull: { followers: senderId }
+     });
+     res.json({ message: 'Unfollowed successfully' });
+  } catch (error) {
+      res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// ... Legacy Friend Functions (Keep for compatibility or deprecate) ...
 const sendFriendRequest = async (req, res) => {
+  // Redirect to follow logic or keep separate? 
+  // For now, let's keep separate to avoid breaking old clients, 
+  // BUT the UI will primarily use followUser.
+  // Actually, let's just use followUser logic here if called? 
+  // No, safer to keep distinct.
   const { recipientId } = req.params;
   const senderId = req.user._id;
 
@@ -234,5 +324,7 @@ module.exports = {
   acceptFriendRequest,
   rejectFriendRequest,
   getNotifications,
-  getFriends
+  getFriends,
+  followUser,
+  unfollowUser
 };

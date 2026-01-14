@@ -152,8 +152,8 @@ const IconButton = styled.button`
 `;
 
 const SendButton = styled.button`
-  background-color: #25D366; /* WhatsApp Green */
-  color: #000000; /* Black Icon */
+  background-color: ${props => props.theme.colors.primary};
+  color: #FFFFFF;
   border: none;
   width: 42px;
   height: 42px;
@@ -163,12 +163,12 @@ const SendButton = styled.button`
   justify-content: center;
   font-size: 1.4rem;
   cursor: pointer;
-  transition: transform 0.2s, background-color 0.2s;
+  transition: transform 0.2s, filter 0.2s;
   margin-left: 4px;
   flex-shrink: 0;
 
   &:hover {
-    background-color: #20ba5a;
+    filter: brightness(1.1);
     transform: scale(1.05);
   }
 

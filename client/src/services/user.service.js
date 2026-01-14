@@ -20,6 +20,14 @@ const sendFriendRequest = (recipientId) => {
   return api.post(`/users/friend-request/${recipientId}`);
 };
 
+const followUser = (recipientId) => {
+  return api.post(`/users/follow/${recipientId}`);
+};
+
+const unfollowUser = (recipientId) => {
+  return api.delete(`/users/follow/${recipientId}`);
+};
+
 const acceptFriendRequest = (requestId) => {
   return api.put(`/users/friend-request/${requestId}/accept`);
 };
@@ -41,6 +49,8 @@ const userService = {
   updateUser,
   searchUsers,
   sendFriendRequest,
+  followUser,
+  unfollowUser,
   acceptFriendRequest,
   rejectFriendRequest,
   getNotifications,

@@ -168,9 +168,10 @@ const Ticks = styled.div`
   opacity: 0.9;
   
   /* WhatsApp Ticks Colors */
-  .tick-read { color: ${props => props.theme.colors.tick_read || '#53bdeb'}; } /* Accent/Blue */
-  .tick-delivered { color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : '#8696a0'}; } /* Gray */
-  .tick-sent { color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : '#8696a0'}; } /* Gray */
+  .tick-read { color: #53bdeb; } /* Standard Cyan-Blue for Read */
+  /* Use text color for contrast (e.g. dark text on light bubble -> dark ticks) */
+  .tick-delivered { color: ${props => props.$isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textSecondary}; opacity: 0.6; }
+  .tick-sent { color: ${props => props.$isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textSecondary}; opacity: 0.6; }
 `;
 
 const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) => {

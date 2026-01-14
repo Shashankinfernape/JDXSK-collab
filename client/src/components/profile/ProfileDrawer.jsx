@@ -118,6 +118,37 @@ const UserStatus = styled.span`
   text-align: center;
 `;
 
+const StatsRow = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  width: 100%;
+  margin: 1.5rem 0 0.5rem 0;
+  padding: 0.5rem 0;
+`;
+
+const StatItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  
+  &:hover {
+      opacity: 0.8;
+  }
+`;
+
+const StatValue = styled.span`
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: ${props => props.theme.colors.textPrimary};
+`;
+
+const StatLabel = styled.span`
+  font-size: 0.85rem;
+  color: ${props => props.theme.colors.textSecondary};
+`;
+
 // Info Section
 const SectionContainer = styled.div`
   padding: 1.2rem 1.5rem;
@@ -339,6 +370,21 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser }) => {
                     {displayUser.email}
                     {/* Add online status logic here if available */}
                 </UserStatus>
+
+                <StatsRow>
+                    <StatItem>
+                        <StatValue>0</StatValue>
+                        <StatLabel>Posts</StatLabel>
+                    </StatItem>
+                    <StatItem>
+                        <StatValue>{displayUser.followers?.length || 0}</StatValue>
+                        <StatLabel>Followers</StatLabel>
+                    </StatItem>
+                    <StatItem>
+                        <StatValue>{displayUser.following?.length || 0}</StatValue>
+                        <StatLabel>Following</StatLabel>
+                    </StatItem>
+                </StatsRow>
             </HeroSection>
 
             {/* About Section */}

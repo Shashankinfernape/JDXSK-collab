@@ -15,6 +15,14 @@ router.put('/me', authMiddleware, userController.updateUserProfile);
 // @route   GET /api/users/search
 router.get('/search', authMiddleware, userController.searchUsers);
 
+// @desc    Follow User
+// @route   POST /api/users/follow/:recipientId
+router.post('/follow/:recipientId', authMiddleware, userController.followUser);
+
+// @desc    Unfollow User
+// @route   DELETE /api/users/follow/:recipientId
+router.delete('/follow/:recipientId', authMiddleware, userController.unfollowUser);
+
 // @desc    Send friend request
 // @route   POST /api/users/friend-request/:recipientId
 router.post('/friend-request/:recipientId', authMiddleware, userController.sendFriendRequest);
