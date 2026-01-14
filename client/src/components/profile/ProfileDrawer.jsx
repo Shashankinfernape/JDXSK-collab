@@ -333,6 +333,10 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat }) => {
               setLocalFollowers(prev => prev + 1); // Increase count
               await userService.followUser(targetUser._id);
           }
+          
+          // Refresh Current User to update "Following" list in own profile
+          const { data: updatedMe } = await userService.getMe();
+          updateUser(updatedMe);
       } catch (e) {
           console.error(e);
           // Revert on error
