@@ -90,6 +90,10 @@ const MessageList = () => {
 
         const isSelected = selectedMessages.includes(msg._id);
 
+        // Check if next message is from same sender (for spacing)
+        const nextMsg = messages[index + 1];
+        const isSequence = nextMsg && nextMsg.senderId?._id === msg.senderId?._id;
+
         return (
           <React.Fragment key={msg._id || `temp-${index}`}>
             {showDateSeparator && (
@@ -103,6 +107,7 @@ const MessageList = () => {
                 isSelectionMode={isSelectionMode}
                 onSelect={toggleMessageSelection}
                 onReply={setReplyingTo}
+                isSequence={isSequence}
             />
           </React.Fragment>
         );

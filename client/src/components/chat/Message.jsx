@@ -28,10 +28,12 @@ const ReplyIconWrapper = styled.div`
 const MessageWrapper = styled.div`
   display: flex;
   justify-content: ${props => (props.isMe ? 'flex-end' : 'flex-start')};
-  margin-bottom: 2px; /* Tight spacing between messages */
+  
+  /* Dynamic spacing based on sequence */
+  margin-bottom: ${props => props.$isSequence ? '2px' : '12px'}; 
   
   @media (max-width: 900px) {
-    margin-bottom: 6px; /* Increased spacing on mobile */
+    margin-bottom: ${props => props.$isSequence ? '6px' : '16px'};
   }
 
   padding: 0 5%; 
@@ -179,7 +181,7 @@ const Ticks = styled.div`
   .tick-sent { color: ${props => props.$isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textSecondary}; opacity: 0.6; }
 `;
 
-const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) => {
+const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSequence }) => {
   const { user } = useAuth();
   const longPressTimer = useRef(null);
   const isLongPress = useRef(false);
@@ -318,6 +320,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply }) =>
             $isSelectionMode={isSelectionMode}
             $translateX={translateX}
             $isDragging={isDragging}
+            $isSequence={isSequence}
             onClick={handleClick}
             onContextMenu={handleContextMenu}
             
