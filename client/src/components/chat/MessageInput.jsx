@@ -59,8 +59,8 @@ const ReplyPreview = styled.div`
   border-left: 4px solid ${props => props.theme.colors.primary};
   
   padding: 6px 10px;
-  /* Straight left side, slightly rounded right side */
-  border-radius: 0 6px 6px 0;
+  /* Straight left side to keep stripe vertical, rounded right side */
+  border-radius: 0 8px 8px 0;
   
   display: flex;
   justify-content: space-between;
