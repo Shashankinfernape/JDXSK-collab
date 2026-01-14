@@ -2,8 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { useChat } from '../../context/ChatContext';
 import ChatListItem from './ChatListItem';
-// --- FIX: Removed unused import ---
-// import LoadingSpinner from '../common/LoadingSpinner';
+import LoadingSpinner from '../common/LoadingSpinner';
 import PropTypes from 'prop-types';
 
 const ChatListContainer = styled.div`
@@ -18,8 +17,11 @@ const NoChatsMessage = styled.div`
 `;
 
 const ChatList = ({ onChatSelect }) => {
-  // Assuming loading state is handled elsewhere or not needed for now
-  const { chats, activeChat } = useChat();
+  const { chats, activeChat, loading } = useChat();
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   if (!chats || chats.length === 0) {
     return <NoChatsMessage>No chats yet. Start a new chat!</NoChatsMessage>;

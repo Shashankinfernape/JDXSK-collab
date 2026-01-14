@@ -36,7 +36,8 @@ export const ChatProvider = ({ children }) => {
       setLoading(false);
     };
     fetchChats();
-  }, [user]); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id]); 
 
   // --- UPDATED Socket Listeners useEffect ---
   useEffect(() => {
