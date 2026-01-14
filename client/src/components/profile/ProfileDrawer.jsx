@@ -8,6 +8,7 @@ import Input from '../common/Input';
 import Cropper from 'react-easy-crop';
 import api from '../../services/api';
 import UserListModal from './UserListModal';
+import Skeleton from '../common/Skeleton';
 
 // --- Styled Components ---
 
@@ -284,6 +285,7 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser 
   
   // Local State for fetched data
   const [fetchedUser, setFetchedUser] = useState(null);
+  const [isFetching, setIsFetching] = useState(false);
 
   // Determine mode
   const isEditable = !targetUser || targetUser._id === currentUser._id;
@@ -329,9 +331,11 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser 
       if (targetUser && targetUser._id !== currentUser._id) {
           // Reset fetched user first to avoid showing old data
           setFetchedUser(null);
+          setIsFetching(true);
           userService.getUserById(targetUser._id)
             .then(res => setFetchedUser(res.data))
-            .catch(err => console.error("Failed to fetch user details", err));
+            .catch(err => console.error("Failed to fetch user details", err))
+            .finally(() => setIsFetching(false));
       }
   }, [targetUser, currentUser._id]);
 
@@ -455,52 +459,72 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser 
         <ScrollableContent>
             {/* Hero Section */}
             <HeroSection>
-                <ImageContainer onClick={() => isEditable && fileInputRef.current.click()}>
-                    <ProfileImage 
-                        src={displayUser.profilePic || `https://i.pravatar.cc/150?u=${displayUser._id}`} 
-                        alt="Profile" 
-                    />
-                    {isEditable && (
-                        <ImageOverlay>
-                            <MdPhotoCamera size={30} />
-                            <span>Change</span>
-                        </ImageOverlay>
-                    )}
-                </ImageContainer>
-                
-                {isEditable && (
-                    <HiddenInput 
-                        type="file" accept="image/*" 
-                        ref={fileInputRef} onChange={onFileChange} 
-                    />
-                )}
+                {isFetching ? (
+                    <>
+                        <Skeleton width="150px" height="150px" circle margin="0 0 1rem 0" />
+                        <Skeleton width="180px" height="24px" margin="0 0 8px 0" />
+                        <Skeleton width="120px" height="16px" margin="0 0 24px 0" />
+                        <div style={{ display: 'flex', gap: '3rem', margin: '1rem 0' }}>
+                            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
+                                <Skeleton width="30px" height="20px" />
+                                <Skeleton width="60px" height="14px" />
+                            </div>
+                            <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'}}>
+                                <Skeleton width="30px" height="20px" />
+                                <Skeleton width="60px" height="14px" />
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <ImageContainer onClick={() => isEditable && fileInputRef.current.click()}>
+                            <ProfileImage 
+                                src={displayUser.profilePic || `https://i.pravatar.cc/150?u=${displayUser._id}`} 
+                                alt="Profile" 
+                            />
+                            {isEditable && (
+                                <ImageOverlay>
+                                    <MdPhotoCamera size={30} />
+                                    <span>Change</span>
+                                </ImageOverlay>
+                            )}
+                        </ImageContainer>
+                        
+                        {isEditable && (
+                            <HiddenInput 
+                                type="file" accept="image/*" 
+                                ref={fileInputRef} onChange={onFileChange} 
+                            />
+                        )}
 
-                <UserName>{displayUser.name}</UserName>
-                <UserStatus>
-                    {displayUser.email}
-                    {/* Add online status logic here if available */}
-                </UserStatus>
+                        <UserName>{displayUser.name}</UserName>
+                        <UserStatus>
+                            {displayUser.email}
+                            {/* Add online status logic here if available */}
+                        </UserStatus>
 
-                <StatsRow>
-                    <StatItem onClick={() => fetchSocialList('followers')}>
-                        <StatValue>{localFollowers}</StatValue>
-                        <StatLabel>Followers</StatLabel>
-                    </StatItem>
-                    <StatItem onClick={() => fetchSocialList('following')}>
-                        <StatValue>{localFollowing}</StatValue>
-                        <StatLabel>Following</StatLabel>
-                    </StatItem>
-                </StatsRow>
+                        <StatsRow>
+                            <StatItem onClick={() => fetchSocialList('followers')}>
+                                <StatValue>{localFollowers}</StatValue>
+                                <StatLabel>Followers</StatLabel>
+                            </StatItem>
+                            <StatItem onClick={() => fetchSocialList('following')}>
+                                <StatValue>{localFollowing}</StatValue>
+                                <StatLabel>Following</StatLabel>
+                            </StatItem>
+                        </StatsRow>
 
-                {!isEditable && (
-                    <ActionRow>
-                        <ActionButton $primary={!isFollowing} onClick={handleFollowToggle}>
-                            {isFollowing ? 'Unfollow' : 'Follow'}
-                        </ActionButton>
-                        <ActionButton onClick={handleMessage}>
-                            Message
-                        </ActionButton>
-                    </ActionRow>
+                        {!isEditable && (
+                            <ActionRow>
+                                <ActionButton $primary={!isFollowing} onClick={handleFollowToggle}>
+                                    {isFollowing ? 'Unfollow' : 'Follow'}
+                                </ActionButton>
+                                <ActionButton onClick={handleMessage}>
+                                    Message
+                                </ActionButton>
+                            </ActionRow>
+                        )}
+                    </>
                 )}
             </HeroSection>
 

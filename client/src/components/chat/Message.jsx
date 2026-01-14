@@ -29,6 +29,11 @@ const MessageWrapper = styled.div`
   display: flex;
   justify-content: ${props => (props.isMe ? 'flex-end' : 'flex-start')};
   margin-bottom: 2px; /* Tight spacing between messages */
+  
+  @media (max-width: 900px) {
+    margin-bottom: 6px; /* Increased spacing on mobile */
+  }
+
   padding: 0 5%; 
   position: relative;
   background-color: ${props => props.$isSelected ? 'rgba(66, 133, 244, 0.2)' : 'transparent'}; 
