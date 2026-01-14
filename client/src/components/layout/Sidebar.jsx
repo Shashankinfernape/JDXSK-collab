@@ -189,7 +189,7 @@ const Sidebar = ({ onChatSelect }) => {
   const { socket } = useSocket();
   const { themeName, setTheme, theme } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
+  const [profileTarget, setProfileTarget] = useState(null); // Changed from showProfile boolean
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -265,7 +265,8 @@ const Sidebar = ({ onChatSelect }) => {
     setIsSearching(true);
   };
 
-  const closeSearch = () => {
+  const handleSearchResultClick = (targetUser) => {
+    setProfileTarget(targetUser);
     setSearchQuery('');
     setSearchResults([]);
     setIsSearching(false);
@@ -320,7 +321,7 @@ const Sidebar = ({ onChatSelect }) => {
               theme={theme} // Pass theme for Instagram border
               src={user?.profilePic || `https://i.pravatar.cc/150?u=${user?._id}`}
               alt={user?.name}
-              onClick={() => setShowProfile(true)}
+              onClick={() => setProfileTarget(user)}
             />
           </HeaderLeft>
           <HeaderIcons>
@@ -351,7 +352,7 @@ const Sidebar = ({ onChatSelect }) => {
               </IconButton>
               {showMenu && (
                 <DropdownMenu onMouseLeave={() => setShowMenu(false)}>
-                  <DropdownItem onClick={() => { setShowProfile(true); setShowMenu(false); }}>
+                  <DropdownItem onClick={() => { setProfileTarget(user); setShowMenu(false); }}>
                     <CgProfile size={20} /> Profile
                   </DropdownItem>
                   <DropdownItem onClick={() => { setShowSettings(true); setShowMenu(false); }}>
@@ -379,7 +380,7 @@ const Sidebar = ({ onChatSelect }) => {
 
         <ListContainer>
           {isSearching ? (
-            <SearchResults results={searchResults} onUserClick={closeSearch} />
+            <SearchResults results={searchResults} onUserClick={handleSearchResultClick} />
           ) : (
             <ChatList onChatSelect={onChatSelect} />
           )}
@@ -387,7 +388,12 @@ const Sidebar = ({ onChatSelect }) => {
       </SidebarContainer>
 
       {/* Modals */}
-      <ProfileDrawer isOpen={showProfile} onClose={() => setShowProfile(false)} />
+      <ProfileDrawer 
+        isOpen={!!profileTarget} 
+        onClose={() => setProfileTarget(null)} 
+        targetUser={profileTarget} 
+        onStartChat={onChatSelect} // Pass onChatSelect to ProfileDrawer
+      />
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </>
   );

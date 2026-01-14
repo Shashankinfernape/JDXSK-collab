@@ -6,6 +6,7 @@ import { IoMdArrowBack } from 'react-icons/io';
 import { MdModeEditOutline, MdCheck, MdPhotoCamera } from 'react-icons/md';
 import Input from '../common/Input';
 import Cropper from 'react-easy-crop';
+import api from '../../services/api';
 
 // --- Styled Components ---
 
@@ -207,6 +208,27 @@ const EditAction = styled.button`
   &:hover { color: ${props => props.theme.colors.primary}; }
 `;
 
+const ActionRow = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0 1rem 1.5rem 1rem;
+`;
+
+const ActionButton = styled.button`
+  flex: 1;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: ${props => props.$primary ? props.theme.colors.primary : props.theme.colors.inputBackground};
+  color: ${props => props.$primary ? '#FFF' : props.theme.colors.textPrimary};
+  transition: opacity 0.2s;
+  
+  &:hover { opacity: 0.9; }
+`;
+
 const HiddenInput = styled.input` display: none; `;
 
 // Crop UI (Simplified reuse)
@@ -256,7 +278,7 @@ async function getCroppedImg(imageSrc, pixelCrop, rotation = 0) {
 
 
 // --- Main Component ---
-const ProfileDrawer = ({ isOpen, onClose, targetUser }) => {
+const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat }) => {
   const { user: currentUser, updateUser } = useAuth();
   
   // Determine mode
@@ -268,6 +290,7 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser }) => {
   const [about, setAbout] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingAbout, setIsEditingAbout] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   // Sync state when user changes
   useEffect(() => {
@@ -275,7 +298,12 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser }) => {
         setName(displayUser.name || '');
         setAbout(displayUser.about || 'Hey there! I am using Chatflix.');
     }
-  }, [displayUser]);
+    if (targetUser && currentUser) {
+         // Check connectionStatus or array
+         const following = currentUser.following?.includes(targetUser._id) || targetUser.connectionStatus === 'following';
+         setIsFollowing(following);
+    }
+  }, [displayUser, targetUser, currentUser]);
 
   // Crop State
   const [imageSrc, setImageSrc] = useState(null);
@@ -286,6 +314,32 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser }) => {
   const fileInputRef = useRef(null);
 
   // --- Handlers ---
+  const handleFollowToggle = async () => {
+      try {
+          if (isFollowing) {
+              await userService.unfollowUser(targetUser._id);
+              setIsFollowing(false);
+              // Optimistic update for currentUser following list?
+              // Ideally update auth context, but simplified for now.
+          } else {
+              await userService.followUser(targetUser._id);
+              setIsFollowing(true);
+          }
+      } catch (e) {
+          console.error(e);
+      }
+  };
+
+  const handleMessage = async () => {
+      try {
+          const { data: chat } = await api.post('/chats', { recipientId: targetUser._id });
+          if (onStartChat) onStartChat(chat);
+          onClose();
+      } catch (e) {
+          console.error(e);
+      }
+  };
+
   const handleSaveName = async () => {
     try {
       const { data: updatedUser } = await userService.updateUser({ name });
@@ -385,6 +439,17 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser }) => {
                         <StatLabel>Following</StatLabel>
                     </StatItem>
                 </StatsRow>
+
+                {!isEditable && (
+                    <ActionRow>
+                        <ActionButton $primary={!isFollowing} onClick={handleFollowToggle}>
+                            {isFollowing ? 'Unfollow' : 'Follow'}
+                        </ActionButton>
+                        <ActionButton onClick={handleMessage}>
+                            Message
+                        </ActionButton>
+                    </ActionRow>
+                )}
             </HeroSection>
 
             {/* About Section */}
