@@ -55,11 +55,12 @@ const ReplyPreview = styled.div`
   /* Subtle variation for reply box */
   background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};
   
-  /* Straight solid stripe */
+  /* Straight solid stripe - Sharp and consistent */
   border-left: 4px solid ${props => props.theme.colors.primary};
   
   padding: 6px 10px;
-  border-radius: 8px;
+  /* Straight left side, slightly rounded right side */
+  border-radius: 0 6px 6px 0;
   
   display: flex;
   justify-content: space-between;

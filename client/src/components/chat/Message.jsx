@@ -74,30 +74,24 @@ const MessageBubble = styled.div`
 
 // --- Quoted Reply Block (Synchronized Style) ---
 const QuotedMessage = styled.div`
-  /* Precise thin spacing for premium feel */
-  margin-top: -3px;
-  margin-left: -6px;
-  margin-right: -5px;
-  width: calc(100% + 11px);
+  /* Standard margin within bubble padding */
+  margin: 0 0 6px 0;
+  width: 100%;
   
   /* Visuals */
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.04)'};
+  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)'};
   ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.08);`}
   
-  /* Straight line cut edge for the stripe */
-  border-left: 4px solid ${props => props.theme.colors.primary};
-  border-image: linear-gradient(to bottom, ${props => props.$isMe ? 'rgba(255,255,255,0.85)' : props.theme.colors.primary} 100%, transparent 0) 1 100%;
+  /* Straight line cut edge for the stripe - Solid and sharp */
+  border-left: 4px solid ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : props.theme.colors.primary};
   
   padding: 5px 10px; 
-  /* Synchronize rounding with the main bubble */
-  border-radius: ${props => props.theme.bubbleBorderRadius}; 
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 4px;
+  /* Straight left side, slightly rounded right side */
+  border-radius: 0 6px 6px 0;
   
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  margin-bottom: 2px; 
   
   font-size: 0.82rem;
   line-height: 1.25;
@@ -105,7 +99,7 @@ const QuotedMessage = styled.div`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.22)' : 'rgba(0, 0, 0, 0.07)'};
+    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.07)'};
   }
 `;
 
