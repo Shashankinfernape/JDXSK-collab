@@ -109,7 +109,7 @@ const createTheme = (brandKey, modeKey) => {
       colors.background = '#121212';
       colors.chatBackground = '#121212'; // Flat Dark (No gradient noise)
       colors.panelBackground = '#000000';
-      colors.headerBackground = '#181818';
+      colors.headerBackground = '#000000'; // Match panel for seamless look
       colors.inputBackground = '#282828';
       colors.bubbleOther = '#282828';
       colors.bubbleMe = '#1DB954'; // Brand Green
@@ -163,6 +163,7 @@ const createTheme = (brandKey, modeKey) => {
       colors.background = '#202124';
       colors.chatBackground = '#202124';
       colors.panelBackground = '#2D2E30';
+      colors.headerBackground = '#2D2E30'; // Match panel
       colors.inputBackground = '#3C4043';
       colors.bubbleOther = '#303134';
       colors.bubbleMe = '#8AB4F8'; // Muted Blue
@@ -171,6 +172,7 @@ const createTheme = (brandKey, modeKey) => {
       colors.background = '#FFFFFF';
       colors.chatBackground = '#FFFFFF';
       colors.panelBackground = '#F1F3F4';
+      colors.headerBackground = '#F1F3F4'; // Match panel
       colors.bubbleOther = '#F1F3F4';
       colors.bubbleMe = '#D2E3FC';
       colors.textBubbleMe = '#174EA6';

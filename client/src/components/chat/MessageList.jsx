@@ -47,6 +47,15 @@ const MessageList = () => {
    }, [activeChat?._id]); 
    // --- END FIX ---
 
+   // --- FIX: Scroll to bottom when replyingTo changes (pushes messages up) ---
+   useEffect(() => {
+     if (replyingTo) {
+       // Using 'smooth' behavior for a nice transition when the input grows
+       endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
+     }
+   }, [replyingTo]);
+   // --- END FIX ---
+
 
   if (loading) {
     return <LoadingSpinner />;

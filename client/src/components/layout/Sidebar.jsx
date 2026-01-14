@@ -154,7 +154,7 @@ const DropdownItem = styled.button`
 const SearchBar = styled.div`
   padding: 0.5rem 0.8rem;
   background-color: ${props => props.theme.colors.panelBackground};
-  border-bottom: ${props => subtleBorder(props.theme)};
+  /* border-bottom removed for cleaner look */
   display: flex; align-items: center; flex-shrink: 0;
 `;
 
