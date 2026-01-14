@@ -83,7 +83,7 @@ const QuotedMessage = styled.div`
   ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.08);`}
   
   /* Contained corners: rounding all sides keeps the stripe within the bubble's flow */
-  border-radius: 6px;
+  border-radius: ${props => props.theme.quoteBorderRadius || '6px'};
   position: relative;
   overflow: hidden; /* Clips the pseudo-element stripe to the radius */
   
@@ -147,7 +147,7 @@ const StatusContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 3px;
-  margin-top: 2px; /* Safe gap below text */
+  margin-top: -2px; /* Pull timestamp closer to text */
   margin-right: 2px;
   margin-bottom: 2px;
   

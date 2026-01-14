@@ -14,34 +14,39 @@ const layoutTokens = {
 const brands = {
   netflix: {
     primary: '#E50914', // Brand Red
-    font: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    font: "'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif",
     logo: '/netflix-logo.svg',
     bubbleBorderRadius: '8px', // Cinematic, Boxy
+    quoteBorderRadius: '4px',
   },
   spotify: {
     primary: '#1DB954',
-    font: "'Circular', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+    font: "'Montserrat', 'Helvetica Neue', Helvetica, Arial, sans-serif",
     logo: '/spotify-logo.svg',
     bubbleBorderRadius: '12px', // Modern, Rounded
+    quoteBorderRadius: '8px',
   },
   apple: {
     primary: '#007AFF',
     font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     logo: '/apple-logo.svg',
     bubbleBorderRadius: '16px', // iOS Standard
+    quoteBorderRadius: '12px',
   },
   google: {
     primary: '#1A73E8',
     font: "'Google Sans', Roboto, sans-serif",
     logo: '/google-logo.svg',
     bubbleBorderRadius: '12px', // Clean, Minimal
+    quoteBorderRadius: '8px',
   },
   instagram: {
-    primary: '#3797F0', // Messenger Blue (Standard DM color)
+    primary: '#E1306C', // Instagram Pink
     gradient: 'linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D)',
     font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     logo: '/instagram-logo.svg',
     bubbleBorderRadius: '18px', // Messenger Roundness
+    quoteBorderRadius: '14px',
   }
 };
 
@@ -142,14 +147,14 @@ const createTheme = (brandKey, modeKey) => {
       colors.headerBackground = '#000000';
       colors.inputBackground = '#262626';
       colors.bubbleOther = '#262626'; 
-      colors.bubbleMe = '#3797F0'; // Standard Blue (No gradient overload)
-      colors.primary = '#3797F0';
+      colors.bubbleMe = '#E1306C'; // Instagram Pink
+      colors.primary = '#E1306C';
     } else {
       colors.background = '#FFFFFF';
       colors.chatBackground = '#FFFFFF';
       colors.panelBackground = '#FFFFFF';
       colors.bubbleOther = '#EFEFEF';
-      colors.bubbleMe = '#3797F0';
+      colors.bubbleMe = '#E1306C'; // Instagram Pink
     }
   }
 
