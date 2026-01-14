@@ -30,10 +30,10 @@ const MessageWrapper = styled.div`
   justify-content: ${props => (props.isMe ? 'flex-end' : 'flex-start')};
   
   /* Dynamic spacing based on sequence */
-  margin-bottom: ${props => props.$isSequence ? '2px' : '12px'}; 
+  margin-bottom: ${props => props.$isSequence ? '1px' : '12px'}; 
   
   @media (max-width: 900px) {
-    margin-bottom: ${props => props.$isSequence ? '6px' : '16px'};
+    margin-bottom: ${props => props.$isSequence ? '2px' : '16px'};
   }
 
   padding: 0 5%; 
