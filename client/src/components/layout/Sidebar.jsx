@@ -217,7 +217,7 @@ const Sidebar = ({ onChatSelect }) => {
         setSearchResults([]);
       }
     };
-    const delay = setTimeout(search, 300);
+    const delay = setTimeout(search, 150);
     return () => clearTimeout(delay);
   }, [searchQuery]);
 

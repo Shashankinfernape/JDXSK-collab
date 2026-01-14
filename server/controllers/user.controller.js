@@ -38,41 +38,37 @@ const searchUsers = async (req, res) => {
   }
 
   try {
-    const regex = new RegExp(query, 'i');
+    // 1. Strict Prefix Match (Highest Relevance)
+    // Matches names starting with the query (e.g., "San" -> "Sangeetha")
+    const regexStart = new RegExp(`^${query}`, 'i');
     
-    // Fetch a larger pool to sort in memory for better relevance
-    const users = await User.find({
+    const startMatches = await User.find({
       $and: [
-        { _id: { $ne: req.user._id } }, // Exclude self
-        {
-          $or: [
-            { name: { $regex: regex } },
-            { email: { $regex: regex } }
-          ]
-        }
+        { _id: { $ne: req.user._id } },
+        { $or: [{ name: { $regex: regexStart } }, { email: { $regex: regexStart } }] }
       ]
-    }).limit(20).lean();
-    
-    // Sort logic: StartsWith > Contains
-    users.sort((a, b) => {
-        const aName = a.name.toLowerCase();
-        const bName = b.name.toLowerCase();
-        const q = query.toLowerCase();
-        
-        const aStarts = aName.startsWith(q);
-        const bStarts = bName.startsWith(q);
-        
-        if (aStarts && !bStarts) return -1;
-        if (!aStarts && bStarts) return 1;
-        
-        return aName.localeCompare(bName);
-    });
+    }).limit(10).lean();
 
-    const topUsers = users.slice(0, 10);
+    let results = startMatches;
+
+    // 2. Loose Contains Match (Fill remaining slots if needed)
+    // Only run if we don't have enough results, ensuring speed.
+    if (results.length < 10) {
+        const regexContains = new RegExp(query, 'i');
+        const idsToExclude = results.map(u => u._id);
+        idsToExclude.push(req.user._id);
+
+        const containMatches = await User.find({
+            _id: { $nin: idsToExclude },
+            $or: [{ name: { $regex: regexContains } }, { email: { $regex: regexContains } }]
+        }).limit(10 - results.length).lean();
+        
+        results = [...results, ...containMatches];
+    }
     
     const currentUser = await User.findById(req.user._id); // Refresh user to get latest following
 
-    const usersWithStatus = topUsers.map(user => {
+    const usersWithStatus = results.map(user => {
       let status = 'none';
       // Check Following (Instagram Style)
       if (currentUser.following && currentUser.following.some(id => id.toString() === user._id.toString())) {
