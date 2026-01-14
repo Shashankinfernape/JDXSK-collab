@@ -38,21 +38,41 @@ const searchUsers = async (req, res) => {
   }
 
   try {
+    const regex = new RegExp(query, 'i');
+    
+    // Fetch a larger pool to sort in memory for better relevance
     const users = await User.find({
       $and: [
         { _id: { $ne: req.user._id } }, // Exclude self
         {
           $or: [
-            { name: { $regex: query, $options: 'i' } },
-            { email: { $regex: query, $options: 'i' } }
+            { name: { $regex: regex } },
+            { email: { $regex: regex } }
           ]
         }
       ]
-    }).limit(10).lean();
+    }).limit(20).lean();
+    
+    // Sort logic: StartsWith > Contains
+    users.sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const q = query.toLowerCase();
+        
+        const aStarts = aName.startsWith(q);
+        const bStarts = bName.startsWith(q);
+        
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        
+        return aName.localeCompare(bName);
+    });
+
+    const topUsers = users.slice(0, 10);
     
     const currentUser = await User.findById(req.user._id); // Refresh user to get latest following
 
-    const usersWithStatus = users.map(user => {
+    const usersWithStatus = topUsers.map(user => {
       let status = 'none';
       // Check Following (Instagram Style)
       if (currentUser.following && currentUser.following.some(id => id.toString() === user._id.toString())) {
