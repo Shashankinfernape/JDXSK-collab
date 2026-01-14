@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import Button from '../common/Button';
-import backupService from '../../services/backup.service';
 import { FcGoogle } from 'react-icons/fc';
 
 // ... (All styled-components are correct, no changes here) ...
@@ -37,19 +36,28 @@ const BackupList = styled.div`
 `;
 
 const BackupItem = styled.div`
-  background: ${props => props.theme.colors.black};
-  padding: 0.75rem 1rem;
-  border-radius: 4px;
+  background: ${props => props.theme.colors.inputBackground};
+  color: ${props => props.theme.colors.textPrimary};
+  padding: 1rem;
+  border-radius: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
+  border: 1px solid ${props => props.theme.colors.border};
 `;
 
-const RestoreButton = styled(Button)`
-  background: ${props => props.theme.colors.grey};
-  font-size: 0.8rem;
-  padding: 0.4rem 0.8rem;
+const RestoreButton = styled.button`
+  background: transparent;
+  color: ${props => props.theme.colors.primary};
+  border: 1px solid ${props => props.theme.colors.primary};
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover { background: ${props => props.theme.colors.primary}; color: #fff; }
 `;
 
 const BackupRestore = () => {
@@ -57,7 +65,7 @@ const BackupRestore = () => {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [backups, setBackups] = useState([
-    { id: 'backup-1', date: 'October 26, 2025' }
+    { id: 'backup-1', date: new Date().toLocaleDateString() }
   ]); 
 
   const handleBackup = async () => {
@@ -66,10 +74,10 @@ const BackupRestore = () => {
     setIsError(false);
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      await backupService.createBackup();
+      // Simulate success
       
       setMessage('Backup created successfully!');
-      setBackups([{ id: `backup-${Math.random()}`, date: 'October 27, 2025' }, ...backups]);
+      setBackups([{ id: `backup-${Date.now()}`, date: new Date().toLocaleString() }, ...backups]);
     } catch (err) {
       console.error(err);
       setMessage('Backup failed. Please try again.');

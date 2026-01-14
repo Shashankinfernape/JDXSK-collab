@@ -47,4 +47,8 @@ router.get('/social/:userId?', authMiddleware, userController.getSocialConnectio
 // @route   GET /api/users/friends
 router.get('/friends', authMiddleware, userController.getFriends);
 
+// @desc    Get user by ID
+// @route   GET /api/users/:id
+router.get('/:id', authMiddleware, userController.getUserById);
+
 module.exports = router;

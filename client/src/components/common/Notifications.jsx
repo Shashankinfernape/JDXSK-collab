@@ -6,8 +6,8 @@ import { FaUserFriends } from 'react-icons/fa';
 
 // --- Animations ---
 const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; margin-top: -10px; }
+  to { opacity: 1; margin-top: 0; }
 `;
 
 const NotificationContainer = styled.div`
@@ -170,7 +170,9 @@ const Notifications = ({ onClose }) => {
     const loadNotifications = async () => {
         try {
             const { data } = await userService.getNotifications();
-            setNotifications(data);
+            // Deduplicate just in case
+            const uniqueNotifications = Array.from(new Map(data.map(item => [item._id, item])).values());
+            setNotifications(uniqueNotifications);
         } catch (e) {
             console.error(e);
         } finally {

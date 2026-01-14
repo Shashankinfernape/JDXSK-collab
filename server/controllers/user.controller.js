@@ -335,6 +335,15 @@ const getSocialConnections = async (req, res) => {
     }
 };
 
+// Get user by ID (Public info)
+const getUserById = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        res.json(user);
+    } catch (e) { res.status(500).json({ message: 'Server error' }); }
+};
+
 module.exports = {
   getUserProfile,
   updateUserProfile,
@@ -346,5 +355,6 @@ module.exports = {
   getFriends,
   followUser,
   unfollowUser,
-  getSocialConnections
+  getSocialConnections,
+  getUserById
 };

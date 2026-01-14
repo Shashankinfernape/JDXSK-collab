@@ -7,7 +7,7 @@ const generateToken = (userId) => {
     throw new Error("JWT Secret is missing"); // Prevent token generation without secret
   }
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: '30d', // Token will be valid for 30 days
+    expiresIn: '365d', // Token valid for 1 year (Stay Logged In)
   });
 };
 

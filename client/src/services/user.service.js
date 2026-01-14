@@ -44,6 +44,10 @@ const getFriends = () => {
   return api.get('/users/friends');
 };
 
+const getUserById = (id) => {
+  return api.get(`/users/${id}`);
+};
+
 const userService = {
   getMe,
   updateUser,
@@ -54,7 +58,8 @@ const userService = {
   acceptFriendRequest,
   rejectFriendRequest,
   getNotifications,
-  getFriends
+  getFriends,
+  getUserById
 };
 
 export default userService;

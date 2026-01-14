@@ -153,7 +153,7 @@ const StatLabel = styled.span`
 
 // Info Section
 const SectionContainer = styled.div`
-  padding: 1.2rem 1.5rem;
+  padding: 1rem 1.5rem;
   background-color: ${props => props.theme.colors.panelBackground};
   display: flex;
   flex-direction: column;
@@ -282,9 +282,12 @@ async function getCroppedImg(imageSrc, pixelCrop, rotation = 0) {
 const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser }) => {
   const { user: currentUser, updateUser } = useAuth();
   
+  // Local State for fetched data
+  const [fetchedUser, setFetchedUser] = useState(null);
+
   // Determine mode
   const isEditable = !targetUser || targetUser._id === currentUser._id;
-  const displayUser = isEditable ? currentUser : targetUser;
+  const displayUser = isEditable ? currentUser : (fetchedUser || targetUser);
 
   // Local State
   const [name, setName] = useState('');
@@ -320,6 +323,17 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser 
       setListModalOpen(false);
       if (onSwitchUser) onSwitchUser(user);
   };
+
+  // Fetch fresh user data when target changes
+  useEffect(() => {
+      if (targetUser && targetUser._id !== currentUser._id) {
+          // Reset fetched user first to avoid showing old data
+          setFetchedUser(null);
+          userService.getUserById(targetUser._id)
+            .then(res => setFetchedUser(res.data))
+            .catch(err => console.error("Failed to fetch user details", err));
+      }
+  }, [targetUser, currentUser._id]);
 
   // Sync state when user changes
   useEffect(() => {
