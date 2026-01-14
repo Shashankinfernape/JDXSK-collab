@@ -124,7 +124,7 @@ const StatsRow = styled.div`
   justify-content: center;
   gap: 2rem;
   width: 100%;
-  margin: 1.5rem 0 0.5rem 0;
+  margin: 1rem 0;
   padding: 0.5rem 0;
 `;
 
@@ -291,12 +291,16 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat }) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [localFollowers, setLocalFollowers] = useState(0);
+  const [localFollowing, setLocalFollowing] = useState(0);
 
   // Sync state when user changes
   useEffect(() => {
     if (displayUser) {
         setName(displayUser.name || '');
         setAbout(displayUser.about || 'Hey there! I am using Chatflix.');
+        setLocalFollowers(displayUser.followers?.length || 0);
+        setLocalFollowing(displayUser.following?.length || 0);
     }
     if (targetUser && currentUser) {
          // Check connectionStatus or array
@@ -315,18 +319,25 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat }) => {
 
   // --- Handlers ---
   const handleFollowToggle = async () => {
+      // Optimistic Update
+      const previousState = isFollowing;
+      const previousFollowers = localFollowers;
+      
       try {
           if (isFollowing) {
-              await userService.unfollowUser(targetUser._id);
               setIsFollowing(false);
-              // Optimistic update for currentUser following list?
-              // Ideally update auth context, but simplified for now.
+              setLocalFollowers(prev => Math.max(0, prev - 1)); // Decrease count
+              await userService.unfollowUser(targetUser._id);
           } else {
-              await userService.followUser(targetUser._id);
               setIsFollowing(true);
+              setLocalFollowers(prev => prev + 1); // Increase count
+              await userService.followUser(targetUser._id);
           }
       } catch (e) {
           console.error(e);
+          // Revert on error
+          setIsFollowing(previousState);
+          setLocalFollowers(previousFollowers);
       }
   };
 
@@ -427,15 +438,11 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat }) => {
 
                 <StatsRow>
                     <StatItem>
-                        <StatValue>0</StatValue>
-                        <StatLabel>Posts</StatLabel>
-                    </StatItem>
-                    <StatItem>
-                        <StatValue>{displayUser.followers?.length || 0}</StatValue>
+                        <StatValue>{localFollowers}</StatValue>
                         <StatLabel>Followers</StatLabel>
                     </StatItem>
                     <StatItem>
-                        <StatValue>{displayUser.following?.length || 0}</StatValue>
+                        <StatValue>{localFollowing}</StatValue>
                         <StatLabel>Following</StatLabel>
                     </StatItem>
                 </StatsRow>
