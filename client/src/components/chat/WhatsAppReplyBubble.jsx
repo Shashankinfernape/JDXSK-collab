@@ -30,15 +30,25 @@ const BubbleContainer = styled.div`
 const ReplyCard = styled.div`
   width: 100%; /* Force full width */
   background-color: rgba(0, 0, 0, 0.2); /* bg-black/20 */
-  border-left: 4px solid #D1D5DB; /* Accent color */
   border-radius: 0.375rem; /* rounded-md */
+  position: relative;
   overflow: hidden;
-  padding: 0.5rem; /* p-2 */
+  padding: 0.5rem 0.5rem 0.5rem 1rem; /* p-2 with extra left padding for stripe */
   margin-bottom: 0.5rem; /* Space between reply and main text */
   
   display: flex;
   flex-direction: column;
   justify-content: center;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #D1D5DB; /* Accent color */
+  }
 `;
 
 const ReplySender = styled.span`

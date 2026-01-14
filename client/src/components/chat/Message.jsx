@@ -82,12 +82,12 @@ const QuotedMessage = styled.div`
   background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)'};
   ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.08);`}
   
-  /* Straight line cut edge for the stripe - Solid and sharp */
-  border-left: 4px solid ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : props.theme.colors.primary};
+  /* Contained corners: rounding all sides keeps the stripe within the bubble's flow */
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden; /* Clips the pseudo-element stripe to the radius */
   
-  padding: 5px 10px; 
-  /* Straight left side to keep stripe vertical, slightly rounded right side */
-  border-radius: 0 6px 6px 0;
+  padding: 5px 12px 5px 16px; /* Left padding includes space for the 4px stripe */
   
   display: flex;
   flex-direction: column;
@@ -97,6 +97,17 @@ const QuotedMessage = styled.div`
   line-height: 1.25;
   cursor: pointer;
   transition: background-color 0.2s;
+
+  /* Straight line stripe - Purely contained within the rounded block */
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : props.theme.colors.primary};
+  }
 
   &:hover {
     background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.07)'};

@@ -55,12 +55,12 @@ const ReplyPreview = styled.div`
   /* Subtle variation for reply box */
   background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};
   
-  /* Straight solid stripe - Sharp and consistent */
-  border-left: 4px solid ${props => props.theme.colors.primary};
+  /* Contained corners: matches Message.jsx for consistent UI */
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
   
-  padding: 6px 10px;
-  /* Straight left side to keep stripe vertical, rounded right side */
-  border-radius: 0 8px 8px 0;
+  padding: 6px 12px 6px 16px;
   
   display: flex;
   justify-content: space-between;
@@ -68,6 +68,17 @@ const ReplyPreview = styled.div`
   
   animation: ${slideUp} 0.2s ease-out;
   cursor: default;
+
+  /* Straight solid stripe - Contained within the rounded block */
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: ${props => props.theme.colors.primary};
+  }
 `;
 
 const ReplyContent = styled.div`
