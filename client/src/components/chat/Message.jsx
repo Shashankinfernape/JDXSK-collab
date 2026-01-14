@@ -47,7 +47,7 @@ const MessageBubble = styled.div`
     max-width: 80%; 
   }
   
-  padding: 6px 8px 6px 9px;
+  padding: 4px;
   
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
   background-color: ${props =>
@@ -75,70 +75,15 @@ const MessageBubble = styled.div`
 // --- Quoted Reply Block (Synchronized Style) ---
 const QuotedMessage = styled.div`
   /* Standard margin within bubble padding - Contained */
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
   width: 100%;
-  
-  /* Visuals */
-  background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)'};
-  ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.08);`}
-  
-  /* Contained corners: rounding all sides keeps the stripe within the bubble's flow */
-  border-radius: 6px;
-  position: relative;
-  overflow: hidden; /* Clips the pseudo-element stripe to the radius */
-  
-  padding: 5px 12px 5px 16px; /* Left padding includes space for the 4px stripe */
-  
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  
-  font-size: 0.82rem;
-  line-height: 1.25;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  /* Straight line stripe - Purely contained within the rounded block */
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background-color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : props.theme.colors.primary};
-  }
-
-  &:hover {
-    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.07)'};
-  }
-`;
-
-const QuotedSender = styled.span`
-  font-weight: 700;
-  color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.primary};
-  font-size: 0.75rem;
-  margin-bottom: 1px;
-  opacity: 0.98;
-`;
-
-const QuotedText = styled.span`
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: inherit;
-  opacity: 0.85;
-  font-size: 0.8rem;
-  line-height: 1.3;
-  display: block;
-`;
-
+... <!-- This section will be replaced by the actual content -->
 const MessageText = styled.div`
   font-size: 0.95rem; 
   line-height: 1.4;
   color: inherit;
   width: 100%;
-  padding: 0 1px;
+  padding: 2px 5px 0 5px;
   margin-bottom: 0px;
 `;
 
@@ -148,8 +93,8 @@ const StatusContainer = styled.div`
   align-items: center;
   gap: 3px;
   margin-top: 2px; /* Safe gap below text */
-  margin-right: -2px;
-  margin-bottom: -2px;
+  margin-right: 2px;
+  margin-bottom: 2px;
   
   height: 14px; 
   line-height: 1;

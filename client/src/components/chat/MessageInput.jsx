@@ -41,7 +41,7 @@ const InputBubble = styled.div`
   /* If replying, it looks more like a complex message bubble */
   ${props => props.$isReplying && `
     border-radius: 16px; 
-    padding-top: 6px;
+    padding-top: 4px;
   `}
 `;
 
@@ -49,8 +49,8 @@ const InputBubble = styled.div`
    ReplyPreview: Imitates 'QuotedMessage' from Message.jsx 
 */
 const ReplyPreview = styled.div`
-  margin: 0 6px 4px 6px; /* Internal margins */
-  width: calc(100% - 12px);
+  margin: 0 4px 4px 4px; /* Internal margins - Thin area look */
+  width: calc(100% - 8px);
   
   /* Subtle variation for reply box */
   background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};
