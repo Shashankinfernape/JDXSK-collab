@@ -128,7 +128,7 @@ const Home = () => {
 
 
   // Determine if placeholder should be shown
-  const showPlaceholder = !activeChat && (!isMobileView); // Only show placeholder on desktop
+  // const showPlaceholder = !activeChat && (!isMobileView); // Removed unused variable
 
   return (
     <HomeContainer>

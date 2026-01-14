@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { IoMdClose, IoMdSend } from 'react-icons/io';
 import { useChat } from '../../context/ChatContext';
-import { useAuth } from '../../context/AuthContext';
 
 const Overlay = styled.div`
   position: fixed;

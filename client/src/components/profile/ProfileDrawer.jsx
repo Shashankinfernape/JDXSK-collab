@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import userService from '../../services/user.service';
 import { IoMdArrowBack } from 'react-icons/io';

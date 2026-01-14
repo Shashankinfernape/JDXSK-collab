@@ -1,11 +1,7 @@
-import { createGlobalStyle, css, keyframes } from 'styled-components';
+import { createGlobalStyle, css } from 'styled-components';
 
 // --- Keyframes ---
-const instagramBgAnimation = keyframes`
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-`;
+// const instagramBgAnimation removed - unused
 
 // --- Shared Layout Tokens ---
 const layoutTokens = {

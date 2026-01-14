@@ -3,9 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import { useAuth } from './context/AuthContext';
-import { ThemeProvider } from 'styled-components'; // From styled-components
 import { GlobalStyles } from './theme/GlobalStyles'; 
-import { useTheme } from './context/ThemeContext'; // From our custom hook
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
