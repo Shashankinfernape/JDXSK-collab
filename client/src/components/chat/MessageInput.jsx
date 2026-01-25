@@ -4,7 +4,6 @@ import { IoMdSend, IoMdClose } from 'react-icons/io';
 import { BsEmojiSmile, BsMicFill } from 'react-icons/bs';
 import { useChat } from '../../context/ChatContext';
 import EmojiPicker from './EmojiPicker';
-import AudioVisualizer from '../common/AudioVisualizer';
 
 const slideUp = keyframes`
   from { opacity: 0; transform: translateY(10px); }
@@ -12,9 +11,9 @@ const slideUp = keyframes`
 `;
 
 const pulse = keyframes`
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 0, 56, 0.4); }
-  70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(234, 0, 56, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 0, 56, 0); }
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
 `;
 
 const Container = styled.div`
@@ -108,13 +107,14 @@ const SendButton = styled.button`
   svg { margin-left: 2px; }
 `;
 
-// Updated Mic Button - Matches Theme + Pulse
 const MicButton = styled(SendButton)`
-  background-color: ${props => props.$recording ? props.theme.colors.primary : props.theme.colors.primary};
-  /* Only pulse/change if recording */
+  /* Keep it solid primary color, no weird red unless holding */
+  background-color: ${props => props.theme.colors.primary}; 
+  
   ${props => props.$recording && css`
+    transform: scale(1.2);
+    /* Subtle pulse in theme color */
     animation: ${pulse} 1.5s infinite;
-    transform: scale(1.1);
   `}
 `;
 
@@ -126,21 +126,15 @@ const TextInput = styled.input`
 
 const RecordingIndicator = styled.div`
   flex: 1; display: flex; align-items: center; gap: 10px;
-  color: ${props => props.theme.colors.textPrimary}; /* Neutral color */
-  font-weight: 500; font-size: 0.95rem;
+  color: ${props => props.theme.colors.textPrimary};
+  font-weight: 500; font-size: 1rem;
   padding-left: 10px;
-  overflow: hidden;
+  animation: ${slideUp} 0.2s ease-out;
 `;
 
 const RecDot = styled.div`
-  width: 8px; height: 8px; background-color: #ff3b30; border-radius: 50%;
+  width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%;
   animation: ${pulse} 1s infinite;
-  flex-shrink: 0;
-`;
-
-const VisualizerContainer = styled.div`
-  flex: 1; height: 30px; display: flex; align-items: center;
-  margin: 0 10px;
 `;
 
 const MessageInput = () => {
@@ -148,7 +142,6 @@ const MessageInput = () => {
   const [showPicker, setShowPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [recordingStream, setRecordingStream] = useState(null); 
   
   const { sendMessage, sendFileMessage, replyingTo, setReplyingTo } = useChat();
   const inputRef = useRef(null);
@@ -167,10 +160,9 @@ const MessageInput = () => {
   };
 
   const startRecording = async (e) => {
-      e.preventDefault(); // Prevent focus loss
+      e.preventDefault(); 
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          setRecordingStream(stream); 
           
           mediaRecorderRef.current = new MediaRecorder(stream);
           audioChunksRef.current = [];
@@ -183,11 +175,13 @@ const MessageInput = () => {
 
           mediaRecorderRef.current.onstop = () => {
               const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-              const file = new File([audioBlob], "voice_message.webm", { type: 'audio/webm' });
-              sendFileMessage(file);
-              
+              // Simple check to ensure we recorded something
+              if (audioBlob.size > 0) {
+                  const file = new File([audioBlob], "voice_message.webm", { type: 'audio/webm' });
+                  sendFileMessage(file);
+              }
+              // Cleanup
               stream.getTracks().forEach(track => track.stop());
-              setRecordingStream(null);
           };
 
           mediaRecorderRef.current.start();
@@ -195,26 +189,27 @@ const MessageInput = () => {
           setRecordingTime(0);
           timerRef.current = setInterval(() => setRecordingTime(p => p + 1), 1000);
 
-          // Add GLOBAL listeners for release
+          // Add GLOBAL listeners for release to ensure we catch it
           document.addEventListener('mouseup', stopRecording);
           document.addEventListener('touchend', stopRecording);
 
       } catch (err) {
           console.error("Mic access denied", err);
-          alert("Could not access microphone.");
       }
   };
 
   const stopRecording = () => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-          mediaRecorderRef.current.stop();
-      }
-      setIsRecording(false);
-      clearInterval(timerRef.current);
-      
-      // Remove GLOBAL listeners
+      // Ensure we clean up listeners immediately so it doesn't fire twice
       document.removeEventListener('mouseup', stopRecording);
       document.removeEventListener('touchend', stopRecording);
+
+      if (mediaRecorderRef.current) {
+          if (mediaRecorderRef.current.state !== 'inactive') {
+              mediaRecorderRef.current.stop();
+          }
+      }
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
   };
 
   const handleSubmit = (e) => {
@@ -253,10 +248,10 @@ const MessageInput = () => {
             {isRecording ? (
                 <RecordingIndicator>
                     <RecDot />
-                    <span style={{ minWidth: '40px' }}>{formatTime(recordingTime)}</span>
-                    <VisualizerContainer>
-                        <AudioVisualizer stream={recordingStream} isRecording={true} />
-                    </VisualizerContainer>
+                    <span>{formatTime(recordingTime)}</span>
+                    <span style={{ marginLeft: 'auto', marginRight: '10px', fontSize: '0.8rem', opacity: 0.7 }}>
+                        Release to send
+                    </span>
                 </RecordingIndicator>
             ) : (
                 <TextInput
