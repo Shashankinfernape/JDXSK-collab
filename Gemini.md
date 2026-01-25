@@ -1,6 +1,6 @@
-# NETSAPP - Project Documentation
+# NETSAPP (Chatflix) - Project Documentation
 
-NETSAPP is a high-performance, real-time chat application inspired by WhatsApp. It provides a seamless communication experience with features like instant messaging, status updates, and group chats, built using the MERN stack.
+**Chatflix** (formerly NETSAPP) is a premium, high-performance real-time chat application built on the MERN stack. It features a unique "Brand Mode" theming engine, allowing users to switch between Netflix, Spotify, Apple, Google, and Instagram-inspired interfaces.
 
 ## 🚀 Tech Stack
 
@@ -17,91 +17,69 @@ NETSAPP is a high-performance, real-time chat application inspired by WhatsApp. 
 - **Runtime:** Node.js
 - **Framework:** Express.js
 - **Database:** MongoDB (via Mongoose)
-- **Authentication:** Passport.js (Google OAuth 2.0)
+- **Authentication:** Passport.js (Google OAuth 2.0) + JWT (365-day persistence)
 - **Real-time:** Socket.io
-- **Middleware:** Express-session, CORS, Auth Middleware
-
-## 🏗️ Architecture
-
-The project follows a modular and decoupled architecture to ensure scalability and maintainability.
-
-### Backend Structure (MVC-ish)
-- **`controllers/`**: Handles business logic and coordinates between models and routes.
-- **`models/`**: Defines MongoDB schemas (User, Message, Chat, Status, Notification).
-- **`routes/`**: Defines API endpoints and maps them to controllers.
-- **`socket/`**: Encapsulates all WebSocket event logic.
-- **`middleware/`**: Custom Express middleware for authentication and security.
-
-### Frontend Structure
-- **`context/`**: Global state providers for cross-component data sharing.
-- **`components/`**: Atomic and molecular UI components (Chat, Profile, Settings, Layout).
-- **`services/`**: Modular API and WebSocket interaction logic.
-- **`theme/`**: Global styles and theme definitions.
+- **Search:** MongoDB Aggregation Pipeline (Weighted Prefix Matching)
 
 ## ✨ Key Features
 
-### 👥 Social & Friends (Instagram Style)
-- **User Search:** Search for users by name or email.
-- **Friend Requests:** Send "Follow" requests to other users.
-- **Instant Updates:** `ChatList` instantly updates when a friend request is accepted.
-- **Connection Status:** UI shows "Follow", "Requested", or "Following" based on user relationship.
+### 🎨 Premium Theming System (Brand Modes)
+- **Netflix Mode:** Cinematic Dark, Red Accents, 'Archivo' font.
+- **Spotify Mode:** Deep Black, Vibrant Green, 'Montserrat' font.
+- **Apple Mode:** Clean, Glassmorphism, San Francisco-style font.
+- **Instagram Mode:** Gradient borders, Pink accents, Social layout.
+- **Google Mode:** Material Design, Playful colors.
+- **Theme-Aware Components:** Send buttons, ticks, and layouts adapt to the active brand.
 
-### 🔔 Notifications
-- **Real-time:** Receive instant notifications for new friend requests and acceptances via Socket.io.
-- **Professional UI:** Instagram-inspired notification panel with avatars, timestamps, and styled action buttons.
-- **Persistent State:** Accepted notifications are permanently marked as "Following".
+### 👥 Social Graph (Followers/Following)
+- **Unilateral Connections:** Instagram-style Follow system (replacing legacy Friend Requests).
+- **Profile Hub:** 
+    - Stats for Followers/Following.
+    - Clickable lists to view connections (Modal view).
+    - Optimistic UI updates for instant feedback.
+- **Smart Integration:** Following a user automatically ensures they appear in the Chat List.
 
-### 👤 Profile Customization
-- **Refined UI:** Polished layout with high-quality typography and improved spacing.
-- **Image Cropping:** Users can upload a profile picture, crop it to a 1:1 ratio, and save it.
-- **Editable Fields:** Update user `name` and `about` status.
-- **Contact View:** View other users' profiles in a clean, read-only mode directly from the chat.
+### 🔍 Advanced Search
+- **Algorithm:** MongoDB Aggregation Pipeline using `$regexMatch` and `$cond` to prioritize names *starting with* the query over partial matches.
+- **Performance:** 50ms debounce time for near-instant reactivity.
+- **Indexing:** DB-level indexes on `name` and `email`.
 
-### 💬 Advanced Messaging
-- **Real-time Delivery:** Instant message transmission via WebSockets.
-- **Message Interactions:**
-    - **Swipe-to-Reply:** Gesture-based shortcut to reply to specific messages.
-    - **Message Selection:** Multi-select mode via long-press or right-click.
-    - **Contextual Action Bar:** WhatsApp-Web-style top bar for Reply, Forward, and Delete actions.
-    - **Persistent Replies:** Full rehydration of reply context (quoted blocks) after reloads.
-    - **Message Forwarding:** Dedicated forwarding screen with contact search, checklist, and content preview.
-- **Rich Media:** 
-    - **Emoji Picker:** Integrated tabbed picker for Emojis, GIFs, and Stickers.
-- **Disappearing Messages:** Automatic deletion of messages after 48 hours.
-- **Typing Indicators:** Real-time feedback when a user is typing.
-- **Group Chats:** Multi-participant conversation support.
+### 💬 Messaging Experience
+- **Smart Spacing:** Dynamic vertical margins grouping consecutive messages from the same sender (1px/2px) vs. different senders (12px/16px).
+- **Rich Interaction:** Swipe-to-Reply, Message Forwarding, Context Menus.
+- **Visuals:** WhatsApp-style ticks with high-contrast colors.
+- **Loaders:** Skeleton screens for smooth data fetching transitions.
 
-### ✅ WhatsApp-Style Tick System
-- **Full Lifecycle:** 
-    - **Clock (🕓):** Message is sending (Optimistic state).
-    - **Single Gray Tick (✓):** Sent to server.
-    - **Double Gray Tick (✓✓):** Delivered to recipient's device.
-    - **Double Blue Tick (✓✓):** Message read by recipient.
-- **Robust Logic:** Improved optimistic replacement ensures the clock icon transitions to ticks instantly upon server acknowledgment.
+### 📱 UI/UX Polish
+- **Landing Page:** "Chatflix" cinematic landing page with floating animations and minimalist design.
+- **Input:** Floating pill-shaped input bar.
+- **Notifications:** "Improvised" layout with deduplication and smooth animations.
 
-### 📱 Status Updates
-- **24h Expiry:** Text and image statuses that automatically expire.
-- **Status List:** View updates from all contacts in a dedicated panel.
+## 🏗️ Architecture
 
-### 🎨 Premium Theming System
-- **Brand Modes:** Distinct UI personalities for **Netflix, Google, Spotify, Apple, and Instagram**.
-- **Fixed Identity:** Corrected style "leakage" to ensure each brand has its unique colors and bubble geometry.
-    - **Netflix:** Cinematic Dark (Pure black bg, deep red accents).
-    - **Instagram:** Clean Messenger style (Standard Blue bubbles, no gradient overload).
-- **Subtle Rounding:** Standardized, professional border-radii (8px - 18px) for a non-toy-like appearance.
+### Backend Structure
+- **`controllers/`**: 
+    - `user.controller.js`: Handles profile, search (aggregation), and social graph (follow/unfollow).
+    - `chat.controller.js`: Manages chat creation and message retrieval.
+- **`models/`**: 
+    - `User`: Includes `followers` and `following` arrays.
+    - `Notification`: Supports `follow` and `friend_request` types.
+- **`socket/`**: Real-time event handling for messages and notifications.
 
-### 🔒 Security & Authentication
-- **Google OAuth:** Secure third-party authentication.
-- **Session Management:** Secure token-based sessions with optimized payload.
+### Frontend Structure
+- **`context/`**: Global state. `ChatContext` optimized to prevent re-fetches on user profile updates.
+- **`components/`**: 
+    - `ProfileDrawer`: Handles profile viewing, editing, and social stats.
+    - `UserListModal`: Reusable modal for viewing user lists.
+    - `Skeleton`: Reusable loading component.
 
-### 🛠️ Utilities & Layout
-- **Wider Bubbles:** Optimized for readability with **80-90% width** (mobile/desktop).
-- **Floating Input Bar:** 
-    - **"Fake Bubble" Pill:** Input area mimics chat messages for a modern look.
-    - **Transparent Container:** Wallpaper remains visible behind the input area.
-    - **Push-up Motion:** Messages smoothly animate upwards when replying to create space.
-- **Responsive Spacing:** Dynamic bottom padding prevents input bar from overlapping chat content.
+## 🛠️ Status & Todo
+- [x] **Project Rename:** Rebranded to "Chatflix".
+- [x] **Search:** Optimized to "Best Algorithm" (Prefix Priority).
+- [x] **Social:** Full Followers/Following implementation.
+- [x] **UI:** Final spacing and font adjustments completed.
+- [ ] **Backup:** UI updated, backend logic mocked/placeholder.
 
 ---
 *Last updated: January 14, 2026*
-*Latest features: Forwarding Screen, Contained Straight-Stripe Replies, Floating Input Pill, Strict Tick System*
+*Latest Milestone: Final Polish & "Chatflix" Rebranding*

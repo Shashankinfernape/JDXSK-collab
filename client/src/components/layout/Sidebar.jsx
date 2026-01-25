@@ -10,6 +10,7 @@ import userService from '../../services/user.service';
 import SearchResults from '../search/SearchResults';
 import { useTheme } from '../../context/ThemeContext';
 import Notifications from '../common/Notifications';
+import VoiceAssistant from '../common/VoiceAssistant';
 // --- FIX: Add FaInstagram back ---
 import { TbBrandNetflix } from 'react-icons/tb';
 import { BsSpotify, BsApple, BsGoogle, BsSun, BsMoonStars } from 'react-icons/bs';
@@ -325,6 +326,9 @@ const Sidebar = ({ onChatSelect }) => {
             />
           </HeaderLeft>
           <HeaderIcons>
+            {/* AI Voice Assistant */}
+            <VoiceAssistant />
+
              {/* Brand Cycle Button */}
              <ThemeSwitcher onClick={cycleBrand} theme={theme} title="Switch UI Style">
               {renderThemeIcon()}
