@@ -178,74 +178,164 @@ const VoiceAssistant = () => {
   
   const recognitionRef = useRef(null);
 
-  // --- Fuzzy Match Helper ---
-  const levenshteinDistance = (a, b) => {
-    if (a.length === 0) return b.length;
-    if (b.length === 0) return a.length;
-    const matrix = [];
-    for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
-    for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
-    for (let i = 1; i <= b.length; i++) {
-      for (let j = 1; j <= a.length; j++) {
-        if (b.charAt(i - 1) === a.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
-          );
+  // --- ADVANCED NAME MATCHING (Jaro-Winkler + Recency + Phonetic) ---
+  
+  // 1. Jaro-Winkler Distance (0.0 = no match, 1.0 = perfect match)
+  const getJaroWinkler = (s1, s2) => {
+    if (s1.length === 0 || s2.length === 0) return 0;
+    
+    // Simple Jaro implementation
+    const matchWindow = Math.floor(Math.max(s1.length, s2.length) / 2) - 1;
+    const matches1 = new Array(s1.length).fill(false);
+    const matches2 = new Array(s2.length).fill(false);
+    let mCount = 0;
+    
+    for (let i = 0; i < s1.length; i++) {
+        const start = Math.max(0, i - matchWindow);
+        const end = Math.min(i + matchWindow + 1, s2.length);
+        for (let j = start; j < end; j++) {
+            if (!matches2[j] && s1[i] === s2[j]) {
+                matches1[i] = true;
+                matches2[j] = true;
+                mCount++;
+                break;
+            }
         }
-      }
     }
-    return matrix[b.length][a.length];
+    
+    if (mCount === 0) return 0;
+    
+    let tCount = 0;
+    let k = 0;
+    for (let i = 0; i < s1.length; i++) {
+        if (matches1[i]) {
+            while (!matches2[k]) k++;
+            if (s1[i] !== s2[k]) tCount++;
+            k++;
+        }
+    }
+    const t = tCount / 2;
+    const jaro = (mCount / s1.length + mCount / s2.length + (mCount - t) / mCount) / 3;
+    
+    // Winkler Boost (Prefix bonus)
+    let prefix = 0;
+    for (let i = 0; i < Math.min(4, Math.min(s1.length, s2.length)); i++) {
+        if (s1[i] === s2[i]) prefix++;
+        else break;
+    }
+    
+    return jaro + prefix * 0.1 * (1 - jaro);
+  };
+
+  // 2. Simple Phonetic Key (remove vowels, double letters)
+  const getPhonetic = (str) => {
+      return str.toLowerCase()
+          .replace(/[^a-z]/g, '')
+          .replace(/[aeiouy]/g, '') // remove vowels
+          .replace(/(.)\1+/g, '$1'); // remove doubles
   };
 
   const findBestMatch = (rawName) => {
     if (!rawName) return null;
     const normalize = (s) => s.toLowerCase().trim();
     const target = normalize(rawName);
+    const targetPhonetic = getPhonetic(target);
     
     let bestMatch = null;
-    let minDistance = Infinity;
-
-    // Helper to check distance and update best match
-    const checkMatch = (candidateName, chat) => {
-        const dist = levenshteinDistance(target, candidateName);
-        // Dynamic threshold: 
-        // Allow more errors for longer names.
-        // Min threshold 1.5 ensures "Bo" (2) matches "Jo" (2) (dist 1 < 1.5).
-        // "Eshwar" (6) -> Threshold 2.4. "Ishwar" (dist 1) matches.
-        const threshold = Math.max(1.5, candidateName.length * 0.4); 
-
-        if (dist < minDistance && dist <= threshold) {
-            minDistance = dist;
-            bestMatch = chat;
-        }
-    };
+    let bestScore = 0;
 
     chats.forEach(chat => {
         const partner = chat.participants.find(p => p._id !== user._id);
         if (!partner?.name) return;
         
         const fullName = normalize(partner.name);
-        const firstName = fullName.split(' ')[0]; // Check first name separately
-
-        // 1. Direct Search Priority
-        if (fullName === target || firstName === target || fullName.startsWith(target)) {
-            minDistance = 0;
-            bestMatch = chat;
-            return;
-        }
+        const firstName = fullName.split(' ')[0];
         
-        // 2. Fuzzy Search against Full Name AND First Name
-        checkMatch(fullName, chat);
-        if (firstName !== fullName) {
-            checkMatch(firstName, chat);
+        // --- SCORING SYSTEM ---
+        let score = 0;
+
+        // A. Jaro-Winkler Score (Base)
+        // Check both full name and first name
+        const scoreFull = getJaroWinkler(target, fullName);
+        const scoreFirst = getJaroWinkler(target, firstName);
+        score = Math.max(scoreFull, scoreFirst);
+
+        // B. Phonetic Bonus
+        const pFull = getPhonetic(fullName);
+        const pFirst = getPhonetic(firstName);
+        if (targetPhonetic === pFull || targetPhonetic === pFirst) {
+            score += 0.15; // Significant boost for "sounding" the same
+        }
+
+        // C. Recency Boost (Context Awareness)
+        if (chat.lastMessage && chat.lastMessage.createdAt) {
+            const lastMsgTime = new Date(chat.lastMessage.createdAt).getTime();
+            const now = Date.now();
+            const hoursSince = (now - lastMsgTime) / (1000 * 60 * 60);
+            
+            if (hoursSince < 24) score += 0.1;       // Super active (today)
+            else if (hoursSince < 72) score += 0.05; // Recent (3 days)
+        }
+
+        // Update Winner
+        // Threshold: 0.85 (Jaro-Winkler is usually high, so we set a high bar)
+        if (score > bestScore && score > 0.8) { 
+            bestScore = score;
+            bestMatch = chat;
         }
     });
 
     return bestMatch;
+  };
+
+  // --- POV Transformer (3rd Person -> 1st Person) ---
+  const transformContent = (rawText) => {
+      let text = rawText.trim();
+      
+      // 1. "Ask [Name] IF HE IS free" -> "Are you free?"
+      // Patterns: if he/she + is/are/will/can/could/should
+      const indirectMap = [
+          { regex: /^if\s+(?:he|she)\s+is\b/i, replace: "Are you" },
+          { regex: /^if\s+(?:he|she)\s+are\b/i, replace: "Are you" },
+          { regex: /^if\s+(?:he|she)\s+was\b/i, replace: "Were you" },
+          { regex: /^if\s+(?:he|she)\s+were\b/i, replace: "Were you" },
+          { regex: /^if\s+(?:he|she)\s+will\b/i, replace: "Will you" },
+          { regex: /^if\s+(?:he|she)\s+can\b/i, replace: "Can you" },
+          { regex: /^if\s+(?:he|she)\s+could\b/i, replace: "Could you" },
+          { regex: /^if\s+(?:he|she)\s+should\b/i, replace: "Should you" },
+          { regex: /^if\s+(?:he|she)\s+has\b/i, replace: "Have you" },
+          { regex: /^if\s+(?:he|she)\s+needs\b/i, replace: "Do you need" },
+          { regex: /^if\s+(?:he|she)\s+wants\b/i, replace: "Do you want" },
+          { regex: /^if\s+(?:he|she)\s+likes\b/i, replace: "Do you like" },
+      ];
+
+      for (let rule of indirectMap) {
+          if (rule.regex.test(text)) {
+              // Replace start, append '?' if missing
+              let transformed = text.replace(rule.regex, rule.replace);
+              if (!transformed.endsWith('?')) transformed += '?';
+              return transformed;
+          }
+      }
+
+      // 2. "Tell [Name] TO call me" -> "Call me" (Imperative)
+      if (/^to\s+\w+/i.test(text)) {
+          let clean = text.replace(/^to\s+/i, "");
+          // Capitalize first letter
+          return clean.charAt(0).toUpperCase() + clean.slice(1);
+      }
+
+      // 3. "Tell [Name] THAT I am here" -> "I am here" (Declarative connector)
+      if (/^that\s+/i.test(text)) {
+          return text.replace(/^that\s+/i, "");
+      }
+      
+      // 4. "Ask [Name] ABOUT the meeting" -> "What about the meeting?"
+      if (/^about\s+/i.test(text)) {
+           return "What " + text + "?";
+      }
+
+      return text;
   };
 
   // --- Logic ---
@@ -327,56 +417,6 @@ const VoiceAssistant = () => {
     }
   };
 
-  // --- POV Transformer (3rd Person -> 1st Person) ---
-  const transformContent = (rawText) => {
-      let text = rawText.trim();
-      
-      // 1. "Ask [Name] IF HE IS free" -> "Are you free?"
-      // Patterns: if he/she + is/are/will/can/could/should
-      const indirectMap = [
-          { regex: /^if\s+(?:he|she)\s+is\b/i, replace: "Are you" },
-          { regex: /^if\s+(?:he|she)\s+are\b/i, replace: "Are you" },
-          { regex: /^if\s+(?:he|she)\s+was\b/i, replace: "Were you" },
-          { regex: /^if\s+(?:he|she)\s+were\b/i, replace: "Were you" },
-          { regex: /^if\s+(?:he|she)\s+will\b/i, replace: "Will you" },
-          { regex: /^if\s+(?:he|she)\s+can\b/i, replace: "Can you" },
-          { regex: /^if\s+(?:he|she)\s+could\b/i, replace: "Could you" },
-          { regex: /^if\s+(?:he|she)\s+should\b/i, replace: "Should you" },
-          { regex: /^if\s+(?:he|she)\s+has\b/i, replace: "Have you" },
-          { regex: /^if\s+(?:he|she)\s+needs\b/i, replace: "Do you need" },
-          { regex: /^if\s+(?:he|she)\s+wants\b/i, replace: "Do you want" },
-          { regex: /^if\s+(?:he|she)\s+likes\b/i, replace: "Do you like" },
-      ];
-
-      for (let rule of indirectMap) {
-          if (rule.regex.test(text)) {
-              // Replace start, append '?' if missing
-              let transformed = text.replace(rule.regex, rule.replace);
-              if (!transformed.endsWith('?')) transformed += '?';
-              return transformed;
-          }
-      }
-
-      // 2. "Tell [Name] TO call me" -> "Call me" (Imperative)
-      if (/^to\s+\w+/i.test(text)) {
-          let clean = text.replace(/^to\s+/i, "");
-          // Capitalize first letter
-          return clean.charAt(0).toUpperCase() + clean.slice(1);
-      }
-
-      // 3. "Tell [Name] THAT I am here" -> "I am here" (Declarative connector)
-      if (/^that\s+/i.test(text)) {
-          return text.replace(/^that\s+/i, "");
-      }
-      
-      // 4. "Ask [Name] ABOUT the meeting" -> "What about the meeting?"
-      if (/^about\s+/i.test(text)) {
-           return "What " + text + "?";
-      }
-
-      return text;
-  };
-
   const processCommand = (text) => {
     if (!text) {
         setIsListening(false);
@@ -413,8 +453,6 @@ const VoiceAssistant = () => {
     for (const regex of patterns) {
         match = lowerText.match(regex);
         if (match) {
-             // We rely on manual extraction logic below for precision 
-             // because regex groups can be tricky with lazy/greedy matching
             break; 
         }
     }
