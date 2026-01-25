@@ -278,6 +278,7 @@ const VoiceAssistant = () => {
     return () => {
         if (silenceTimer.current) clearTimeout(silenceTimer.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chats, pendingCommand]); // Add chats dependency for fresh list
 
   const toggleListening = () => {
