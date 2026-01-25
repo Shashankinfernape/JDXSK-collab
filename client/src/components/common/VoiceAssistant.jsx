@@ -183,11 +183,14 @@ const VoiceAssistant = () => {
   const { chats, sendMessageToChat } = useChat();
   const { user } = useAuth();
   
-  // Use Ref for chats to avoid re-initializing SpeechRecognition on every chat update
+  // Use Refs for dependencies to avoid re-initializing SpeechRecognition
   const chatsRef = useRef(chats);
+  const sendMessageRef = useRef(sendMessageToChat);
+
   useEffect(() => {
       chatsRef.current = chats;
-  }, [chats]);
+      sendMessageRef.current = sendMessageToChat;
+  }, [chats, sendMessageToChat]);
   
   const recognitionRef = useRef(null);
   const silenceTimer = useRef(null);
@@ -447,7 +450,7 @@ const VoiceAssistant = () => {
         if (recognitionRef.current) recognitionRef.current.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingCommand, sendMessageToChat]); // Removed 'chats' dependency 
+  }, [pendingCommand]); // Clean dependency: only restart if UI state changes
 
   const toggleListening = () => {
     if (isListening) {
@@ -535,10 +538,15 @@ const VoiceAssistant = () => {
   };
 
   const handleSend = (chatId, content) => {
-      sendMessageToChat(chatId, content);
-      setFeedback("Sent!");
-      setPendingCommand(null);
-      setTimeout(() => setIsListening(false), 1500);
+      // Use REF to get the latest function instance
+      if (sendMessageRef.current) {
+          sendMessageRef.current(chatId, content);
+          setFeedback("Sent!");
+          setPendingCommand(null);
+          setTimeout(() => setIsListening(false), 1500);
+      } else {
+          setFeedback("Error: Not connected");
+      }
   };
 
   const handleConfirm = () => {
