@@ -215,6 +215,34 @@ export const ChatProvider = ({ children }) => {
 
   const sendFileMessage = async (file) => {
       if (!activeChat || !user) return;
+      
+      // 1. Optimistic Update
+      const tempId = `temp-${Date.now()}`;
+      const previewUrl = URL.createObjectURL(file);
+      const type = file.type.startsWith('audio') || file.name.endsWith('.webm') ? 'audio' : 'image';
+      
+      const optimisticMessage = {
+          _id: tempId,
+          chatId: activeChat._id,
+          senderId: { 
+            _id: user._id, 
+            name: user.name, 
+            profilePic: user.profilePic 
+          },
+          content: type === 'audio' ? '🎤 Voice Message' : '📷 Image',
+          contentType: type,
+          fileUrl: previewUrl, // Local Blob URL
+          createdAt: new Date().toISOString(),
+          readBy: [],
+          deliveredTo: []
+      };
+
+      // Add temp message immediately
+      setMessages(prev => ({
+          ...prev,
+          [activeChat._id]: [...(prev[activeChat._id] || []), optimisticMessage]
+      }));
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('chatId', activeChat._id);
@@ -224,16 +252,27 @@ export const ChatProvider = ({ children }) => {
               headers: { 'Content-Type': 'multipart/form-data' }
           });
           
-          // Socket emit so others receive it immediately (and self via receiveMessage)
+          // Socket emit
           socket.emit('sendMessage', newMessage);
           
-          // Add locally immediately to be safe
-          setMessages(prev => ({
-              ...prev,
-              [activeChat._id]: [...(prev[activeChat._id] || []), newMessage]
-          }));
+          // Replace temp message with real one
+          setMessages(prev => {
+              const chatMessages = prev[activeChat._id] || [];
+              const updatedMessages = chatMessages.map(msg => 
+                  msg._id === tempId ? newMessage : msg
+              );
+              return { ...prev, [activeChat._id]: updatedMessages };
+          });
       } catch (error) {
           console.error("Failed to send file", error);
+          // Remove temp message on error
+          setMessages(prev => {
+              const chatMessages = prev[activeChat._id] || [];
+              return { 
+                  ...prev, 
+                  [activeChat._id]: chatMessages.filter(msg => msg._id !== tempId) 
+              };
+          });
       }
   };
 

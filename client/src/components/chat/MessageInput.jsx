@@ -210,6 +210,8 @@ const MessageInput = () => {
 
       if (mediaRecorderRef.current) {
           if (mediaRecorderRef.current.state !== 'inactive') {
+              // Force flush of final data chunk
+              mediaRecorderRef.current.requestData(); 
               mediaRecorderRef.current.stop();
           }
       }

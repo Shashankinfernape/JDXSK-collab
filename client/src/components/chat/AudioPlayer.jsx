@@ -66,7 +66,9 @@ const Duration = styled.span`
   margin-left: 2px;
   line-height: 1;
   font-weight: 600;
-  opacity: 0.9;
+  opacity: 0.95;
+  min-width: 35px; /* Prevent jump */
+  text-align: right;
 `;
 
 const FooterContainer = styled.div`
@@ -86,6 +88,11 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     const audio = audioRef.current;
     if (!audio) return;
 
+    // Reset state on src change
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+
     const setAudioData = () => {
         if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
             setDuration(audio.duration);
@@ -93,13 +100,16 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     };
 
     const handleLoadedData = () => {
-        // Workaround for Chrome/Edge webm duration bug
-        if (audio.duration === Infinity || audio.duration === 0) {
-            audio.currentTime = 1e101; // Go to end
+        // Retry logic for WebM duration bug
+        if (audio.duration === Infinity || isNaN(audio.duration)) {
+            audio.currentTime = 1e101;
             audio.ontimeupdate = () => {
                 audio.ontimeupdate = null;
-                setDuration(audio.duration);
-                audio.currentTime = 0; // Go back to start
+                audio.currentTime = 0;
+                // Slight delay to let browser update duration property
+                setTimeout(() => {
+                    setDuration(audio.duration);
+                }, 100);
             };
         } else {
             setDuration(audio.duration);
@@ -108,8 +118,8 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
 
     const setAudioTime = () => {
         setCurrentTime(audio.currentTime);
-        // Backup: if duration is still not set, try setting it
-        if ((duration === 0 || duration === Infinity) && audio.duration > 0 && audio.duration !== Infinity) {
+        // Continuous check for valid duration during playback if initially failed
+        if ((!duration || duration === Infinity) && audio.duration > 0 && audio.duration !== Infinity) {
             setDuration(audio.duration);
         }
     };
@@ -124,6 +134,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     audio.addEventListener('timeupdate', setAudioTime);
     audio.addEventListener('ended', onEnded);
     
+    // Force load if likely cached or blob
     if(audio.readyState >= 1) handleLoadedData();
 
     return () => {
@@ -132,7 +143,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
       audio.removeEventListener('timeupdate', setAudioTime);
       audio.removeEventListener('ended', onEnded);
     };
-  }, [duration]);
+  }, [src]); // Re-run if SRC changes (e.g. temp -> real)
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -147,7 +158,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
   };
 
   const formatTime = (time) => {
-    if (!time) return "0:00";
+    if (!time || time === Infinity || isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
