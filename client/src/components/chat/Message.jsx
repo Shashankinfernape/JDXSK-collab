@@ -346,7 +346,11 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
             )}
             
             {message.contentType === 'audio' ? (
-                <AudioPlayer src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} isMe={isMe} />
+                <AudioPlayer 
+                    src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} 
+                    isMe={isMe}
+                    senderProfilePic={message.senderId?.profilePic || `https://i.pravatar.cc/150?u=${message.senderId?._id}`}
+                />
             ) : message.contentType === 'image' ? (
                 <img 
                     src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} 

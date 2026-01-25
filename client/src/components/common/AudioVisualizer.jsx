@@ -24,40 +24,30 @@ const AudioVisualizer = ({ stream, audioRef, isRecording, isPlaying }) => {
 
       const ctx = audioContextRef.current;
       
-      // Resume context if suspended (browser autoplay policy)
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
+      if (ctx.state === 'suspended') await ctx.resume();
 
       if (!analyserRef.current) {
         analyserRef.current = ctx.createAnalyser();
-        analyserRef.current.fftSize = 64; // Low resolution for bar graph
+        analyserRef.current.fftSize = 256; // Higher resolution for waveform
+        analyserRef.current.smoothingTimeConstant = 0.5; // Smoother
       }
 
       const analyser = analyserRef.current;
 
-      // Disconnect old source if exists
-      if (sourceRef.current) {
-        sourceRef.current.disconnect();
-      }
+      if (sourceRef.current) sourceRef.current.disconnect();
 
       if (isRecording && stream) {
         sourceRef.current = ctx.createMediaStreamSource(stream);
         sourceRef.current.connect(analyser);
       } else if (isPlaying && audioRef && audioRef.current) {
-        try {
-            // Check if source already exists for this element to avoid errors
-            if (!audioRef.current._source) {
-                 sourceRef.current = ctx.createMediaElementSource(audioRef.current);
-                 audioRef.current._source = sourceRef.current; // Store it
-            } else {
-                sourceRef.current = audioRef.current._source;
-            }
-            sourceRef.current.connect(analyser);
-            analyser.connect(ctx.destination); // Connect to speakers for playback
-        } catch (e) {
-            console.error("Audio Source Error:", e);
+        if (!audioRef.current._source) {
+             sourceRef.current = ctx.createMediaElementSource(audioRef.current);
+             audioRef.current._source = sourceRef.current;
+        } else {
+            sourceRef.current = audioRef.current._source;
         }
+        sourceRef.current.connect(analyser);
+        analyser.connect(ctx.destination);
       }
 
       draw();
@@ -73,30 +63,40 @@ const AudioVisualizer = ({ stream, audioRef, isRecording, isPlaying }) => {
       
       const bufferLength = analyserRef.current.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
-      
       analyserRef.current.getByteFrequencyData(dataArray);
       
       ctx.clearRect(0, 0, width, height);
       
-      const barWidth = (width / bufferLength) * 2.5;
-      let barHeight;
-      let x = 0;
-      
-      for (let i = 0; i < bufferLength; i++) {
-        barHeight = dataArray[i] / 2; // Scale down
-        
-        // Dynamic color based on theme would be ideal, but hardcoding primary-ish for now
-        // Or pass color prop. Let's use a nice gradient or solid.
-        ctx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`; 
-        if (isRecording) ctx.fillStyle = '#EA0038'; // Red for recording
-        else ctx.fillStyle = '#4285F4'; // Blue for playback
+      // WhatsApp Style: Mirrored Bars
+      const barWidth = 3;
+      const gap = 2;
+      const barCount = Math.floor(width / (barWidth + gap));
+      const step = Math.floor(bufferLength / barCount);
 
-        // Rounded bars logic is hard in raw canvas, just rects for now
-        // Center vertically
-        const y = (height - barHeight) / 2;
-        ctx.fillRect(x, y, barWidth, barHeight);
+      ctx.fillStyle = isRecording ? '#ff3b30' : '#4285F4'; // Red recording, Blue playing
+      // Use round line caps for drawing
+      ctx.lineCap = 'round';
+      ctx.lineWidth = barWidth;
+      ctx.strokeStyle = isRecording ? '#ff3b30' : '#8e8e93'; // Grey for playback default?
+      if (isPlaying) ctx.strokeStyle = '#4285F4'; // Active color
+
+      for (let i = 0; i < barCount; i++) {
+        let value = dataArray[i * step];
         
-        x += barWidth + 2;
+        // Normalize value (0-255) to height (0 - height/2)
+        let percent = value / 255;
+        // Make it non-linear for better visual
+        percent = percent * percent; 
+        
+        let barHeight = Math.max(4, percent * (height * 0.8)); // Min height 4px
+        
+        const x = i * (barWidth + gap) + barWidth / 2;
+        const yCenter = height / 2;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, yCenter - barHeight / 2);
+        ctx.lineTo(x, yCenter + barHeight / 2);
+        ctx.stroke();
       }
       
       if (isRecording || isPlaying) {
@@ -108,16 +108,23 @@ const AudioVisualizer = ({ stream, audioRef, isRecording, isPlaying }) => {
         initAudio();
     } else {
         if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current);
-        // Clear canvas
+        // Draw static line or clear
         if (canvasRef.current) {
-            const ctx = canvasRef.current.getContext('2d');
-            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+             const ctx = canvasRef.current.getContext('2d');
+             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+             
+             // Draw static waveform hint (dots)
+             const width = canvasRef.current.width;
+             const height = canvasRef.current.height;
+             ctx.fillStyle = '#ccc';
+             for(let i=0; i<width; i+=5) {
+                 ctx.fillRect(i, height/2 - 1, 3, 2);
+             }
         }
     }
 
     return () => {
       if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current);
-      // We generally don't close AudioContext to reuse it, but can suspend
     };
   }, [stream, audioRef, isRecording, isPlaying]);
 

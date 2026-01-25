@@ -71,11 +71,11 @@ const createTheme = (brandKey, modeKey) => {
     bubbleOther: isDark ? '#2A2A2A' : '#FFFFFF',
     textBubbleOther: isDark ? '#E5E5E5' : '#111B21',
     textBubbleMe: '#FFFFFF',
-    scrollbarTrack: isDark ? '#1F1F1F' : '#F0F2F5',
-    scrollbarThumb: isDark ? '#808080' : '#D1D7DB',
+    scrollbarTrack: 'transparent', // Keep track invisible for premium feel
+    scrollbarThumb: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+    scrollbarThumbHover: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
     primary: brand.primary,
     bubbleMe: brand.primary,
-    scrollbarThumbHover: brand.primary,
     tick_read: brand.primary,
     tick_sent: isDark ? '#808080' : '#667781',
     tick_delivered: isDark ? '#808080' : '#667781',
@@ -241,12 +241,12 @@ export const GlobalStyles = createGlobalStyle`
     `}
   }
 
-  /* Scrollbar styles */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  /* Scrollbar styles - Premium / Lighter */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.colors.scrollbarThumb};
-    border-radius: 3px;
+    border-radius: 10px; /* Rounder caps */
   }
   ::-webkit-scrollbar-thumb:hover {
     background: ${({ theme }) => theme.colors.scrollbarThumbHover};

@@ -4,7 +4,7 @@ import { IoMdSend, IoMdClose } from 'react-icons/io';
 import { BsEmojiSmile, BsMicFill } from 'react-icons/bs';
 import { useChat } from '../../context/ChatContext';
 import EmojiPicker from './EmojiPicker';
-import AudioVisualizer from '../common/AudioVisualizer'; // Import Visualizer
+import AudioVisualizer from '../common/AudioVisualizer';
 
 const slideUp = keyframes`
   from { opacity: 0; transform: translateY(10px); }
@@ -12,16 +12,16 @@ const slideUp = keyframes`
 `;
 
 const pulse = keyframes`
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 0, 56, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(234, 0, 56, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 0, 56, 0); }
 `;
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   background-color: transparent; 
-  padding: 0 10px 10px 10px; /* Floating margin */
+  padding: 0 10px 10px 10px; 
   flex-shrink: 0;
   position: relative; 
   z-index: 20;
@@ -108,9 +108,14 @@ const SendButton = styled.button`
   svg { margin-left: 2px; }
 `;
 
+// Updated Mic Button - Matches Theme + Pulse
 const MicButton = styled(SendButton)`
-  background-color: ${props => props.$recording ? '#EA0038' : props.theme.colors.primary}; /* Red when recording */
-  animation: ${props => props.$recording ? css`${pulse} 1.5s infinite` : 'none'};
+  background-color: ${props => props.$recording ? props.theme.colors.primary : props.theme.colors.primary};
+  /* Only pulse/change if recording */
+  ${props => props.$recording && css`
+    animation: ${pulse} 1.5s infinite;
+    transform: scale(1.1);
+  `}
 `;
 
 const TextInput = styled.input`
@@ -121,13 +126,14 @@ const TextInput = styled.input`
 
 const RecordingIndicator = styled.div`
   flex: 1; display: flex; align-items: center; gap: 10px;
-  color: #EA0038; font-weight: 600; font-size: 1rem;
+  color: ${props => props.theme.colors.textPrimary}; /* Neutral color */
+  font-weight: 500; font-size: 0.95rem;
   padding-left: 10px;
   overflow: hidden;
 `;
 
 const RecDot = styled.div`
-  width: 10px; height: 10px; background-color: #EA0038; border-radius: 50%;
+  width: 8px; height: 8px; background-color: #ff3b30; border-radius: 50%;
   animation: ${pulse} 1s infinite;
   flex-shrink: 0;
 `;
@@ -142,7 +148,7 @@ const MessageInput = () => {
   const [showPicker, setShowPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [recordingStream, setRecordingStream] = useState(null); // Store stream for visualizer
+  const [recordingStream, setRecordingStream] = useState(null); 
   
   const { sendMessage, sendFileMessage, replyingTo, setReplyingTo } = useChat();
   const inputRef = useRef(null);
@@ -160,10 +166,11 @@ const MessageInput = () => {
       return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const startRecording = async () => {
+  const startRecording = async (e) => {
+      e.preventDefault(); // Prevent focus loss
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          setRecordingStream(stream); // Pass to visualizer
+          setRecordingStream(stream); 
           
           mediaRecorderRef.current = new MediaRecorder(stream);
           audioChunksRef.current = [];
@@ -179,7 +186,6 @@ const MessageInput = () => {
               const file = new File([audioBlob], "voice_message.webm", { type: 'audio/webm' });
               sendFileMessage(file);
               
-              // Cleanup
               stream.getTracks().forEach(track => track.stop());
               setRecordingStream(null);
           };
@@ -189,6 +195,10 @@ const MessageInput = () => {
           setRecordingTime(0);
           timerRef.current = setInterval(() => setRecordingTime(p => p + 1), 1000);
 
+          // Add GLOBAL listeners for release
+          document.addEventListener('mouseup', stopRecording);
+          document.addEventListener('touchend', stopRecording);
+
       } catch (err) {
           console.error("Mic access denied", err);
           alert("Could not access microphone.");
@@ -196,11 +206,15 @@ const MessageInput = () => {
   };
 
   const stopRecording = () => {
-      if (mediaRecorderRef.current && isRecording) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
           mediaRecorderRef.current.stop();
-          setIsRecording(false);
-          clearInterval(timerRef.current);
       }
+      setIsRecording(false);
+      clearInterval(timerRef.current);
+      
+      // Remove GLOBAL listeners
+      document.removeEventListener('mouseup', stopRecording);
+      document.removeEventListener('touchend', stopRecording);
   };
 
   const handleSubmit = (e) => {
@@ -262,9 +276,8 @@ const MessageInput = () => {
                     type="button" 
                     $recording={isRecording}
                     onMouseDown={startRecording}
-                    onMouseUp={stopRecording}
                     onTouchStart={startRecording}
-                    onTouchEnd={stopRecording}
+                    // onMouseUp and onTouchEnd handled globally
                 > 
                     <BsMicFill /> 
                 </MicButton>
