@@ -6,11 +6,6 @@ import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 
 // --- Animations ---
-const pulse = keyframes`
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-`;
 
 const wave = keyframes`
   0% { height: 10px; }
@@ -151,7 +146,7 @@ const VoiceAssistant = () => {
   const [feedback, setFeedback] = useState('Listening...');
   const [pendingCommand, setPendingCommand] = useState(null); // { targetChat, message }
   
-  const { chats, sendMessageToChat, addNewChat } = useChat();
+  const { chats, sendMessageToChat } = useChat();
   const { user } = useAuth();
   
   const recognitionRef = useRef(null);
