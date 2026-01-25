@@ -4,6 +4,7 @@ import { IoMdSend, IoMdClose } from 'react-icons/io';
 import { BsEmojiSmile, BsMicFill } from 'react-icons/bs';
 import { useChat } from '../../context/ChatContext';
 import EmojiPicker from './EmojiPicker';
+import AudioVisualizer from '../common/AudioVisualizer'; // Import Visualizer
 
 const slideUp = keyframes`
   from { opacity: 0; transform: translateY(10px); }
@@ -122,11 +123,18 @@ const RecordingIndicator = styled.div`
   flex: 1; display: flex; align-items: center; gap: 10px;
   color: #EA0038; font-weight: 600; font-size: 1rem;
   padding-left: 10px;
+  overflow: hidden;
 `;
 
 const RecDot = styled.div`
   width: 10px; height: 10px; background-color: #EA0038; border-radius: 50%;
   animation: ${pulse} 1s infinite;
+  flex-shrink: 0;
+`;
+
+const VisualizerContainer = styled.div`
+  flex: 1; height: 30px; display: flex; align-items: center;
+  margin: 0 10px;
 `;
 
 const MessageInput = () => {
@@ -134,6 +142,7 @@ const MessageInput = () => {
   const [showPicker, setShowPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [recordingStream, setRecordingStream] = useState(null); // Store stream for visualizer
   
   const { sendMessage, sendFileMessage, replyingTo, setReplyingTo } = useChat();
   const inputRef = useRef(null);
@@ -154,6 +163,8 @@ const MessageInput = () => {
   const startRecording = async () => {
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          setRecordingStream(stream); // Pass to visualizer
+          
           mediaRecorderRef.current = new MediaRecorder(stream);
           audioChunksRef.current = [];
 
@@ -165,12 +176,12 @@ const MessageInput = () => {
 
           mediaRecorderRef.current.onstop = () => {
               const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-              // Send audio file
               const file = new File([audioBlob], "voice_message.webm", { type: 'audio/webm' });
               sendFileMessage(file);
               
               // Cleanup
               stream.getTracks().forEach(track => track.stop());
+              setRecordingStream(null);
           };
 
           mediaRecorderRef.current.start();
@@ -228,7 +239,10 @@ const MessageInput = () => {
             {isRecording ? (
                 <RecordingIndicator>
                     <RecDot />
-                    <span>Recording... {formatTime(recordingTime)}</span>
+                    <span style={{ minWidth: '40px' }}>{formatTime(recordingTime)}</span>
+                    <VisualizerContainer>
+                        <AudioVisualizer stream={recordingStream} isRecording={true} />
+                    </VisualizerContainer>
                 </RecordingIndicator>
             ) : (
                 <TextInput

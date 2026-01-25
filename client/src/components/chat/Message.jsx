@@ -1,9 +1,13 @@
 import React, { useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
-import { BsCheck, BsCheckAll } from 'react-icons/bs'; // Thinner, cleaner ticks
-import { BiTime } from 'react-icons/bi'; // Clock icon
-import { IoMdUndo } from 'react-icons/io'; // Reply Icon
+import { BsCheck, BsCheckAll } from 'react-icons/bs'; 
+import { BiTime } from 'react-icons/bi'; 
+import { IoMdUndo } from 'react-icons/io'; 
+import AudioPlayer from './AudioPlayer'; // Import AudioPlayer
+
+const SERVER_URL = "https://jdxsk-collab.onrender.com"; 
+// const SERVER_URL = "http://localhost:5000"; // Toggle for local
 
 const SwipeContainer = styled.div`
   position: relative;
@@ -341,7 +345,19 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
                 </QuotedMessage>
             )}
             
-            <MessageText>{message.content}</MessageText>
+            {message.contentType === 'audio' ? (
+                <AudioPlayer src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} isMe={isMe} />
+            ) : message.contentType === 'image' ? (
+                <img 
+                    src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} 
+                    alt="Shared" 
+                    style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '4px', cursor: 'pointer' }}
+                    onClick={() => window.open(message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`, '_blank')}
+                />
+            ) : (
+                <MessageText>{message.content}</MessageText>
+            )}
+
             <StatusContainer>
             <Timestamp isMe={isMe}>
                 {new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
