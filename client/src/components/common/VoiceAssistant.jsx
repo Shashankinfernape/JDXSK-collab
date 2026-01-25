@@ -447,7 +447,7 @@ const VoiceAssistant = () => {
         if (recognitionRef.current) recognitionRef.current.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingCommand]); // Removed 'chats' dependency 
+  }, [pendingCommand, sendMessageToChat]); // Removed 'chats' dependency 
 
   const toggleListening = () => {
     if (isListening) {

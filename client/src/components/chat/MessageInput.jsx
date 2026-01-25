@@ -154,8 +154,8 @@ const MessageInput = () => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
-  const isStoppingRef = useRef(false);
-  const recordingTimeRef = useRef(0); // Ref for live access in callbacks
+  const startTimeRef = useRef(0); 
+  const isRecordingRef = useRef(false); // Guard for start
 
   useEffect(() => {
     if (replyingTo && inputRef.current) inputRef.current.focus();
@@ -170,13 +170,21 @@ const MessageInput = () => {
   const startRecording = async (e) => {
       if (e) e.preventDefault();
       
+      // Prevent multiple starts
+      if (isRecordingRef.current) return;
+      isRecordingRef.current = true;
+
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           
-          const recorder = new MediaRecorder(stream);
+          // Use standard webm for compatibility
+          const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+          
           mediaRecorderRef.current = recorder;
           audioChunksRef.current = [];
-          isStoppingRef.current = false;
+          
+          // Local flag to prevent double processing of the same recording
+          let processed = false;
 
           recorder.ondataavailable = (event) => {
               if (event.data && event.data.size > 0) {
@@ -185,29 +193,30 @@ const MessageInput = () => {
           };
 
           recorder.onstop = () => {
+              if (processed) return;
+              processed = true;
+
               const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-              // Use REF for correct duration, not stale state
-              const duration = recordingTimeRef.current; 
+              
+              // Calculate duration from start time for accuracy
+              const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
               
               if (audioBlob.size > 0) {
                   const file = new File([audioBlob], "voice_message.webm", { type: 'audio/webm' });
-                  sendFileMessage(file, duration);
+                  sendFileMessage(file, duration || 1); // Ensure at least 1s
               }
               
               stream.getTracks().forEach(track => track.stop());
+              isRecordingRef.current = false;
           };
 
           recorder.start();
           setIsRecording(true);
           setRecordingTime(0);
-          recordingTimeRef.current = 0;
+          startTimeRef.current = Date.now(); // Set start time
           
           timerRef.current = setInterval(() => {
-              setRecordingTime(prev => {
-                  const next = prev + 1;
-                  recordingTimeRef.current = next; // Sync ref
-                  return next;
-              });
+              setRecordingTime(prev => prev + 1);
           }, 1000);
 
           document.addEventListener('mouseup', stopRecording);
@@ -215,6 +224,7 @@ const MessageInput = () => {
 
       } catch (err) {
           console.error("Mic access denied", err);
+          isRecordingRef.current = false;
       }
   };
 
@@ -228,12 +238,12 @@ const MessageInput = () => {
       }
       
       const recorder = mediaRecorderRef.current;
-      if (recorder && recorder.state !== 'inactive' && !isStoppingRef.current) {
-          isStoppingRef.current = true;
+      if (recorder && recorder.state !== 'inactive') {
           recorder.stop();
       }
       
       setIsRecording(false);
+      // isRecordingRef is reset in onstop
   };
 
   const handleSubmit = (e) => {
