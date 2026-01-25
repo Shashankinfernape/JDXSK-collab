@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes, css } from 'styled-components';
-import { FaMicrophone, FaMicrophoneSlash, FaPaperPlane, FaTimes } from 'react-icons/fa';
+import { FaMicrophone, FaMicrophoneSlash, FaTimes, FaRedo, FaCheck } from 'react-icons/fa';
 import { RiSparklingFill } from 'react-icons/ri';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
@@ -327,6 +327,56 @@ const VoiceAssistant = () => {
     }
   };
 
+  // --- POV Transformer (3rd Person -> 1st Person) ---
+  const transformContent = (rawText) => {
+      let text = rawText.trim();
+      
+      // 1. "Ask [Name] IF HE IS free" -> "Are you free?"
+      // Patterns: if he/she + is/are/will/can/could/should
+      const indirectMap = [
+          { regex: /^if\s+(?:he|she)\s+is\b/i, replace: "Are you" },
+          { regex: /^if\s+(?:he|she)\s+are\b/i, replace: "Are you" },
+          { regex: /^if\s+(?:he|she)\s+was\b/i, replace: "Were you" },
+          { regex: /^if\s+(?:he|she)\s+were\b/i, replace: "Were you" },
+          { regex: /^if\s+(?:he|she)\s+will\b/i, replace: "Will you" },
+          { regex: /^if\s+(?:he|she)\s+can\b/i, replace: "Can you" },
+          { regex: /^if\s+(?:he|she)\s+could\b/i, replace: "Could you" },
+          { regex: /^if\s+(?:he|she)\s+should\b/i, replace: "Should you" },
+          { regex: /^if\s+(?:he|she)\s+has\b/i, replace: "Have you" },
+          { regex: /^if\s+(?:he|she)\s+needs\b/i, replace: "Do you need" },
+          { regex: /^if\s+(?:he|she)\s+wants\b/i, replace: "Do you want" },
+          { regex: /^if\s+(?:he|she)\s+likes\b/i, replace: "Do you like" },
+      ];
+
+      for (let rule of indirectMap) {
+          if (rule.regex.test(text)) {
+              // Replace start, append '?' if missing
+              let transformed = text.replace(rule.regex, rule.replace);
+              if (!transformed.endsWith('?')) transformed += '?';
+              return transformed;
+          }
+      }
+
+      // 2. "Tell [Name] TO call me" -> "Call me" (Imperative)
+      if (/^to\s+\w+/i.test(text)) {
+          let clean = text.replace(/^to\s+/i, "");
+          // Capitalize first letter
+          return clean.charAt(0).toUpperCase() + clean.slice(1);
+      }
+
+      // 3. "Tell [Name] THAT I am here" -> "I am here" (Declarative connector)
+      if (/^that\s+/i.test(text)) {
+          return text.replace(/^that\s+/i, "");
+      }
+      
+      // 4. "Ask [Name] ABOUT the meeting" -> "What about the meeting?"
+      if (/^about\s+/i.test(text)) {
+           return "What " + text + "?";
+      }
+
+      return text;
+  };
+
   const processCommand = (text) => {
     if (!text) {
         setIsListening(false);
@@ -363,18 +413,8 @@ const VoiceAssistant = () => {
     for (const regex of patterns) {
         match = lowerText.match(regex);
         if (match) {
-            // Pattern 1 & 2 & 4 usually map Group 1 -> Name, Group 2 -> Content
-            // But strict check:
-            // "Say hello to Eshwar" -> G1: "hello", G2: "Eshwar" (Wait, regex 1 above is greedy on message or name?)
-            
-            // Let's refine specific parsing based on which regex hit
-            
-            // Refined Loop Logic not needed if regexes are distinct, but standardizing groups is safer.
-            // My Regex #1: (say/send...) (to Name) (Message) OR (say/send) (Message) (to Name)?
-            // The regex 1 above: `(?:to\s+)?(.+?)\s+...` might be ambiguous.
-            
-            // Let's use specific checks for better accuracy:
-            
+             // We rely on manual extraction logic below for precision 
+             // because regex groups can be tricky with lazy/greedy matching
             break; 
         }
     }
@@ -406,12 +446,16 @@ const VoiceAssistant = () => {
         
         if (targetChat) {
             const partnerName = targetChat.participants.find(p => p._id !== user._id)?.name;
+            
+            // --- APPLY POV TRANSFORMATION ---
+            const finalMessage = transformContent(content);
+
             setFeedback(`Confirm: Send to ${partnerName}?`);
-            setPendingCommand({ targetChat, content: content.trim() });
+            setPendingCommand({ targetChat, content: finalMessage }); // Use transformed message
             
             const autoSend = localStorage.getItem('voice_auto_send') === 'true';
             if (autoSend) {
-                handleSend(targetChat._id, content.trim());
+                handleSend(targetChat._id, finalMessage);
             }
         } else {
             setFeedback(`Found no contact close to "${rawName}"`);
@@ -439,6 +483,18 @@ const VoiceAssistant = () => {
   const handleCancel = () => {
       setIsListening(false);
       setPendingCommand(null);
+  };
+
+  const handleRetry = () => {
+      setPendingCommand(null);
+      setTranscript('');
+      setFeedback('Listening...');
+      setIsListening(true);
+      if (recognitionRef.current) {
+          try {
+              recognitionRef.current.start();
+          } catch(e) { console.error(e); }
+      }
   };
 
   if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
@@ -476,11 +532,14 @@ const VoiceAssistant = () => {
                   <>
                     <TranscriptText>"{pendingCommand.content}"</TranscriptText>
                     <ActionButtons>
-                        <ActionButton onClick={handleCancel}>
-                            <FaTimes /> Cancel
+                        <ActionButton onClick={handleCancel} title="Cancel">
+                            <FaTimes />
                         </ActionButton>
-                        <ActionButton primary onClick={handleConfirm}>
-                            <FaPaperPlane /> Send
+                        <ActionButton onClick={handleRetry} title="Retry">
+                            <FaRedo />
+                        </ActionButton>
+                        <ActionButton primary onClick={handleConfirm} title="Send">
+                            <FaCheck />
                         </ActionButton>
                     </ActionButtons>
                   </>
