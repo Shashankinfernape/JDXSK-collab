@@ -19,67 +19,61 @@
 - **Database:** MongoDB (via Mongoose)
 - **Authentication:** Passport.js (Google OAuth 2.0) + JWT (365-day persistence)
 - **Real-time:** Socket.io
-- **Search:** MongoDB Aggregation Pipeline (Weighted Prefix Matching)
+- **Storage:** Local Disk Storage (via Multer) for Voice & Images.
 
 ## ✨ Key Features
 
+### 🎙️ AI Voice Assistant (Mic x AI)
+- **Voice Commands:** Intelligent parsing of commands like *"Message Alice hi"*, *"Ask Sunil if he's free"*, or *"Eshwar ku hi sollu"* (Tanglish).
+- **Advanced Matching:** Jaro-Winkler distance + Phonetic scoring + Recency boosting to find the correct contact even if misheard.
+- **POV Transformation:** Automatically converts 3rd person requests to 1st person messages (e.g., *"Ask him if he is coming"* -> *"Are you coming?"*).
+- **Confirmation UI:** Google Assistant-style portal overlay with silence detection and manual redo/confirm controls.
+
+### 🎤 Voice Messaging (WhatsApp Grade)
+- **Press & Hold:** Native-feeling recording logic with global release listeners.
+- **Static Waveform:** WhatsApp-style mirrored bar visualizer that fills up progressively during playback.
+- **Rich Player:** Dedicated audio player bubble with sender profile picture and duration tracking.
+- **Infrastructure:** Seamless integration with backend Multer-based upload system.
+
 ### 🎨 Premium Theming System (Brand Modes)
-- **Netflix Mode:** Cinematic Dark, Red Accents, 'Archivo' font.
-- **Spotify Mode:** Deep Black, Vibrant Green, 'Montserrat' font.
-- **Apple Mode:** Clean, Glassmorphism, San Francisco-style font.
-- **Instagram Mode:** Gradient borders, Pink accents, Social layout.
-- **Google Mode:** Material Design, Playful colors.
-- **Theme-Aware Components:** Send buttons, ticks, and layouts adapt to the active brand.
+- **Dynamic Adaptability:** All new features (Voice, AI, Emojis) automatically sync with the active Brand (Netflix Red, Spotify Green, etc.).
+- **Premium UI:** Refined scrollbars (thinner, semi-transparent), clean Portals for overlays, and high-performance animations.
 
-### 👥 Social Graph (Followers/Following)
-- **Unilateral Connections:** Instagram-style Follow system (replacing legacy Friend Requests).
-- **Profile Hub:** 
-    - Stats for Followers/Following.
-    - Clickable lists to view connections (Modal view).
-    - Optimistic UI updates for instant feedback.
-- **Smart Integration:** Following a user automatically ensures they appear in the Chat List.
-
-### 🔍 Advanced Search
-- **Algorithm:** MongoDB Aggregation Pipeline using `$regexMatch` and `$cond` to prioritize names *starting with* the query over partial matches.
-- **Performance:** 50ms debounce time for near-instant reactivity.
-- **Indexing:** DB-level indexes on `name` and `email`.
+### 👥 Social Graph & Search
+- **Unilateral Connections:** Instagram-style Follow system.
+- **Fuzzy Search:** High-performance MongoDB aggregation combined with frontend fuzzy matching.
 
 ### 💬 Messaging Experience
-- **Smart Spacing:** Dynamic vertical margins grouping consecutive messages from the same sender (1px/2px) vs. different senders (12px/16px).
-- **Rich Interaction:** Swipe-to-Reply, Message Forwarding, Context Menus.
-- **Visuals:** WhatsApp-style ticks with high-contrast colors.
-- **Loaders:** Skeleton screens for smooth data fetching transitions.
-
-### 📱 UI/UX Polish
-- **Landing Page:** "Chatflix" cinematic landing page with floating animations and minimalist design.
-- **Input:** Floating pill-shaped input bar.
-- **Notifications:** "Improvised" layout with deduplication and smooth animations.
+- **Disappearing Messages:** Optional 24-hour expiration setting per chat (Permanent by default).
+- **WhatsApp Emotes:** Massive emoji library categorized by standard WhatsApp sections + "Chatflix Refiner" for custom assets.
+- **Smart Spacing:** Sequence-aware vertical margins for grouped messages.
 
 ## 🏗️ Architecture
 
 ### Backend Structure
 - **`controllers/`**: 
-    - `user.controller.js`: Handles profile, search (aggregation), and social graph (follow/unfollow).
-    - `chat.controller.js`: Manages chat creation and message retrieval.
-- **`models/`**: 
-    - `User`: Includes `followers` and `following` arrays.
-    - `Notification`: Supports `follow` and `friend_request` types.
-- **`socket/`**: Real-time event handling for messages and notifications.
+    - `message.controller.js`: Handles file uploads (audio/images) and metadata.
+    - `chat.controller.js`: Manages chat settings (disappearing messages) and lists.
+- **`middleware/`**:
+    - `upload.middleware.js`: Configures Multer for local file processing.
+- **`socket/`**: Real-time event logic with setting-aware TTL for disappearing messages.
 
 ### Frontend Structure
-- **`context/`**: Global state. `ChatContext` optimized to prevent re-fetches on user profile updates.
-- **`components/`**: 
-    - `ProfileDrawer`: Handles profile viewing, editing, and social stats.
-    - `UserListModal`: Reusable modal for viewing user lists.
-    - `Skeleton`: Reusable loading component.
+- **`components/common/`**: 
+    - `VoiceAssistant.jsx`: Portal-based AI voice interface.
+    - `AudioVisualizer.jsx`: Canvas-based waveform engine.
+- **`components/chat/`**: 
+    - `AudioPlayer.jsx`: Professional in-bubble playback UI.
+    - `EmojiPicker.jsx`: Expanded categorized emoji system.
 
 ## 🛠️ Status & Todo
 - [x] **Project Rename:** Rebranded to "Chatflix".
-- [x] **Search:** Optimized to "Best Algorithm" (Prefix Priority).
-- [x] **Social:** Full Followers/Following implementation.
-- [x] **UI:** Final spacing and font adjustments completed.
-- [ ] **Backup:** UI updated, backend logic mocked/placeholder.
+- [x] **AI Voice Assistant:** Full implementation with POV and Fuzzy Matching.
+- [x] **Voice Messages:** WhatsApp-grade recording and waveform player.
+- [x] **Settings:** Added Disappearing Messages toggle.
+- [x] **Emojis:** Categorized WhatsApp-style picker.
+- [ ] **Cloud Storage:** Migration from local `uploads/` to S3/Cloudinary.
 
 ---
-*Last updated: January 14, 2026*
-*Latest Milestone: Final Polish & "Chatflix" Rebranding*
+*Last updated: January 25, 2026*
+*Latest Milestone: Voice Assistant & Messaging Rework*

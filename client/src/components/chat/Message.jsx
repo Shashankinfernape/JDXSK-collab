@@ -313,6 +313,15 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
     return <Ticks $isMe={isMe}><BsCheck className="tick-sent" /></Ticks>;
   };
 
+  const messageStatus = (
+      <>
+        <Timestamp isMe={isMe}>
+            {new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
+        </Timestamp>
+        {getTicks()}
+      </>
+  );
+
   return (
     <SwipeContainer id={`msg-${message._id}`}>
         <ReplyIconWrapper $visible={translateX > 40}>
@@ -350,24 +359,25 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
                     src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} 
                     isMe={isMe}
                     senderProfilePic={message.senderId?.profilePic || `https://i.pravatar.cc/150?u=${message.senderId?._id}`}
+                    footer={messageStatus}
                 />
             ) : message.contentType === 'image' ? (
-                <img 
-                    src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} 
-                    alt="Shared" 
-                    style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '4px', cursor: 'pointer' }}
-                    onClick={() => window.open(message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`, '_blank')}
-                />
+                <>
+                    <img 
+                        src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} 
+                        alt="Shared" 
+                        style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '4px', cursor: 'pointer' }}
+                        onClick={() => window.open(message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`, '_blank')}
+                    />
+                    <StatusContainer>{messageStatus}</StatusContainer>
+                </>
             ) : (
-                <MessageText>{message.content}</MessageText>
+                <>
+                    <MessageText>{message.content}</MessageText>
+                    <StatusContainer>{messageStatus}</StatusContainer>
+                </>
             )}
 
-            <StatusContainer>
-            <Timestamp isMe={isMe}>
-                {new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}
-            </Timestamp>
-            {getTicks()}
-            </StatusContainer>
         </MessageBubble>
         </MessageWrapper>
     </SwipeContainer>

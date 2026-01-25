@@ -272,6 +272,7 @@ const MessageInput = () => {
                     $recording={isRecording}
                     onMouseDown={startRecording}
                     onTouchStart={startRecording}
+                    onContextMenu={(e) => e.preventDefault()}
                     // onMouseUp and onTouchEnd handled globally
                 > 
                     <BsMicFill /> 

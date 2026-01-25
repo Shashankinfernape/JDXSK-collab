@@ -37,7 +37,7 @@ const ControlButton = styled.button`
 
 const VisualizerWrapper = styled.div`
   flex: 1;
-  height: 30px;
+  height: 24px; /* Reduced height for compactness */
   display: flex;
   align-items: center;
 `;
@@ -46,17 +46,32 @@ const InfoCol = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 0px;
   flex: 1;
+`;
+
+const BottomRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end; /* Align bottom to match baseline */
+  width: 100%;
+  margin-top: 2px;
 `;
 
 const Duration = styled.span`
   font-size: 0.75rem;
   color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : props.theme.colors.textSecondary};
   margin-left: 2px;
+  line-height: 1;
 `;
 
-const AudioPlayer = ({ src, isMe, senderProfilePic }) => {
+const FooterContainer = styled.div`
+    display: flex;
+    align-items: center;
+    line-height: 1;
+`;
+
+const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -125,9 +140,12 @@ const AudioPlayer = ({ src, isMe, senderProfilePic }) => {
                 isRecording={false}
              />
           </VisualizerWrapper>
-          <Duration $isMe={isMe}>
-            {formatTime(currentTime > 0 ? currentTime : duration)}
-          </Duration>
+          <BottomRow>
+            <Duration $isMe={isMe}>
+                {formatTime(currentTime > 0 ? currentTime : duration)}
+            </Duration>
+            {footer && <FooterContainer>{footer}</FooterContainer>}
+          </BottomRow>
       </InfoCol>
 
     </PlayerContainer>
