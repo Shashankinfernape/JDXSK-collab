@@ -151,13 +151,76 @@ const VoiceAssistant = () => {
   
   const recognitionRef = useRef(null);
 
-  // Initialize Speech Recognition
+  // --- Fuzzy Match Helper ---
+  const levenshteinDistance = (a, b) => {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
+    for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  };
+
+  const findBestMatch = (rawName) => {
+    if (!rawName) return null;
+    const normalize = (s) => s.toLowerCase().trim();
+    const target = normalize(rawName);
+    
+    let bestMatch = null;
+    let minDistance = Infinity;
+
+    // 1. Direct Search (Exact or StartsWith)
+    const directMatch = chats.find(c => {
+        const p = c.participants.find(userP => userP._id !== user._id);
+        const pName = normalize(p?.name || '');
+        return pName === target || pName.startsWith(target) || target.startsWith(pName);
+    });
+    if (directMatch) return directMatch;
+
+    // 2. Fuzzy Search
+    chats.forEach(chat => {
+        const partner = chat.participants.find(p => p._id !== user._id);
+        if (!partner?.name) return;
+        const pName = normalize(partner.name);
+        
+        // Calculate distance
+        const dist = levenshteinDistance(target, pName);
+        
+        // Calculate score (lower distance relative to length is better)
+        // threshold: allow ~30% error rate (e.g., "eshwar" vs "eshwa" is dist 1, len 6. 1/6 < 0.3)
+        const threshold = Math.max(target.length, pName.length) * 0.4; 
+
+        if (dist < minDistance && dist <= threshold) {
+            minDistance = dist;
+            bestMatch = chat;
+        }
+    });
+
+    return bestMatch;
+  };
+
+  // --- Logic ---
+  const silenceTimer = useRef(null);
+
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true; // Keep listening until manual stop or silence logic
+      recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'en-US';
 
@@ -169,9 +232,11 @@ const VoiceAssistant = () => {
       };
 
       recognitionRef.current.onend = () => {
-        // Only valid if we didn't manually process a command yet
-        if (!pendingCommand) {
-            setIsListening(false);
+        if (isListening && !pendingCommand) {
+            // Restart if we simply stopped without a command (unless manually stopped)
+             // setFeedback('Tap mic to stop.'); 
+        } else {
+             setIsListening(false);
         }
       };
 
@@ -187,32 +252,41 @@ const VoiceAssistant = () => {
           }
         }
         
-        const currentText = finalTranscript || interimTranscript;
+        const currentText = (finalTranscript || interimTranscript).trim();
         setTranscript(currentText);
 
-        // Optional: Auto-process if silence/pause detected could go here, 
-        // but for now we rely on the button toggle or user pause logic (if we added a timer)
+        // Reset silence timer on any speech
+        if (silenceTimer.current) clearTimeout(silenceTimer.current);
+        
+        // Auto-process logic: if we have a decent length string, wait for 2 seconds of silence then process
+        if (currentText.length > 5) {
+             silenceTimer.current = setTimeout(() => {
+                 recognitionRef.current.stop(); // Stop listening
+                 processCommand(currentText);   // Process what we have
+             }, 2000); // 2 seconds silence -> End of command
+        }
       };
 
       recognitionRef.current.onerror = (event) => {
-        console.error("Speech recognition error", event.error);
-        if (event.error === 'no-speech') {
-             setFeedback('Did not hear anything.');
-        } else {
-            setFeedback('Error occurred in recognition.');
-            setIsListening(false);
+        console.error("Speech error", event.error);
+        if (event.error !== 'no-speech') {
+             setFeedback('Error: ' + event.error);
+             setIsListening(false);
         }
       };
     }
-  }, [pendingCommand]);
+    return () => {
+        if (silenceTimer.current) clearTimeout(silenceTimer.current);
+    };
+  }, [chats, pendingCommand]); // Add chats dependency for fresh list
 
   const toggleListening = () => {
     if (isListening) {
-      recognitionRef.current.stop();
-      processCommand(transcript); // Process on stop
+      if (recognitionRef.current) recognitionRef.current.stop();
+      processCommand(transcript);
     } else {
       try {
-        recognitionRef.current.start();
+        if (recognitionRef.current) recognitionRef.current.start();
       } catch (e) {
         console.error("Start error", e);
       }
@@ -226,61 +300,59 @@ const VoiceAssistant = () => {
     }
 
     const lowerText = text.toLowerCase();
+    console.log("Processing Voice Command:", lowerText);
     
-    // Regex to parse: "Message [Name] [Content]"
-    // Support: "Message Alice Hello there"
-    // Support: "Text Bob that I am coming"
-    // Support: "Send to Charlie saying Are you ready?"
+    // Patterns covering:
+    // 1. "Message [Name] [Content]"
+    // 2. "Say [Content] to [Name]"
+    // 3. "Tell [Name] [Content]"
+    // 4. "Send [Content] to [Name]"
     
     const patterns = [
-        /^(?:message|text|send to)\s+(.+?)\s+(?:saying|that|:)\s+(.+)$/i, // Explicit separator
-        /^(?:message|text|send to)\s+(.+?)\s+(.+)$/i // Implicit separator (riskier)
+        // "Say hello to Eshwar" -> Name: Eshwar, Content: hello
+        /^(?:say|send)\s+(.+?)\s+to\s+(.+)$/i, 
+        
+        // "Tell Eshwar (that) I am here"
+        /^(?:tell|message|text)\s+(.+?)\s+(?:that|saying|:)\s+(.+)$/i,
+        
+        // "Message Eshwar I am here" (Implicit)
+        /^(?:tell|message|text)\s+(\w+)\s+(.+)$/i 
     ];
 
     let match = null;
-    for (let pattern of patterns) {
-        match = lowerText.match(pattern);
-        if (match) break;
+    let rawName = '';
+    let content = '';
+
+    // Try Pattern 1: "Say [Content] to [Name]"
+    if ((match = lowerText.match(patterns[0]))) {
+        content = match[1];
+        rawName = match[2];
+    } 
+    // Try Pattern 2 & 3: "Tell [Name] [Content]"
+    else if ((match = lowerText.match(patterns[1])) || (match = lowerText.match(patterns[2]))) {
+        rawName = match[1];
+        content = match[2];
     }
 
-    if (match) {
-        const rawName = match[1].trim();
-        const content = match[2].trim();
-        
-        // Find user in chats
-        // Priority: Exact match -> Starts with -> Includes
-        let targetChat = chats.find(c => {
-             const partner = c.participants.find(p => p._id !== user._id);
-             return partner?.name.toLowerCase() === rawName;
-        });
-
-        if (!targetChat) {
-             targetChat = chats.find(c => {
-                 const partner = c.participants.find(p => p._id !== user._id);
-                 return partner?.name.toLowerCase().startsWith(rawName);
-            });
-        }
-        
-        // If still not found, we can't send easily without searching global users.
-        // For MVP/Safety, we only support existing chats or we fail gracefully.
+    if (rawName && content) {
+        const targetChat = findBestMatch(rawName.trim());
         
         if (targetChat) {
             const partnerName = targetChat.participants.find(p => p._id !== user._id)?.name;
             setFeedback(`Confirm: Send to ${partnerName}?`);
-            setPendingCommand({ targetChat, content });
+            setPendingCommand({ targetChat, content: content.trim() });
             
-            // Check Auto-Send Preference
             const autoSend = localStorage.getItem('voice_auto_send') === 'true';
             if (autoSend) {
-                handleSend(targetChat._id, content);
+                handleSend(targetChat._id, content.trim());
             }
         } else {
-            setFeedback(`Could not find chat with "${rawName}"`);
-            setTimeout(() => setIsListening(false), 2000);
+            setFeedback(`Found no contact close to "${rawName}"`);
+            setTimeout(() => setIsListening(false), 3000);
         }
     } else {
-        setFeedback("Couldn't understand the command. Try 'Message [User] [Text]'");
-        setTimeout(() => setIsListening(false), 2000);
+        setFeedback("Didn't catch that. Try 'Say hi to [Name]'");
+        setTimeout(() => setIsListening(false), 3000);
     }
   };
 
