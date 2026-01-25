@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import styled, { keyframes, css } from 'styled-components';
 import { FaMicrophone, FaMicrophoneSlash, FaTimes, FaRedo, FaCheck } from 'react-icons/fa';
 import { RiSparklingFill } from 'react-icons/ri';
@@ -547,7 +548,7 @@ const VoiceAssistant = () => {
         </TriggerButton>
       </AssistantContainer>
 
-      {isListening && (
+      {isListening && ReactDOM.createPortal(
           <Overlay>
               <StatusText>{feedback}</StatusText>
               
@@ -592,7 +593,8 @@ const VoiceAssistant = () => {
                     <HintText>{hints[hintIndex]}</HintText>
                 </>
               )}
-          </Overlay>
+          </Overlay>,
+          document.body
       )}
     </>
   );
