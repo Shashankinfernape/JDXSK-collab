@@ -289,11 +289,10 @@ const VoiceAssistant = () => {
   };
 
   // --- POV Transformer (3rd Person -> 1st Person) ---
-  const transformContent = (rawText) => {
+  const transformContent = (rawText, isQuestion = false) => {
       let text = rawText.trim();
       
       // 1. "Ask [Name] IF HE IS free" -> "Are you free?"
-      // Patterns: if he/she + is/are/will/can/could/should
       const indirectMap = [
           { regex: /^if\s+(?:he|she)\s+is\b/i, replace: "Are you" },
           { regex: /^if\s+(?:he|she)\s+are\b/i, replace: "Are you" },
@@ -310,11 +309,11 @@ const VoiceAssistant = () => {
           // New: "how he is" -> "how are you"
           { regex: /^how\s+(?:he|she)\s+is\b/i, replace: "How are you" },
           { regex: /^how\s+is\s+(?:he|she)\b/i, replace: "How are you" },
+          { regex: /^where\s+(?:he|she)\s+is\b/i, replace: "Where are you" },
       ];
 
       for (let rule of indirectMap) {
           if (rule.regex.test(text)) {
-              // Replace start, append '?' if missing
               let transformed = text.replace(rule.regex, rule.replace);
               if (!transformed.endsWith('?')) transformed += '?';
               return transformed;
@@ -324,21 +323,28 @@ const VoiceAssistant = () => {
       // 2. "Tell [Name] TO call me" -> "Call me" (Imperative)
       if (/^to\s+\w+/i.test(text)) {
           let clean = text.replace(/^to\s+/i, "");
-          // Capitalize first letter
-          return clean.charAt(0).toUpperCase() + clean.slice(1);
+          text = clean.charAt(0).toUpperCase() + clean.slice(1);
       }
 
       // 3. "Tell [Name] THAT I am here" -> "I am here" (Declarative connector)
-      if (/^that\s+/i.test(text)) {
-          return text.replace(/^that\s+/i, "");
+      else if (/^that\s+/i.test(text)) {
+          text = text.replace(/^that\s+/i, "");
       }
       
       // 4. "Ask [Name] ABOUT the meeting" -> "What about the meeting?"
-      if (/^about\s+/i.test(text)) {
-           return "What " + text + "?";
+      else if (/^about\s+/i.test(text)) {
+           text = "What " + text;
       }
 
-      return text;
+      // Final Polish
+      let result = text.charAt(0).toUpperCase() + text.slice(1);
+      
+      // Ensure question mark for Ask commands
+      if (isQuestion && !result.endsWith('?')) {
+          result += '?';
+      }
+
+      return result;
   };
 
   // --- Logic ---
@@ -429,36 +435,9 @@ const VoiceAssistant = () => {
     const lowerText = text.toLowerCase().trim();
     console.log("Processing Voice Command:", lowerText);
     
-    // --- FLEXIBLE COMMAND PATTERNS ---
-    const patterns = [
-        // --- ENGLISH (Casual & Formal) ---
-        // "Say hello to Eshwar"
-        /^(?:say|send|drop|shoot)\s+(?:a\s+)?(?:message|text|note|msg)?\s*(?:to\s+)?(.+?)\s+(?:saying|that|:)?\s*(.+)$/i,
-        
-        // "Tell Eshwar I am late" / "Ask Eshwar where are you" / "Ping Eshwar hi"
-        /^(?:tell|ask|ping|message|text|inform|notify)\s+(.+?)\s+(?:that|saying|:)?\s*(.+)$/i,
-        
-        // "Let Eshwar know that I am coming"
-        /^let\s+(.+?)\s+know\s+(?:that\s+)?(.+)$/i,
-
-        // --- TANGLISH (Tamil Syntax) ---
-        // "Eshwar ku hi sollu" (To Eshwar, say hi)
-        // "Eshwar kitta I am coming nu sollu" (Tell Eshwar that I am coming)
-        // Regex: [Name] (ku/kitta) [Message] (sollu/anuppu/kalu)
-        /^(.+?)\s+(?:ku|kitta|kitta)\s+(.+?)(?:\s+(?:nu|nnu))?\s*(?:sollu|anuppu|podu|kalu)?$/i
-    ];
-
-    let match = null;
     let rawName = '';
     let content = '';
-
-    // Check patterns
-    for (const regex of patterns) {
-        match = lowerText.match(regex);
-        if (match) {
-            break; 
-        }
-    }
+    const isQuestion = lowerText.startsWith('ask');
 
     // --- Manual Pattern Matching for Precision ---
     
@@ -500,7 +479,7 @@ const VoiceAssistant = () => {
             
             // --- APPLY POV TRANSFORMATION ---
             // Only apply if it wasn't already transformed by the special case
-            const finalMessage = pSpecial ? content : transformContent(content);
+            const finalMessage = pSpecial ? content : transformContent(content, isQuestion);
 
             setFeedback(`Confirm: Send to ${partnerName}?`);
             setPendingCommand({ targetChat, content: finalMessage }); // Use transformed message
