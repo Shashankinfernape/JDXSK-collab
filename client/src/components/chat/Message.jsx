@@ -373,7 +373,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
                 </>
             ) : (
                 <>
-                    <MessageText>{message.content}</MessageText>
+                    {message.content !== '🎤 Voice Message' && <MessageText>{message.content}</MessageText>}
                     <StatusContainer>{messageStatus}</StatusContainer>
                 </>
             )}

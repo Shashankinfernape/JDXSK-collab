@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { FaPlayCircle, FaPauseCircle } from 'react-icons/fa';
+import { FaPlay, FaPause } from 'react-icons/fa';
 import AudioVisualizer from '../common/AudioVisualizer';
 
 const PlayerContainer = styled.div`
@@ -24,21 +24,21 @@ const ControlButton = styled.button`
   border: none;
   color: ${props => props.$isMe ? 'rgba(255,255,255,0.95)' : props.theme.colors.primary};
   cursor: pointer;
-  font-size: 1.8rem; /* Larger, nicer icon */
+  font-size: 1.2rem; /* Revert to standard size for Play/Pause */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   
-  &:hover { opacity: 0.9; transform: scale(1.05); }
+  &:hover { opacity: 0.9; transform: scale(1.1); }
   transition: all 0.2s ease;
 `;
 
 const VisualizerWrapper = styled.div`
   flex: 1;
-  height: 20px; /* Reduced height for compactness */
+  height: 20px; 
   display: flex;
   align-items: center;
   margin-top: 2px;
@@ -98,7 +98,6 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     audio.addEventListener('timeupdate', setAudioTime);
     audio.addEventListener('ended', onEnded);
     
-    // Fallback for infinite duration (common in webm/blobs sometimes)
     if(audio.readyState >= 1) setAudioData();
 
     return () => {
@@ -136,7 +135,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
 
       {/* Play Button */}
       <ControlButton onClick={togglePlay} $isMe={isMe}>
-        {isPlaying ? <FaPauseCircle /> : <FaPlayCircle />}
+        {isPlaying ? <FaPause /> : <FaPlay />}
       </ControlButton>
       
       {/* Waveform & Time */}

@@ -247,6 +247,24 @@ export const ChatProvider = ({ children }) => {
           replyTo: null 
       };
       socket.emit('sendMessage', messageData);
+
+      // Optimistic Update if we are in that chat
+      if (activeChat && activeChat._id === targetChatId) {
+          const optimisticMessage = {
+              ...messageData,
+              _id: `temp-${Math.random()}`,
+              createdAt: new Date().toISOString(),
+              senderId: { 
+                  _id: user._id, 
+                  name: user.name,
+                  profilePic: user.profilePic,
+              }
+          };
+          setMessages(prev => ({
+              ...prev,
+              [targetChatId]: [...(prev[targetChatId] || []), optimisticMessage],
+          }));
+      }
   };
   
   const deleteMessage = async (messageIds) => {
