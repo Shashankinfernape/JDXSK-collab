@@ -26,7 +26,7 @@ const AssistantContainer = styled.div`
 `;
 
 const TriggerButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: transparent;
   border: none;
   width: 40px;
   height: 40px;
@@ -34,25 +34,31 @@ const TriggerButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: ${props => props.theme.colors.icon};
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
+  transition: all 0.2s ease;
 
   &:hover {
+    background-color: ${props => props.theme.colors.hoverBackground};
+    color: ${props => props.theme.colors.primary};
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
   }
+
+  /* Active State */
+  ${props => props.$isListening && css`
+    color: ${props.theme.colors.primary};
+    background-color: ${props.theme.colors.hoverBackground};
+    box-shadow: 0 0 15px ${props.theme.colors.primary}40;
+  `}
 
   /* Sparkle Icon absolute positioning */
   .sparkle {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: 4px;
+    right: 4px;
     font-size: 0.7rem;
-    color: #ffd700;
+    color: ${props => props.theme.colors.primary};
   }
 `;
 
@@ -71,7 +77,7 @@ const Overlay = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 10000; /* Increased to ensure it covers message bar */
   padding: 2rem;
   animation: ${fadeIn} 0.3s ease-out;
   border-top: 1px solid ${props => props.theme.colors.border};
@@ -535,7 +541,7 @@ const VoiceAssistant = () => {
   return (
     <>
       <AssistantContainer>
-        <TriggerButton onClick={toggleListening} title="AI Voice Assistant">
+        <TriggerButton onClick={toggleListening} title="AI Voice Assistant" $isListening={isListening}>
             {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
             <RiSparklingFill className="sparkle" />
         </TriggerButton>
