@@ -150,9 +150,12 @@ const MessageInput = () => {
   
   const { sendMessage, sendFileMessage, replyingTo, setReplyingTo } = useChat();
   const inputRef = useRef(null);
+  
+  // Refs to maintain state inside event listeners
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
 
   useEffect(() => {
     if (replyingTo && inputRef.current) inputRef.current.focus();
@@ -165,58 +168,84 @@ const MessageInput = () => {
   };
 
   const startRecording = async (e) => {
-      e.preventDefault(); 
+      // Prevent default context menu or ghost clicks
+      if (e) e.preventDefault();
+      
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           
-          mediaRecorderRef.current = new MediaRecorder(stream);
+          let options = {};
+          if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+              options = { mimeType: 'audio/webm;codecs=opus' };
+          } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+              options = { mimeType: 'audio/webm' };
+          }
+
+          const recorder = new MediaRecorder(stream, options);
+          mediaRecorderRef.current = recorder;
           audioChunksRef.current = [];
 
-          mediaRecorderRef.current.ondataavailable = (event) => {
-              if (event.data.size > 0) {
+          recorder.ondataavailable = (event) => {
+              if (event.data && event.data.size > 0) {
                   audioChunksRef.current.push(event.data);
               }
           };
 
-          mediaRecorderRef.current.onstop = () => {
+          recorder.onstop = () => {
               const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-              // Simple check to ensure we recorded something
+              const duration = recordingTime || Math.round((Date.now() - startTimeRef.current) / 1000);
+              
               if (audioBlob.size > 0) {
-                  const file = new File([audioBlob], "voice_message.webm", { type: 'audio/webm' });
-                  sendFileMessage(file);
+                  // Ensure we send a File object with proper name
+                  const file = new File([audioBlob], "voice_message.webm", { 
+                      type: 'audio/webm',
+                      lastModified: Date.now()
+                  });
+                  
+                  // Pass duration to helper
+                  sendFileMessage(file, duration); 
               }
-              // Cleanup
+              
+              // Stop all tracks to release mic
               stream.getTracks().forEach(track => track.stop());
           };
 
-          mediaRecorderRef.current.start();
+          recorder.start(200); // Collect chunks every 200ms
+          
           setIsRecording(true);
           setRecordingTime(0);
-          timerRef.current = setInterval(() => setRecordingTime(p => p + 1), 1000);
+          startTimeRef.current = Date.now();
+          
+          timerRef.current = setInterval(() => {
+              setRecordingTime(prev => prev + 1);
+          }, 1000);
 
-          // Add GLOBAL listeners for release to ensure we catch it
+          // Global release listeners
           document.addEventListener('mouseup', stopRecording);
           document.addEventListener('touchend', stopRecording);
 
       } catch (err) {
-          console.error("Mic access denied", err);
+          console.error("Mic access denied or error:", err);
+          alert("Could not access microphone. Please check permissions.");
       }
   };
 
   const stopRecording = () => {
-      // Ensure we clean up listeners immediately so it doesn't fire twice
+      // Cleanup listeners
       document.removeEventListener('mouseup', stopRecording);
       document.removeEventListener('touchend', stopRecording);
 
-      if (mediaRecorderRef.current) {
-          if (mediaRecorderRef.current.state !== 'inactive') {
-              // Force flush of final data chunk
-              mediaRecorderRef.current.requestData(); 
-              mediaRecorderRef.current.stop();
-          }
+      if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
       }
+      
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') {
+          recorder.stop();
+      }
+      
       setIsRecording(false);
-      if (timerRef.current) clearInterval(timerRef.current);
   };
 
   const handleSubmit = (e) => {
@@ -280,7 +309,6 @@ const MessageInput = () => {
                     onMouseDown={startRecording}
                     onTouchStart={startRecording}
                     onContextMenu={(e) => e.preventDefault()}
-                    // onMouseUp and onTouchEnd handled globally
                 > 
                     <BsMicFill /> 
                 </MicButton>

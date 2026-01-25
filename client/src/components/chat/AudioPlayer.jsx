@@ -24,7 +24,7 @@ const ControlButton = styled.button`
   border: none;
   color: ${props => props.$isMe ? 'rgba(255,255,255,0.95)' : props.theme.colors.primary};
   cursor: pointer;
-  font-size: 1.2rem; /* Revert to standard size for Play/Pause */
+  font-size: 1.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,7 +67,7 @@ const Duration = styled.span`
   line-height: 1;
   font-weight: 600;
   opacity: 0.95;
-  min-width: 35px; /* Prevent jump */
+  min-width: 35px;
   text-align: right;
 `;
 
@@ -88,62 +88,48 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Reset state on src change
+    // Reset state when source changes
     setIsPlaying(false);
     setCurrentTime(0);
-    setDuration(0);
+    setDuration(0); 
 
-    const setAudioData = () => {
+    const updateDuration = () => {
         if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
             setDuration(audio.duration);
         }
     };
 
-    const handleLoadedData = () => {
-        // Retry logic for WebM duration bug
-        if (audio.duration === Infinity || isNaN(audio.duration)) {
-            audio.currentTime = 1e101;
-            audio.ontimeupdate = () => {
-                audio.ontimeupdate = null;
-                audio.currentTime = 0;
-                // Slight delay to let browser update duration property
-                setTimeout(() => {
-                    setDuration(audio.duration);
-                }, 100);
-            };
-        } else {
-            setDuration(audio.duration);
-        }
-    };
-
-    const setAudioTime = () => {
+    const handleTimeUpdate = () => {
         setCurrentTime(audio.currentTime);
-        // Continuous check for valid duration during playback if initially failed
-        if ((!duration || duration === Infinity) && audio.duration > 0 && audio.duration !== Infinity) {
-            setDuration(audio.duration);
+        // If we didn't get duration earlier, try again (sometimes it comes late)
+        if (!duration || duration === Infinity) {
+            updateDuration();
         }
     };
 
-    const onEnded = () => {
+    const handleEnded = () => {
         setIsPlaying(false);
-        setCurrentTime(0); 
+        setCurrentTime(0);
     };
 
-    audio.addEventListener('loadedmetadata', setAudioData);
-    audio.addEventListener('loadeddata', handleLoadedData);
-    audio.addEventListener('timeupdate', setAudioTime);
-    audio.addEventListener('ended', onEnded);
+    // Events
+    audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('durationchange', updateDuration);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
     
-    // Force load if likely cached or blob
-    if(audio.readyState >= 1) handleLoadedData();
+    // Check immediately in case it's already loaded (e.g. cache/blob)
+    if (audio.readyState >= 1) {
+        updateDuration();
+    }
 
     return () => {
-      audio.removeEventListener('loadedmetadata', setAudioData);
-      audio.removeEventListener('loadeddata', handleLoadedData);
-      audio.removeEventListener('timeupdate', setAudioTime);
-      audio.removeEventListener('ended', onEnded);
+        audio.removeEventListener('loadedmetadata', updateDuration);
+        audio.removeEventListener('durationchange', updateDuration);
+        audio.removeEventListener('timeupdate', handleTimeUpdate);
+        audio.removeEventListener('ended', handleEnded);
     };
-  }, [src]); // Re-run if SRC changes (e.g. temp -> real)
+  }, [src, duration]); // Added duration to dep array to satisfy linter if needed, but mostly src is key
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -151,7 +137,8 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     
     if (isPlaying) {
       audio.pause();
-    } else {
+    }
+    else {
       audio.play().catch(e => console.error("Playback failed", e));
     }
     setIsPlaying(!isPlaying);
@@ -168,17 +155,14 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     <PlayerContainer>
       <audio ref={audioRef} src={src} preload="metadata" crossOrigin="anonymous" />
       
-      {/* Profile Pic on Left */}
       {senderProfilePic && (
           <ProfilePic src={senderProfilePic} alt="Sender" />
       )}
 
-      {/* Play Button */}
       <ControlButton onClick={togglePlay} $isMe={isMe}>
         {isPlaying ? <FaPause /> : <FaPlay />}
       </ControlButton>
       
-      {/* Waveform & Time */}
       <InfoCol>
           <VisualizerWrapper>
              <AudioVisualizer 

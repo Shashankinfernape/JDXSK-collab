@@ -213,7 +213,7 @@ export const ChatProvider = ({ children }) => {
     setReplyingTo(null); 
   };
 
-  const sendFileMessage = async (file) => {
+  const sendFileMessage = async (file, duration = 0) => {
       if (!activeChat || !user) return;
       
       // 1. Optimistic Update
@@ -234,7 +234,9 @@ export const ChatProvider = ({ children }) => {
           fileUrl: previewUrl, // Local Blob URL
           createdAt: new Date().toISOString(),
           readBy: [],
-          deliveredTo: []
+          deliveredTo: [],
+          // Pass duration for immediate UI feedback
+          duration: duration 
       };
 
       // Add temp message immediately
@@ -246,6 +248,8 @@ export const ChatProvider = ({ children }) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('chatId', activeChat._id);
+      // Note: We aren't sending duration to backend yet as schema might not support it, 
+      // but this fixes the local preview.
 
       try {
           const { data: newMessage } = await api.post('/messages/upload', formData, {
