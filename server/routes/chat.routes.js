@@ -19,5 +19,9 @@ router.post('/group', authMiddleware, chatController.createGroupChat);
 // @route   GET /api/chats/:chatId/messages
 router.get('/:chatId/messages', authMiddleware, chatController.getMessagesForChat);
 
+// @desc    Toggle disappearing messages setting
+// @route   PUT /api/chats/:chatId/disappearing
+router.put('/:chatId/disappearing', authMiddleware, chatController.toggleDisappearingMessages);
+
 
 module.exports = router;

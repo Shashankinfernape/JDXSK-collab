@@ -8,12 +8,17 @@ const passport = require('passport');
 const connectDB = require('./config/db');
 const { initSocket } = require('./socket/socket');
 
+const path = require('path');
+
 // Last Updated: Final Layout & Persistence Fixes
 dotenv.config();
 connectDB();
 require('./config/passport');
 
 const app = express();
+
+// Serve Uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // --- CORS Middleware for REST API ---
 // Apply stricter CORS here if needed, but allow client origin

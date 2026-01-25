@@ -109,9 +109,24 @@ const getMessagesForChat = async (req, res) => {
   }
 };
 
+const toggleDisappearingMessages = async (req, res) => {
+  try {
+    const chat = await Chat.findById(req.params.chatId);
+    if (!chat) return res.status(404).json({ message: 'Chat not found' });
+
+    chat.disappearingMessages = !chat.disappearingMessages;
+    await chat.save();
+
+    res.json(chat);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getChatsForUser,
   createChat,
   createGroupChat,
   getMessagesForChat,
+  toggleDisappearingMessages,
 };

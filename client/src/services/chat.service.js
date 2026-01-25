@@ -15,10 +15,16 @@ const createGroup = (name, participants) => {
   return api.post('/chats/group', { name, participants });
 };
 
+// Toggle disappearing messages
+const toggleDisappearingMessages = (chatId) => {
+  return api.put(`/chats/${chatId}/disappearing`);
+};
+
 const chatService = {
   getChats,
   getMessages,
   createGroup,
+  toggleDisappearingMessages,
 };
 
 export default chatService;

@@ -2,8 +2,10 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import userService from '../../services/user.service';
+import chatService from '../../services/chat.service';
 import { IoMdArrowBack } from 'react-icons/io';
 import { MdModeEditOutline, MdCheck, MdPhotoCamera } from 'react-icons/md';
+import { BsClockHistory } from 'react-icons/bs';
 import Input from '../common/Input';
 import Cropper from 'react-easy-crop';
 import api from '../../services/api';
@@ -280,12 +282,15 @@ async function getCroppedImg(imageSrc, pixelCrop, rotation = 0) {
 
 
 // --- Main Component ---
-const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser }) => {
+const ProfileDrawer = ({ isOpen, onClose, targetUser, activeChat, onStartChat, onSwitchUser }) => {
   const { user: currentUser, updateUser } = useAuth();
   
   // Local State for fetched data
   const [fetchedUser, setFetchedUser] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
+  
+  // Chat Settings State
+  const [disappearingMessages, setDisappearingMessages] = useState(false);
 
   // Determine mode
   const isEditable = !targetUser || targetUser._id === currentUser._id;
@@ -304,6 +309,14 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser 
   const [listModalOpen, setListModalOpen] = useState(false);
   const [listTitle, setListTitle] = useState('');
   const [listUsers, setListUsers] = useState([]);
+
+  // Crop State
+  const [imageSrc, setImageSrc] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const fileInputRef = useRef(null);
 
   const fetchSocialList = async (type) => {
       try {
@@ -339,8 +352,12 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser 
       }
   }, [targetUser, currentUser._id]);
 
-  // Sync state when user changes
+  // Sync state when user/chat changes
   useEffect(() => {
+    if (activeChat) {
+        setDisappearingMessages(activeChat.disappearingMessages || false);
+    }
+    // ... existing user sync logic ...
     if (displayUser) {
         setName(displayUser.name || '');
         setAbout(displayUser.about || 'Hey there! I am using Chatflix.');
@@ -348,21 +365,27 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser 
         setLocalFollowing(displayUser.following?.length || 0);
     }
     if (targetUser && currentUser) {
-         // Check connectionStatus or array
          const following = currentUser.following?.includes(targetUser._id) || targetUser.connectionStatus === 'following';
          setIsFollowing(following);
     }
-  }, [displayUser, targetUser, currentUser]);
-
-  // Crop State
-  const [imageSrc, setImageSrc] = useState(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [isCropping, setIsCropping] = useState(false);
-  const fileInputRef = useRef(null);
+  }, [displayUser, targetUser, currentUser, activeChat]);
 
   // --- Handlers ---
+  
+  const handleToggleDisappearing = async () => {
+      if (!activeChat) return;
+      try {
+          const newState = !disappearingMessages;
+          setDisappearingMessages(newState); // Optimistic
+          await chatService.toggleDisappearingMessages(activeChat._id);
+          // Ideally update global chat context, but for now local state is fine visually
+          if (activeChat) activeChat.disappearingMessages = newState; 
+      } catch (e) {
+          console.error("Failed to toggle setting", e);
+          setDisappearingMessages(!disappearingMessages); // Revert
+      }
+  };
+
   const handleFollowToggle = async () => {
       // Optimistic Update
       const previousState = isFollowing;
@@ -550,6 +573,34 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, onStartChat, onSwitchUser 
                     )}
                 </InfoRow>
             </SectionContainer>
+
+            {/* Chat Settings Section (Only if active chat exists) */}
+            {activeChat && (
+                <SectionContainer>
+                    <SectionTitle>Chat Settings</SectionTitle>
+                    <InfoRow onClick={handleToggleDisappearing} style={{ cursor: 'pointer' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <InfoText style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <BsClockHistory /> Disappearing Messages
+                            </InfoText>
+                            <span style={{ fontSize: '0.8rem', color: '#888' }}>
+                                {disappearingMessages ? 'On (24 hours)' : 'Off'}
+                            </span>
+                        </div>
+                        <div style={{ 
+                            width: '40px', height: '20px', 
+                            background: disappearingMessages ? '#4CAF50' : '#ccc',
+                            borderRadius: '10px', position: 'relative', transition: '0.3s'
+                        }}>
+                            <div style={{ 
+                                width: '16px', height: '16px', background: 'white', borderRadius: '50%',
+                                position: 'absolute', top: '2px', left: disappearingMessages ? '22px' : '2px',
+                                transition: '0.3s'
+                            }} />
+                        </div>
+                    </InfoRow>
+                </SectionContainer>
+            )}
 
             {/* Name Section (Editable only) or Other Info */}
              <SectionContainer>

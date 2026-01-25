@@ -223,7 +223,8 @@ const ChatWindow = ({ onBack }) => {
       <ProfileDrawer 
         isOpen={showProfile} 
         onClose={() => setShowProfile(false)} 
-        targetUser={profileTarget} 
+        targetUser={profileTarget}
+        activeChat={activeChat} // Pass active chat for settings
       />
       
       {/* Forward Modal */}

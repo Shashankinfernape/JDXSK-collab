@@ -21,6 +21,11 @@ const chatSchema = new mongoose.Schema({
   lastMessage: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Message'
+  },
+  // --- Disappearing Messages Setting ---
+  disappearingMessages: {
+    type: Boolean,
+    default: false,
   }
 }, {
   timestamps: true,

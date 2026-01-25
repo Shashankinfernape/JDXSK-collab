@@ -195,6 +195,7 @@ export const ChatProvider = ({ children }) => {
       replyTo: replyingTo ? { _id: replyingTo._id, content: replyingTo.content, senderName: replyingTo.senderId.name } : null
     };
     socket.emit('sendMessage', messageData);
+    // Optimistic UI Update
     const optimisticMessage = {
       ...messageData,
       _id: `temp-${Math.random()}`,
@@ -209,7 +210,31 @@ export const ChatProvider = ({ children }) => {
       ...prev,
       [activeChat._id]: [...(prev[activeChat._id] || []), optimisticMessage],
     }));
-    setReplyingTo(null); // Clear reply after sending
+    setReplyingTo(null); 
+  };
+
+  const sendFileMessage = async (file) => {
+      if (!activeChat || !user) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('chatId', activeChat._id);
+
+      try {
+          const { data: newMessage } = await api.post('/messages/upload', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          
+          // Socket emit so others receive it immediately (and self via receiveMessage)
+          socket.emit('sendMessage', newMessage);
+          
+          // Add locally immediately to be safe
+          setMessages(prev => ({
+              ...prev,
+              [activeChat._id]: [...(prev[activeChat._id] || []), newMessage]
+          }));
+      } catch (error) {
+          console.error("Failed to send file", error);
+      }
   };
 
   const sendMessageToChat = (targetChatId, text) => {
@@ -276,6 +301,7 @@ export const ChatProvider = ({ children }) => {
     loading,
     selectChat,
     sendMessage,
+    sendFileMessage, // Exported
     sendMessageToChat, // Exposed for Forwarding
     deleteMessage, 
     addNewChat, 

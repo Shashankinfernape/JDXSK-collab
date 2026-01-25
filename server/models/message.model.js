@@ -13,12 +13,15 @@ const messageSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true,
+    required: false, // Can be empty if it's just an audio/image
   },
   contentType: {
     type: String,
-    enum: ['text', 'image'],
+    enum: ['text', 'image', 'audio'],
     default: 'text',
+  },
+  fileUrl: {
+    type: String, 
   },
   // --- REPLACE 'readBy' WITH THIS ---
   deliveredTo: [{

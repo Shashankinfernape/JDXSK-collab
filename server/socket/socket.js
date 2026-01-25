@@ -32,14 +32,21 @@ function initSocket(io) {
     // --- UPDATED sendMessage ---
     socket.on('sendMessage', async (messageData) => {
       try {
+        // Fetch chat settings first
+        const chatDoc = await Chat.findById(messageData.chatId);
+        let disappearAt = null;
+        
+        if (chatDoc && chatDoc.disappearingMessages) {
+            disappearAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        }
+
         const newMessage = new Message({
           chatId: messageData.chatId,
           senderId: messageData.senderId,
           content: messageData.content,
           contentType: 'text',
-          replyTo: messageData.replyTo, // Save reply context
-          // Set the message to disappear in 2 days (48 hours)
-          disappearAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+          replyTo: messageData.replyTo, 
+          disappearAt: disappearAt
         });
         const savedMessage = await newMessage.save();
 
@@ -49,9 +56,11 @@ function initSocket(io) {
 
         const populatedMessage = await savedMessage.populate('senderId', 'name profilePic');
         
-        const chat = await Chat.findById(messageData.chatId);
+        // We already fetched chatDoc, but populating participants might be needed if not in memory
+        // Standardize: Fetch full chat for participants loop (or use chatDoc if participants present)
+        // chatDoc.participants is Array of ObjectIds.
         
-        chat.participants.forEach(participantId => {
+        chatDoc.participants.forEach(participantId => {
             const socketId = userSocketMap.get(participantId.toString());
             
             if (socketId) {
