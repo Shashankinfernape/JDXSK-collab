@@ -140,12 +140,39 @@ const ActionButton = styled.button`
   }
 `;
 
+const HintText = styled.p`
+  color: ${props => props.theme.colors.textSecondary};
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  opacity: 0.8;
+  animation: ${fadeIn} 0.5s ease-in;
+`;
+
 const VoiceAssistant = () => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [feedback, setFeedback] = useState('Listening...');
-  const [pendingCommand, setPendingCommand] = useState(null); // { targetChat, message }
+  const [pendingCommand, setPendingCommand] = useState(null);
   
+  // Hint Rotation
+  const [hintIndex, setHintIndex] = useState(0);
+  const hints = [
+      "Try: 'Ping Eshwar: Are you free?'",
+      "Try: 'Alice ku hi anuppu' (Tanglish)",
+      "Try: 'Let Bob know I'm driving'",
+      "Try: 'Shoot a msg to John: Call me'"
+  ];
+
+  useEffect(() => {
+      if (isListening) {
+          const interval = setInterval(() => {
+              setHintIndex(prev => (prev + 1) % hints.length);
+          }, 4000);
+          return () => clearInterval(interval);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isListening]);
+
   const { chats, sendMessageToChat } = useChat();
   const { user } = useAuth();
   
@@ -182,30 +209,39 @@ const VoiceAssistant = () => {
     let bestMatch = null;
     let minDistance = Infinity;
 
-    // 1. Direct Search (Exact or StartsWith)
-    const directMatch = chats.find(c => {
-        const p = c.participants.find(userP => userP._id !== user._id);
-        const pName = normalize(p?.name || '');
-        return pName === target || pName.startsWith(target) || target.startsWith(pName);
-    });
-    if (directMatch) return directMatch;
-
-    // 2. Fuzzy Search
-    chats.forEach(chat => {
-        const partner = chat.participants.find(p => p._id !== user._id);
-        if (!partner?.name) return;
-        const pName = normalize(partner.name);
-        
-        // Calculate distance
-        const dist = levenshteinDistance(target, pName);
-        
-        // Calculate score (lower distance relative to length is better)
-        // threshold: allow ~30% error rate (e.g., "eshwar" vs "eshwa" is dist 1, len 6. 1/6 < 0.3)
-        const threshold = Math.max(target.length, pName.length) * 0.4; 
+    // Helper to check distance and update best match
+    const checkMatch = (candidateName, chat) => {
+        const dist = levenshteinDistance(target, candidateName);
+        // Dynamic threshold: 
+        // Allow more errors for longer names.
+        // Min threshold 1.5 ensures "Bo" (2) matches "Jo" (2) (dist 1 < 1.5).
+        // "Eshwar" (6) -> Threshold 2.4. "Ishwar" (dist 1) matches.
+        const threshold = Math.max(1.5, candidateName.length * 0.4); 
 
         if (dist < minDistance && dist <= threshold) {
             minDistance = dist;
             bestMatch = chat;
+        }
+    };
+
+    chats.forEach(chat => {
+        const partner = chat.participants.find(p => p._id !== user._id);
+        if (!partner?.name) return;
+        
+        const fullName = normalize(partner.name);
+        const firstName = fullName.split(' ')[0]; // Check first name separately
+
+        // 1. Direct Search Priority
+        if (fullName === target || firstName === target || fullName.startsWith(target)) {
+            minDistance = 0;
+            bestMatch = chat;
+            return;
+        }
+        
+        // 2. Fuzzy Search against Full Name AND First Name
+        checkMatch(fullName, chat);
+        if (firstName !== fullName) {
+            checkMatch(firstName, chat);
         }
     });
 
@@ -222,7 +258,7 @@ const VoiceAssistant = () => {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.lang = 'en-IN'; // Better for Indian names & Tanglish
 
       recognitionRef.current.onstart = () => {
         setIsListening(true);
@@ -233,8 +269,7 @@ const VoiceAssistant = () => {
 
       recognitionRef.current.onend = () => {
         if (isListening && !pendingCommand) {
-            // Restart if we simply stopped without a command (unless manually stopped)
-             // setFeedback('Tap mic to stop.'); 
+             // Keep alive logic handled by user interaction or silence timer
         } else {
              setIsListening(false);
         }
@@ -255,15 +290,13 @@ const VoiceAssistant = () => {
         const currentText = (finalTranscript || interimTranscript).trim();
         setTranscript(currentText);
 
-        // Reset silence timer on any speech
         if (silenceTimer.current) clearTimeout(silenceTimer.current);
         
-        // Auto-process logic: if we have a decent length string, wait for 2 seconds of silence then process
-        if (currentText.length > 5) {
+        if (currentText.length > 3) {
              silenceTimer.current = setTimeout(() => {
-                 recognitionRef.current.stop(); // Stop listening
-                 processCommand(currentText);   // Process what we have
-             }, 2000); // 2 seconds silence -> End of command
+                 recognitionRef.current.stop(); 
+                 processCommand(currentText);   
+             }, 2000); 
         }
       };
 
@@ -279,7 +312,7 @@ const VoiceAssistant = () => {
         if (silenceTimer.current) clearTimeout(silenceTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chats, pendingCommand]); // Add chats dependency for fresh list
+  }, [chats, pendingCommand]); 
 
   const toggleListening = () => {
     if (isListening) {
@@ -300,39 +333,72 @@ const VoiceAssistant = () => {
         return;
     }
 
-    const lowerText = text.toLowerCase();
+    const lowerText = text.toLowerCase().trim();
     console.log("Processing Voice Command:", lowerText);
     
-    // Patterns covering:
-    // 1. "Message [Name] [Content]"
-    // 2. "Say [Content] to [Name]"
-    // 3. "Tell [Name] [Content]"
-    // 4. "Send [Content] to [Name]"
-    
+    // --- FLEXIBLE COMMAND PATTERNS ---
     const patterns = [
-        // "Say hello to Eshwar" -> Name: Eshwar, Content: hello
-        /^(?:say|send)\s+(.+?)\s+to\s+(.+)$/i, 
+        // --- ENGLISH (Casual & Formal) ---
+        // "Say hello to Eshwar"
+        /^(?:say|send|drop|shoot)\s+(?:a\s+)?(?:message|text|note|msg)?\s*(?:to\s+)?(.+?)\s+(?:saying|that|:)?\s*(.+)$/i,
         
-        // "Tell Eshwar (that) I am here"
-        /^(?:tell|message|text)\s+(.+?)\s+(?:that|saying|:)\s+(.+)$/i,
+        // "Tell Eshwar I am late" / "Ask Eshwar where are you" / "Ping Eshwar hi"
+        /^(?:tell|ask|ping|message|text|inform|notify)\s+(.+?)\s+(?:that|saying|:)?\s*(.+)$/i,
         
-        // "Message Eshwar I am here" (Implicit)
-        /^(?:tell|message|text)\s+(\w+)\s+(.+)$/i 
+        // "Let Eshwar know that I am coming"
+        /^let\s+(.+?)\s+know\s+(?:that\s+)?(.+)$/i,
+
+        // --- TANGLISH (Tamil Syntax) ---
+        // "Eshwar ku hi sollu" (To Eshwar, say hi)
+        // "Eshwar kitta I am coming nu sollu" (Tell Eshwar that I am coming)
+        // Regex: [Name] (ku/kitta) [Message] (sollu/anuppu/kalu)
+        /^(.+?)\s+(?:ku|kitta|kitta)\s+(.+?)(?:\s+(?:nu|nnu))?\s*(?:sollu|anuppu|podu|kalu)?$/i
     ];
 
     let match = null;
     let rawName = '';
     let content = '';
 
-    // Try Pattern 1: "Say [Content] to [Name]"
-    if ((match = lowerText.match(patterns[0]))) {
-        content = match[1];
-        rawName = match[2];
-    } 
-    // Try Pattern 2 & 3: "Tell [Name] [Content]"
-    else if ((match = lowerText.match(patterns[1])) || (match = lowerText.match(patterns[2]))) {
-        rawName = match[1];
-        content = match[2];
+    // Check patterns
+    for (const regex of patterns) {
+        match = lowerText.match(regex);
+        if (match) {
+            // Pattern 1 & 2 & 4 usually map Group 1 -> Name, Group 2 -> Content
+            // But strict check:
+            // "Say hello to Eshwar" -> G1: "hello", G2: "Eshwar" (Wait, regex 1 above is greedy on message or name?)
+            
+            // Let's refine specific parsing based on which regex hit
+            
+            // Refined Loop Logic not needed if regexes are distinct, but standardizing groups is safer.
+            // My Regex #1: (say/send...) (to Name) (Message) OR (say/send) (Message) (to Name)?
+            // The regex 1 above: `(?:to\s+)?(.+?)\s+...` might be ambiguous.
+            
+            // Let's use specific checks for better accuracy:
+            
+            break; 
+        }
+    }
+
+    // --- Manual Pattern Matching for Precision ---
+    
+    // 1. "Say [Message] to [Name]"
+    let p1 = /^(?:say|send)\s+(.+)\s+to\s+(.+)$/i.exec(lowerText);
+    if (p1) { content = p1[1]; rawName = p1[2]; }
+    
+    // 2. "Tell/Ping/Message [Name] [Message]"
+    if (!rawName) {
+        let p2 = /^(?:tell|ask|ping|message|text|let)\s+(.+?)(?:\s+know)?\s+(?:that|saying|:)?\s*(.+)$/i.exec(lowerText);
+        if (p2) { rawName = p2[1]; content = p2[2]; }
+    }
+
+    // 3. Tanglish: "[Name] ku [Message] sollu"
+    if (!rawName) {
+        let p3 = /^(.+?)\s+(?:ku|kitta)\s+(.+)$/i.exec(lowerText);
+        if (p3) { 
+            rawName = p3[1]; 
+            // Remove trailing verbs like 'sollu', 'anuppu' from content
+            content = p3[2].replace(/\s+(?:sollu|anuppu|podu|kalu|nu|nnu)$/i, ''); 
+        }
     }
 
     if (rawName && content) {
@@ -352,7 +418,7 @@ const VoiceAssistant = () => {
             setTimeout(() => setIsListening(false), 3000);
         }
     } else {
-        setFeedback("Didn't catch that. Try 'Say hi to [Name]'");
+        setFeedback("Didn't catch that. Try 'Ping [Name] [Message]'");
         setTimeout(() => setIsListening(false), 3000);
     }
   };
@@ -421,11 +487,14 @@ const VoiceAssistant = () => {
               )}
               
               {!pendingCommand && (
-                <ActionButtons>
-                    <ActionButton onClick={toggleListening}>
-                         Stop Listening
-                    </ActionButton>
-                </ActionButtons>
+                <>
+                    <ActionButtons>
+                        <ActionButton onClick={toggleListening}>
+                            Stop Listening
+                        </ActionButton>
+                    </ActionButtons>
+                    <HintText>{hints[hintIndex]}</HintText>
+                </>
               )}
           </Overlay>
       )}
