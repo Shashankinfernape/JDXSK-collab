@@ -1,45 +1,47 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { FaPlay, FaPause } from 'react-icons/fa';
+import { FaPlayCircle, FaPauseCircle } from 'react-icons/fa';
 import AudioVisualizer from '../common/AudioVisualizer';
 
 const PlayerContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 260px; 
-  padding: 6px 0;
+  gap: 8px;
+  width: 240px; 
+  padding: 4px 0;
 `;
 
 const ProfilePic = styled.img`
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  /* WhatsApp Style: Positioned relative to bubble */
 `;
 
 const ControlButton = styled.button`
   background: none;
   border: none;
-  color: ${props => props.$isMe ? 'rgba(255,255,255,0.9)' : props.theme.colors.textSecondary};
+  color: ${props => props.$isMe ? 'rgba(255,255,255,0.95)' : props.theme.colors.primary};
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.8rem; /* Larger, nicer icon */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   
-  &:hover { opacity: 0.8; }
+  &:hover { opacity: 0.9; transform: scale(1.05); }
+  transition: all 0.2s ease;
 `;
 
 const VisualizerWrapper = styled.div`
   flex: 1;
-  height: 24px; /* Reduced height for compactness */
+  height: 20px; /* Reduced height for compactness */
   display: flex;
   align-items: center;
+  margin-top: 2px;
 `;
 
 const InfoCol = styled.div`
@@ -53,22 +55,24 @@ const InfoCol = styled.div`
 const BottomRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-end; /* Align bottom to match baseline */
+  align-items: center;
   width: 100%;
-  margin-top: 2px;
+  margin-top: 1px;
 `;
 
 const Duration = styled.span`
-  font-size: 0.75rem;
-  color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : props.theme.colors.textSecondary};
+  font-size: 0.7rem;
+  color: ${props => props.$isMe ? 'rgba(255,255,255,0.8)' : props.theme.colors.textSecondary};
   margin-left: 2px;
   line-height: 1;
+  font-weight: 500;
 `;
 
 const FooterContainer = styled.div`
     display: flex;
     align-items: center;
     line-height: 1;
+    opacity: 0.85;
 `;
 
 const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
@@ -81,16 +85,21 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const setAudioData = () => setDuration(audio.duration);
+    const setAudioData = () => {
+        if(audio.duration !== Infinity) setDuration(audio.duration);
+    };
     const setAudioTime = () => setCurrentTime(audio.currentTime);
     const onEnded = () => {
         setIsPlaying(false);
-        setCurrentTime(0); // Reset to start look
+        setCurrentTime(0); 
     };
 
     audio.addEventListener('loadedmetadata', setAudioData);
     audio.addEventListener('timeupdate', setAudioTime);
     audio.addEventListener('ended', onEnded);
+    
+    // Fallback for infinite duration (common in webm/blobs sometimes)
+    if(audio.readyState >= 1) setAudioData();
 
     return () => {
       audio.removeEventListener('loadedmetadata', setAudioData);
@@ -127,7 +136,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
 
       {/* Play Button */}
       <ControlButton onClick={togglePlay} $isMe={isMe}>
-        {isPlaying ? <FaPause /> : <FaPlay />}
+        {isPlaying ? <FaPauseCircle /> : <FaPlayCircle />}
       </ControlButton>
       
       {/* Waveform & Time */}
@@ -135,7 +144,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
           <VisualizerWrapper>
              <AudioVisualizer 
                 currentTime={currentTime}
-                duration={duration || 1} // Avoid divide by zero
+                duration={duration || 1} 
                 isPlaying={isPlaying}
                 isRecording={false}
              />

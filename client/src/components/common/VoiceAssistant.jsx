@@ -183,7 +183,15 @@ const VoiceAssistant = () => {
   const { chats, sendMessageToChat } = useChat();
   const { user } = useAuth();
   
+  // Use Ref for chats to avoid re-initializing SpeechRecognition on every chat update
+  const chatsRef = useRef(chats);
+  useEffect(() => {
+      chatsRef.current = chats;
+  }, [chats]);
+  
   const recognitionRef = useRef(null);
+  const silenceTimer = useRef(null);
+  const noSpeechTimer = useRef(null); // Safety timeout
 
   // --- ADVANCED NAME MATCHING (Jaro-Winkler + Recency + Phonetic) ---
   
@@ -251,7 +259,8 @@ const VoiceAssistant = () => {
     let bestMatch = null;
     let bestScore = 0;
 
-    chats.forEach(chat => {
+    // Use REF here
+    chatsRef.current.forEach(chat => {
         const partner = chat.participants.find(p => p._id !== user._id);
         if (!partner?.name) return;
         
@@ -355,8 +364,7 @@ const VoiceAssistant = () => {
   };
 
   // --- Logic ---
-  const silenceTimer = useRef(null);
-
+  
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -371,17 +379,34 @@ const VoiceAssistant = () => {
         setFeedback('Listening...');
         setTranscript('');
         setPendingCommand(null);
+        
+        // Safety: If no speech for 8 seconds, stop.
+        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
+        noSpeechTimer.current = setTimeout(() => {
+            if (!transcript) { // If still empty
+                setFeedback("I didn't hear anything.");
+                setTimeout(() => setIsListening(false), 2000);
+                if (recognitionRef.current) recognitionRef.current.stop();
+            }
+        }, 8000);
       };
 
       recognitionRef.current.onend = () => {
-        if (isListening && !pendingCommand) {
-             // Keep alive logic handled by user interaction or silence timer
-        } else {
+        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
+        if (silenceTimer.current) clearTimeout(silenceTimer.current);
+        
+        // If we are still "listening" in state but the API stopped (e.g. silence),
+        // we usually want to stop UI too unless we have auto-restart logic.
+        // For now, let's sync state.
+        if (!pendingCommand) {
              setIsListening(false);
         }
       };
 
       recognitionRef.current.onresult = (event) => {
+        // Clear safety timer as soon as we hear something
+        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
+
         let interimTranscript = '';
         let finalTranscript = '';
 
@@ -408,17 +433,21 @@ const VoiceAssistant = () => {
 
       recognitionRef.current.onerror = (event) => {
         console.error("Speech error", event.error);
+        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
         if (event.error !== 'no-speech') {
              setFeedback('Error: ' + event.error);
-             setIsListening(false);
+             setTimeout(() => setIsListening(false), 2000);
         }
       };
     }
     return () => {
         if (silenceTimer.current) clearTimeout(silenceTimer.current);
+        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
+        // CRITICAL FIX: Abort the recognition instance on unmount/update to prevent phantom listeners
+        if (recognitionRef.current) recognitionRef.current.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chats, pendingCommand]); 
+  }, [pendingCommand]); // Removed 'chats' dependency 
 
   const toggleListening = () => {
     if (isListening) {
@@ -542,7 +571,12 @@ const VoiceAssistant = () => {
   return (
     <>
       <AssistantContainer>
-        <TriggerButton onClick={toggleListening} title="AI Voice Assistant" $isListening={isListening}>
+        <TriggerButton 
+            onClick={toggleListening} 
+            title="AI Voice Assistant" 
+            $isListening={isListening}
+            onContextMenu={(e) => e.preventDefault()}
+        >
             {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
             <RiSparklingFill className="sparkle" />
         </TriggerButton>

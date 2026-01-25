@@ -11,8 +11,14 @@ const uploadMessage = async (req, res) => {
         const { chatId } = req.body;
         const senderId = req.user._id;
         
-        // Determine type based on mimetype
-        const type = req.file.mimetype.startsWith('audio/') ? 'audio' : 'image';
+        // Robust Mimetype/Extension Check
+        const isAudio = 
+            req.file.mimetype.startsWith('audio/') || 
+            req.file.mimetype === 'video/webm' || 
+            req.file.mimetype === 'application/octet-stream' ||
+            req.file.originalname.match(/\.(webm|mp3|wav|m4a|ogg)$/i);
+
+        const type = isAudio ? 'audio' : 'image';
         
         // Construct public URL (assuming static serve setup)
         // In production, this would be the S3/Cloudinary URL

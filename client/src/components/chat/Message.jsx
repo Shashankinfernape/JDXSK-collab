@@ -6,8 +6,8 @@ import { BiTime } from 'react-icons/bi';
 import { IoMdUndo } from 'react-icons/io'; 
 import AudioPlayer from './AudioPlayer'; // Import AudioPlayer
 
-const SERVER_URL = "https://jdxsk-collab.onrender.com"; 
-// const SERVER_URL = "http://localhost:5000"; // Toggle for local
+const SERVER_URL = "http://localhost:5000"; 
+// const SERVER_URL = "https://jdxsk-collab.onrender.com"; 
 
 const SwipeContainer = styled.div`
   position: relative;
