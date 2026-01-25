@@ -307,6 +307,9 @@ const VoiceAssistant = () => {
           { regex: /^if\s+(?:he|she)\s+needs\b/i, replace: "Do you need" },
           { regex: /^if\s+(?:he|she)\s+wants\b/i, replace: "Do you want" },
           { regex: /^if\s+(?:he|she)\s+likes\b/i, replace: "Do you like" },
+          // New: "how he is" -> "how are you"
+          { regex: /^how\s+(?:he|she)\s+is\b/i, replace: "How are you" },
+          { regex: /^how\s+is\s+(?:he|she)\b/i, replace: "How are you" },
       ];
 
       for (let rule of indirectMap) {
@@ -459,9 +462,19 @@ const VoiceAssistant = () => {
 
     // --- Manual Pattern Matching for Precision ---
     
+    // 0. Special Case: "Ask how [Name] is [doing/etc]" (Split structure)
+    // Needs to come before generic "Ask [Name]" to avoid capturing "how [Name]" as the name.
+    let pSpecial = /^ask\s+how\s+(.+?)\s+is\s+(.+)$/i.exec(lowerText);
+    if (pSpecial) {
+        rawName = pSpecial[1];
+        content = "How are you " + pSpecial[2] + "?";
+    }
+
     // 1. "Say [Message] to [Name]"
-    let p1 = /^(?:say|send)\s+(.+)\s+to\s+(.+)$/i.exec(lowerText);
-    if (p1) { content = p1[1]; rawName = p1[2]; }
+    if (!rawName) {
+        let p1 = /^(?:say|send)\s+(.+)\s+to\s+(.+)$/i.exec(lowerText);
+        if (p1) { content = p1[1]; rawName = p1[2]; }
+    }
     
     // 2. "Tell/Ping/Message [Name] [Message]"
     if (!rawName) {
@@ -486,7 +499,8 @@ const VoiceAssistant = () => {
             const partnerName = targetChat.participants.find(p => p._id !== user._id)?.name;
             
             // --- APPLY POV TRANSFORMATION ---
-            const finalMessage = transformContent(content);
+            // Only apply if it wasn't already transformed by the special case
+            const finalMessage = pSpecial ? content : transformContent(content);
 
             setFeedback(`Confirm: Send to ${partnerName}?`);
             setPendingCommand({ targetChat, content: finalMessage }); // Use transformed message
