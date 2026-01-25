@@ -151,11 +151,11 @@ const MessageInput = () => {
   const { sendMessage, sendFileMessage, replyingTo, setReplyingTo } = useChat();
   const inputRef = useRef(null);
   
-  // Refs to maintain state inside event listeners
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
-  const startTimeRef = useRef(null);
+  const isStoppingRef = useRef(false);
+  const recordingTimeRef = useRef(0); // Ref for live access in callbacks
 
   useEffect(() => {
     if (replyingTo && inputRef.current) inputRef.current.focus();
@@ -168,22 +168,15 @@ const MessageInput = () => {
   };
 
   const startRecording = async (e) => {
-      // Prevent default context menu or ghost clicks
       if (e) e.preventDefault();
       
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           
-          let options = {};
-          if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-              options = { mimeType: 'audio/webm;codecs=opus' };
-          } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-              options = { mimeType: 'audio/webm' };
-          }
-
-          const recorder = new MediaRecorder(stream, options);
+          const recorder = new MediaRecorder(stream);
           mediaRecorderRef.current = recorder;
           audioChunksRef.current = [];
+          isStoppingRef.current = false;
 
           recorder.ondataavailable = (event) => {
               if (event.data && event.data.size > 0) {
@@ -193,45 +186,39 @@ const MessageInput = () => {
 
           recorder.onstop = () => {
               const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-              const duration = recordingTime || Math.round((Date.now() - startTimeRef.current) / 1000);
+              // Use REF for correct duration, not stale state
+              const duration = recordingTimeRef.current; 
               
               if (audioBlob.size > 0) {
-                  // Ensure we send a File object with proper name
-                  const file = new File([audioBlob], "voice_message.webm", { 
-                      type: 'audio/webm',
-                      lastModified: Date.now()
-                  });
-                  
-                  // Pass duration to helper
-                  sendFileMessage(file, duration); 
+                  const file = new File([audioBlob], "voice_message.webm", { type: 'audio/webm' });
+                  sendFileMessage(file, duration);
               }
               
-              // Stop all tracks to release mic
               stream.getTracks().forEach(track => track.stop());
           };
 
-          recorder.start(200); // Collect chunks every 200ms
-          
+          recorder.start();
           setIsRecording(true);
           setRecordingTime(0);
-          startTimeRef.current = Date.now();
+          recordingTimeRef.current = 0;
           
           timerRef.current = setInterval(() => {
-              setRecordingTime(prev => prev + 1);
+              setRecordingTime(prev => {
+                  const next = prev + 1;
+                  recordingTimeRef.current = next; // Sync ref
+                  return next;
+              });
           }, 1000);
 
-          // Global release listeners
           document.addEventListener('mouseup', stopRecording);
           document.addEventListener('touchend', stopRecording);
 
       } catch (err) {
-          console.error("Mic access denied or error:", err);
-          alert("Could not access microphone. Please check permissions.");
+          console.error("Mic access denied", err);
       }
   };
 
   const stopRecording = () => {
-      // Cleanup listeners
       document.removeEventListener('mouseup', stopRecording);
       document.removeEventListener('touchend', stopRecording);
 
@@ -241,7 +228,8 @@ const MessageInput = () => {
       }
       
       const recorder = mediaRecorderRef.current;
-      if (recorder && recorder.state !== 'inactive') {
+      if (recorder && recorder.state !== 'inactive' && !isStoppingRef.current) {
+          isStoppingRef.current = true;
           recorder.stop();
       }
       

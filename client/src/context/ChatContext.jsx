@@ -280,7 +280,7 @@ export const ChatProvider = ({ children }) => {
       }
   };
 
-  const sendMessageToChat = (targetChatId, text) => {
+  const sendMessageToChat = React.useCallback((targetChatId, text) => {
       if (!user || !socket) return;
       const messageData = {
           chatId: targetChatId,
@@ -308,7 +308,7 @@ export const ChatProvider = ({ children }) => {
               [targetChatId]: [...(prev[targetChatId] || []), optimisticMessage],
           }));
       }
-  };
+  }, [user, socket, activeChat]);
   
   const deleteMessage = async (messageIds) => {
       // Optimistic Update
