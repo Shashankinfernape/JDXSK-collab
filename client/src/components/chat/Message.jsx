@@ -6,8 +6,10 @@ import { BiTime } from 'react-icons/bi';
 import { IoMdUndo } from 'react-icons/io'; 
 import AudioPlayer from './AudioPlayer'; // Import AudioPlayer
 
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const SERVER_URL = isLocal ? "http://localhost:5000" : "https://jdxsk-collab.onrender.com"; 
+const isProduction = window.location.hostname.includes('onrender.com');
+const SERVER_URL = isProduction 
+    ? "https://jdxsk-collab.onrender.com" 
+    : `http://${window.location.hostname}:5000`; 
 
 const SwipeContainer = styled.div`
   position: relative;
@@ -322,6 +324,8 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
       </>
   );
 
+  const isAudio = message.contentType === 'audio' || message.content === '🎤 Voice Message';
+
   return (
     <SwipeContainer id={`msg-${message._id}`}>
         <ReplyIconWrapper $visible={translateX > 40}>
@@ -354,7 +358,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
                 </QuotedMessage>
             )}
             
-            {message.contentType === 'audio' ? (
+            {isAudio ? (
                 <AudioPlayer 
                     src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} 
                     isMe={isMe}
@@ -373,7 +377,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
                 </>
             ) : (
                 <>
-                    {message.content !== '🎤 Voice Message' && <MessageText>{message.content}</MessageText>}
+                    <MessageText>{message.content}</MessageText>
                     <StatusContainer>{messageStatus}</StatusContainer>
                 </>
             )}

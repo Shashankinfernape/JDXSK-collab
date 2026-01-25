@@ -125,11 +125,16 @@ const TextInput = styled.input`
 `;
 
 const RecordingIndicator = styled.div`
-  flex: 1; display: flex; align-items: center; gap: 10px;
+  flex: 1; display: flex; align-items: center; gap: 12px;
   color: ${props => props.theme.colors.textPrimary};
-  font-weight: 500; font-size: 1rem;
+  font-weight: 700; font-size: 1.1rem;
   padding-left: 10px;
   animation: ${slideUp} 0.2s ease-out;
+  
+  span:first-of-type {
+      color: #ff3b30; /* Red timer text for urgency/clarity */
+      min-width: 45px;
+  }
 `;
 
 const RecDot = styled.div`

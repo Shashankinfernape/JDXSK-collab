@@ -61,18 +61,19 @@ const BottomRow = styled.div`
 `;
 
 const Duration = styled.span`
-  font-size: 0.7rem;
-  color: ${props => props.$isMe ? 'rgba(255,255,255,0.8)' : props.theme.colors.textSecondary};
+  font-size: 0.75rem;
+  color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.textSecondary};
   margin-left: 2px;
   line-height: 1;
-  font-weight: 500;
+  font-weight: 600;
+  opacity: 0.9;
 `;
 
 const FooterContainer = styled.div`
     display: flex;
     align-items: center;
     line-height: 1;
-    opacity: 0.85;
+    opacity: 1;
 `;
 
 const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
@@ -86,33 +87,61 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     if (!audio) return;
 
     const setAudioData = () => {
-        if(audio.duration !== Infinity) setDuration(audio.duration);
+        if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
+            setDuration(audio.duration);
+        }
     };
-    const setAudioTime = () => setCurrentTime(audio.currentTime);
+
+    const handleLoadedData = () => {
+        // Workaround for Chrome/Edge webm duration bug
+        if (audio.duration === Infinity || audio.duration === 0) {
+            audio.currentTime = 1e101; // Go to end
+            audio.ontimeupdate = () => {
+                audio.ontimeupdate = null;
+                setDuration(audio.duration);
+                audio.currentTime = 0; // Go back to start
+            };
+        } else {
+            setDuration(audio.duration);
+        }
+    };
+
+    const setAudioTime = () => {
+        setCurrentTime(audio.currentTime);
+        // Backup: if duration is still not set, try setting it
+        if ((duration === 0 || duration === Infinity) && audio.duration > 0 && audio.duration !== Infinity) {
+            setDuration(audio.duration);
+        }
+    };
+
     const onEnded = () => {
         setIsPlaying(false);
         setCurrentTime(0); 
     };
 
     audio.addEventListener('loadedmetadata', setAudioData);
+    audio.addEventListener('loadeddata', handleLoadedData);
     audio.addEventListener('timeupdate', setAudioTime);
     audio.addEventListener('ended', onEnded);
     
-    if(audio.readyState >= 1) setAudioData();
+    if(audio.readyState >= 1) handleLoadedData();
 
     return () => {
       audio.removeEventListener('loadedmetadata', setAudioData);
+      audio.removeEventListener('loadeddata', handleLoadedData);
       audio.removeEventListener('timeupdate', setAudioTime);
       audio.removeEventListener('ended', onEnded);
     };
-  }, []);
+  }, [duration]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
+    if (!audio) return;
+    
     if (isPlaying) {
       audio.pause();
     } else {
-      audio.play();
+      audio.play().catch(e => console.error("Playback failed", e));
     }
     setIsPlaying(!isPlaying);
   };

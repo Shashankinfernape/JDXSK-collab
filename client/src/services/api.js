@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 // --- API URL Configuration ---
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const BASE_URL = isLocal ? "http://localhost:5000" : "https://jdxsk-collab.onrender.com";
+const isProduction = window.location.hostname.includes('onrender.com');
+const BASE_URL = isProduction 
+    ? "https://jdxsk-collab.onrender.com" 
+    : `http://${window.location.hostname}:5000`;
 
 // Set up a base instance of Axios
 const api = axios.create({
