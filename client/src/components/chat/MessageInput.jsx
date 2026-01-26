@@ -167,18 +167,37 @@ const MessageInput = () => {
       return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  const recordingAbortedRef = useRef(false);
+
   const startRecording = async (e) => {
       if (e) e.preventDefault();
       
       // Prevent multiple starts
       if (isRecordingRef.current) return;
       isRecordingRef.current = true;
+      recordingAbortedRef.current = false;
+
+      // Add listeners immediately to catch early release
+      document.addEventListener('mouseup', stopRecording);
+      document.addEventListener('touchend', stopRecording);
 
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           
-          // Use standard webm for compatibility
-          const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+          // Check if user already released while we were waiting
+          if (recordingAbortedRef.current) {
+              stream.getTracks().forEach(track => track.stop());
+              isRecordingRef.current = false;
+              return;
+          }
+
+          let mimeType = 'audio/webm';
+          if (!MediaRecorder.isTypeSupported(mimeType)) {
+              console.warn("audio/webm not supported, falling back to default");
+              mimeType = ''; 
+          }
+          
+          const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
           
           mediaRecorderRef.current = recorder;
           audioChunksRef.current = [];
@@ -196,13 +215,15 @@ const MessageInput = () => {
               if (processed) return;
               processed = true;
 
-              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+              const blobMimeType = mimeType || 'audio/webm';
+              const audioBlob = new Blob(audioChunksRef.current, { type: blobMimeType });
               
               // Calculate duration from start time for accuracy
               const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
               
               if (audioBlob.size > 0) {
-                  const file = new File([audioBlob], "voice_message.webm", { type: 'audio/webm' });
+                  const ext = blobMimeType.includes('mp4') ? 'm4a' : 'webm';
+                  const file = new File([audioBlob], `voice_message.${ext}`, { type: blobMimeType });
                   sendFileMessage(file, duration || 1); // Ensure at least 1s
               }
               
@@ -219,18 +240,20 @@ const MessageInput = () => {
               setRecordingTime(prev => prev + 1);
           }, 1000);
 
-          document.addEventListener('mouseup', stopRecording);
-          document.addEventListener('touchend', stopRecording);
-
       } catch (err) {
           console.error("Mic access denied", err);
           isRecordingRef.current = false;
+          document.removeEventListener('mouseup', stopRecording);
+          document.removeEventListener('touchend', stopRecording);
       }
   };
 
   const stopRecording = () => {
       document.removeEventListener('mouseup', stopRecording);
       document.removeEventListener('touchend', stopRecording);
+
+      // Signal abort in case startRecording is still initializing
+      recordingAbortedRef.current = true;
 
       if (timerRef.current) {
           clearInterval(timerRef.current);
@@ -243,7 +266,10 @@ const MessageInput = () => {
       }
       
       setIsRecording(false);
-      // isRecordingRef is reset in onstop
+      // Ensure lock is released even if recorder wasn't started
+      if (!recorder || recorder.state === 'inactive') {
+          isRecordingRef.current = false;
+      }
   };
 
   const handleSubmit = (e) => {

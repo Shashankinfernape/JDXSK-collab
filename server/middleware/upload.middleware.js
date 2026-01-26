@@ -22,10 +22,21 @@ const storage = multer.diskStorage({
 
 // File Filter (Audio & Images)
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/')) {
+    if (
+        file.mimetype.startsWith('image/') || 
+        file.mimetype.startsWith('audio/') ||
+        file.mimetype === 'video/webm' || 
+        file.mimetype === 'video/ogg' ||
+        file.mimetype === 'application/octet-stream'
+    ) {
         cb(null, true);
     } else {
-        cb(new Error('Invalid file type. Only images and audio are allowed!'), false);
+        // Fallback: Check extension if mimetype is weird
+        if (file.originalname.match(/\.(webm|mp3|wav|m4a|ogg|jpg|jpeg|png|gif|webp)$/i)) {
+             cb(null, true);
+        } else {
+             cb(new Error('Invalid file type. Only images and audio are allowed!'), false);
+        }
     }
 };
 
