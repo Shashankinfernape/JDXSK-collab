@@ -135,7 +135,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
         audio.removeEventListener('timeupdate', handleTimeUpdate);
         audio.removeEventListener('ended', handleEnded);
     };
-  }, [src, duration]); // Added duration to dep array to satisfy linter if needed, but mostly src is key
+  }, [src, duration, initialDuration]); // Added initialDuration to dep array to satisfy linter
 
   const togglePlay = () => {
     const audio = audioRef.current;
