@@ -5,6 +5,7 @@ import { FaMicrophone, FaMicrophoneSlash, FaTimes, FaRedo, FaCheck } from 'react
 import { RiSparklingFill } from 'react-icons/ri';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api'; // Import API for Global Search
 
 // --- Animations ---
 
@@ -269,10 +270,17 @@ const VoiceAssistant = () => {
         const currentUser = userRef.current;
         if (!currentUser) return;
 
-        const partner = chat.participants.find(p => p._id !== currentUser._id);
-        if (!partner?.name) return;
+        let nameToCheck = '';
+        if (chat.isGroup) {
+            nameToCheck = chat.groupName;
+        } else {
+            const partner = chat.participants.find(p => p._id !== currentUser._id);
+            nameToCheck = partner?.name;
+        }
+
+        if (!nameToCheck) return;
         
-        const fullName = normalize(partner.name);
+        const fullName = normalize(nameToCheck);
         const firstName = fullName.split(' ')[0];
         
         // --- SCORING SYSTEM ---
@@ -472,7 +480,7 @@ const VoiceAssistant = () => {
     }
   };
 
-  const processCommand = (text) => {
+  const processCommand = async (text) => {
     if (!text) {
         setIsListening(false);
         return;
@@ -487,9 +495,10 @@ const VoiceAssistant = () => {
 
     // --- DEBUGGING ---
     console.log("Voice Command:", lowerText);
-    console.log("Available Contacts:", chatsRef.current.map(c => 
+    const localNames = chatsRef.current.map(c => 
         c.participants.find(p => p._id !== userRef.current?._id)?.name
-    ));
+    );
+    console.log("Available Local Contacts:", localNames);
 
     // --- Manual Pattern Matching for Precision ---
     
@@ -522,13 +531,54 @@ const VoiceAssistant = () => {
             content = p3[2].replace(/\s+(?:sollu|anuppu|podu|kalu|nu|nnu)$/i, ''); 
         }
     }
+    
+    // 4. "Call [Name]"
+    if (!rawName) {
+        let p4 = /^call\s+(.+)$/i.exec(lowerText);
+        if (p4) {
+            rawName = p4[1];
+            content = "📞 Call me";
+        }
+    }
 
     if (rawName && content) {
-        const targetChat = findBestMatch(rawName.trim());
+        // CLEANUP: Remove punctuation like '?' or '.' from name
+        const cleanName = rawName.trim().replace(/[?.!]+$/, "");
+        console.log(`Cleaned Name: '${cleanName}'`);
+
+        let targetChat = findBestMatch(cleanName);
+        let partnerName = "";
+
+        // --- GLOBAL SEARCH FALLBACK ---
+        if (!targetChat) {
+             console.log("Local match failed. Trying Global Search...");
+             setFeedback(`Searching for "${cleanName}"...`);
+             try {
+                 const { data: users } = await api.get(`/users/search?q=${encodeURIComponent(cleanName)}`);
+                 if (users && users.length > 0) {
+                     const bestUser = users[0]; // Backend sorts by priority
+                     console.log("Global Match Found:", bestUser.name);
+                     
+                     // Create or Get Chat
+                     const { data: newChat } = await api.post('/chats', { recipientId: bestUser._id });
+                     targetChat = newChat;
+                     partnerName = bestUser.name;
+                     
+                     // Add to local context if needed (optional, context usually updates via socket)
+                 }
+             } catch (e) {
+                 console.error("Global search failed", e);
+             }
+        } else {
+             const currentUser = userRef.current;
+             if (targetChat.isGroup) {
+                 partnerName = targetChat.groupName;
+             } else {
+                 partnerName = targetChat.participants.find(p => p._id !== currentUser._id)?.name;
+             }
+        }
         
         if (targetChat) {
-            const currentUser = userRef.current;
-            const partnerName = targetChat.participants.find(p => p._id !== currentUser._id)?.name;
             
             // --- APPLY POV TRANSFORMATION ---
             // Only apply if it wasn't already transformed by the special case
@@ -542,7 +592,7 @@ const VoiceAssistant = () => {
                 handleSend(targetChat._id, finalMessage);
             }
         } else {
-            setFeedback(`Found no contact close to "${rawName}"`);
+            setFeedback(`Found no contact close to "${cleanName}"`);
             setTimeout(() => setIsListening(false), 3000);
         }
     } else {
