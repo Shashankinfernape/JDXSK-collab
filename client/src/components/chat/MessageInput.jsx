@@ -156,6 +156,7 @@ const MessageInput = () => {
   // const timerRef = useRef(null); // Removed: Handled by useEffect now
   const startTimeRef = useRef(0); 
   const isRecordingRef = useRef(false); // Guard for start
+  const isStoppingRef = useRef(false); // Guard for stop (prevent double-fire)
 
   // --- Timer Logic Refactor ---
   useEffect(() => {
@@ -186,9 +187,11 @@ const MessageInput = () => {
   const startRecording = async (e) => {
       if (e) e.preventDefault();
       
-      // Prevent multiple starts
-      if (isRecordingRef.current) return;
+      // Prevent multiple starts or restarts while stopping
+      if (isRecordingRef.current || isStoppingRef.current) return;
+      
       isRecordingRef.current = true;
+      isStoppingRef.current = false;
       recordingAbortedRef.current = false;
 
       // Add listeners immediately to catch early release
@@ -218,12 +221,12 @@ const MessageInput = () => {
           mediaRecorderRef.current = recorder;
           audioChunksRef.current = [];
           
-          // Local flag to prevent double processing of the same recording
+          // Local flag to prevent double processing of the same recording instance
           let processed = false;
 
           recorder.ondataavailable = (event) => {
               if (event.data && event.data.size > 0) {
-                  console.log("Chunk received:", event.data.size);
+                  // console.log("Chunk received:", event.data.size);
                   audioChunksRef.current.push(event.data);
               }
           };
@@ -240,16 +243,18 @@ const MessageInput = () => {
               
               console.log("Recording stopped. Total Size:", audioBlob.size, "Duration:", duration, "Chunks:", audioChunksRef.current.length);
 
-              if (audioBlob.size > 0 && duration >= 1) { // Min 1 second
+              // STRICT CHECK: Must be > 0 bytes and at least 1 second (to avoid accidental clicks)
+              if (audioBlob.size > 0 && duration >= 1) { 
                   const ext = blobMimeType.includes('mp4') ? 'm4a' : 'webm';
                   const file = new File([audioBlob], `voice_message.${ext}`, { type: blobMimeType });
                   sendFileMessage(file, duration); 
               } else {
-                  console.warn("Recording too short or empty.");
+                  console.warn("Recording discarded: Too short or empty.");
               }
               
               stream.getTracks().forEach(track => track.stop());
               isRecordingRef.current = false;
+              isStoppingRef.current = false;
           };
 
           recorder.start(100); // Request chunks every 100ms
@@ -259,13 +264,20 @@ const MessageInput = () => {
       } catch (err) {
           console.error("Mic access denied", err);
           isRecordingRef.current = false;
+          isStoppingRef.current = false;
           setIsRecording(false);
           document.removeEventListener('mouseup', stopRecording);
           document.removeEventListener('touchend', stopRecording);
       }
   };
 
-  const stopRecording = () => {
+  const stopRecording = (e) => {
+      // Prevent double calling
+      if (isStoppingRef.current) return;
+      isStoppingRef.current = true;
+
+      if (e) e.preventDefault();
+      
       document.removeEventListener('mouseup', stopRecording);
       document.removeEventListener('touchend', stopRecording);
 
@@ -275,13 +287,13 @@ const MessageInput = () => {
       const recorder = mediaRecorderRef.current;
       if (recorder && recorder.state !== 'inactive') {
           recorder.stop();
+      } else {
+          // If recorder wasn't started yet or failed, reset flags
+          isRecordingRef.current = false;
+          isStoppingRef.current = false;
       }
       
       setIsRecording(false);
-      // Ensure lock is released even if recorder wasn't started
-      if (!recorder || recorder.state === 'inactive') {
-          isRecordingRef.current = false;
-      }
   };
 
   const handleSubmit = (e) => {
