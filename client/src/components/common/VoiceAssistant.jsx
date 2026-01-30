@@ -560,9 +560,12 @@ const VoiceAssistant = () => {
             setFeedback(`Confirm: Send to ${partnerName}?`);
             setPendingCommand({ targetChat, content: finalMessage }); // Use transformed message
             
-            // Auto-send if enabled
-            const autoSend = localStorage.getItem('voice_auto_send') === 'true';
-            if (autoSend) {
+            // Auto-send (Default to TRUE now to restore expected workflow)
+            // We can still respect 'false' if explicitly set, but default is true
+            const autoSendSetting = localStorage.getItem('voice_auto_send');
+            const shouldAutoSend = autoSendSetting === null || autoSendSetting === 'true';
+            
+            if (shouldAutoSend) {
                 handleSend(targetChat._id, finalMessage);
             }
         } else {
