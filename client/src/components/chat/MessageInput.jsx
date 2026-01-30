@@ -153,9 +153,23 @@ const MessageInput = () => {
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  const timerRef = useRef(null);
+  // const timerRef = useRef(null); // Removed: Handled by useEffect now
   const startTimeRef = useRef(0); 
   const isRecordingRef = useRef(false); // Guard for start
+
+  // --- Timer Logic Refactor ---
+  useEffect(() => {
+      let interval;
+      if (isRecording) {
+          setRecordingTime(0); // Reset UI immediately
+          interval = setInterval(() => {
+              setRecordingTime(prev => prev + 1);
+          }, 1000);
+      } else {
+          setRecordingTime(0);
+      }
+      return () => clearInterval(interval);
+  }, [isRecording]);
 
   useEffect(() => {
     if (replyingTo && inputRef.current) inputRef.current.focus();
@@ -193,8 +207,10 @@ const MessageInput = () => {
 
           let mimeType = 'audio/webm';
           if (!MediaRecorder.isTypeSupported(mimeType)) {
-              console.warn("audio/webm not supported, falling back to default");
-              mimeType = ''; 
+              console.warn("audio/webm not supported, checking alternatives");
+              if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+              else if (MediaRecorder.isTypeSupported('video/webm')) mimeType = 'video/webm'; // Chrome fallback
+              else mimeType = ''; // Default
           }
           
           const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
@@ -221,10 +237,14 @@ const MessageInput = () => {
               // Calculate duration from start time for accuracy
               const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
               
-              if (audioBlob.size > 0) {
+              console.log("Recording stopped. Size:", audioBlob.size, "Duration:", duration);
+
+              if (audioBlob.size > 0 && duration >= 1) { // Min 1 second
                   const ext = blobMimeType.includes('mp4') ? 'm4a' : 'webm';
                   const file = new File([audioBlob], `voice_message.${ext}`, { type: blobMimeType });
-                  sendFileMessage(file, duration || 1); // Ensure at least 1s
+                  sendFileMessage(file, duration); 
+              } else {
+                  console.warn("Recording too short or empty.");
               }
               
               stream.getTracks().forEach(track => track.stop());
@@ -232,17 +252,13 @@ const MessageInput = () => {
           };
 
           recorder.start();
-          setIsRecording(true);
-          setRecordingTime(0);
           startTimeRef.current = Date.now(); // Set start time
-          
-          timerRef.current = setInterval(() => {
-              setRecordingTime(prev => prev + 1);
-          }, 1000);
+          setIsRecording(true); // Triggers useEffect for timer
 
       } catch (err) {
           console.error("Mic access denied", err);
           isRecordingRef.current = false;
+          setIsRecording(false);
           document.removeEventListener('mouseup', stopRecording);
           document.removeEventListener('touchend', stopRecording);
       }
@@ -255,11 +271,6 @@ const MessageInput = () => {
       // Signal abort in case startRecording is still initializing
       recordingAbortedRef.current = true;
 
-      if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-      }
-      
       const recorder = mediaRecorderRef.current;
       if (recorder && recorder.state !== 'inactive') {
           recorder.stop();

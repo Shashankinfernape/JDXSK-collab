@@ -186,11 +186,13 @@ const VoiceAssistant = () => {
   // Use Refs for dependencies to avoid re-initializing SpeechRecognition
   const chatsRef = useRef(chats);
   const sendMessageRef = useRef(sendMessageToChat);
+  const userRef = useRef(user);
 
   useEffect(() => {
       chatsRef.current = chats;
       sendMessageRef.current = sendMessageToChat;
-  }, [chats, sendMessageToChat]);
+      userRef.current = user;
+  }, [chats, sendMessageToChat, user]);
   
   const recognitionRef = useRef(null);
   const silenceTimer = useRef(null);
@@ -264,7 +266,10 @@ const VoiceAssistant = () => {
 
     // Use REF here
     chatsRef.current.forEach(chat => {
-        const partner = chat.participants.find(p => p._id !== user._id);
+        const currentUser = userRef.current;
+        if (!currentUser) return;
+
+        const partner = chat.participants.find(p => p._id !== currentUser._id);
         if (!partner?.name) return;
         
         const fullName = normalize(partner.name);
@@ -514,7 +519,8 @@ const VoiceAssistant = () => {
         const targetChat = findBestMatch(rawName.trim());
         
         if (targetChat) {
-            const partnerName = targetChat.participants.find(p => p._id !== user._id)?.name;
+            const currentUser = userRef.current;
+            const partnerName = targetChat.participants.find(p => p._id !== currentUser._id)?.name;
             
             // --- APPLY POV TRANSFORMATION ---
             // Only apply if it wasn't already transformed by the special case
