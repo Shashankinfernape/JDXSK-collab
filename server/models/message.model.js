@@ -23,6 +23,10 @@ const messageSchema = new mongoose.Schema({
   fileUrl: {
     type: String, 
   },
+  duration: {
+    type: Number, // In seconds
+    default: 0
+  },
   // --- REPLACE 'readBy' WITH THIS ---
   deliveredTo: [{
     type: mongoose.Schema.Types.ObjectId,

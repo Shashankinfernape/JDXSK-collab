@@ -78,11 +78,16 @@ const FooterContainer = styled.div`
     opacity: 1;
 `;
 
-const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
+const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDuration }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState(initialDuration || 0);
   const audioRef = useRef(null);
+
+  useEffect(() => {
+    // If initialDuration changes (e.g. from backend), update it
+    if (initialDuration) setDuration(initialDuration);
+  }, [initialDuration]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -91,7 +96,8 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer }) => {
     // Reset state when source changes
     setIsPlaying(false);
     setCurrentTime(0);
-    setDuration(0); 
+    // Don't reset duration to 0 if we have initialDuration
+    if (!initialDuration) setDuration(0); 
 
     const updateDuration = () => {
         if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {

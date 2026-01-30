@@ -303,7 +303,9 @@ const VoiceAssistant = () => {
 
         // Update Winner
         // Threshold: 0.85 (Jaro-Winkler is usually high, so we set a high bar)
-        if (score > bestScore && score > 0.8) { 
+        console.log(`Matching '${target}' vs '${fullName}': Score=${score.toFixed(2)}`);
+        
+        if (score > bestScore && score > 0.65) { // Lowered threshold slightly
             bestScore = score;
             bestMatch = chat;
         }
@@ -482,6 +484,12 @@ const VoiceAssistant = () => {
     let rawName = '';
     let content = '';
     const isQuestion = lowerText.startsWith('ask');
+
+    // --- DEBUGGING ---
+    console.log("Voice Command:", lowerText);
+    console.log("Available Contacts:", chatsRef.current.map(c => 
+        c.participants.find(p => p._id !== userRef.current?._id)?.name
+    ));
 
     // --- Manual Pattern Matching for Precision ---
     

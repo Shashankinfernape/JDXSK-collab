@@ -364,6 +364,7 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
                     isMe={isMe}
                     senderProfilePic={message.senderId?.profilePic || `https://i.pravatar.cc/150?u=${message.senderId?._id}`}
                     footer={messageStatus}
+                    duration={message.duration}
                 />
             ) : message.contentType === 'image' ? (
                 <>

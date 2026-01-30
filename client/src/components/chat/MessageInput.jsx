@@ -223,6 +223,7 @@ const MessageInput = () => {
 
           recorder.ondataavailable = (event) => {
               if (event.data && event.data.size > 0) {
+                  console.log("Chunk received:", event.data.size);
                   audioChunksRef.current.push(event.data);
               }
           };
@@ -237,7 +238,7 @@ const MessageInput = () => {
               // Calculate duration from start time for accuracy
               const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
               
-              console.log("Recording stopped. Size:", audioBlob.size, "Duration:", duration);
+              console.log("Recording stopped. Total Size:", audioBlob.size, "Duration:", duration, "Chunks:", audioChunksRef.current.length);
 
               if (audioBlob.size > 0 && duration >= 1) { // Min 1 second
                   const ext = blobMimeType.includes('mp4') ? 'm4a' : 'webm';
@@ -251,7 +252,7 @@ const MessageInput = () => {
               isRecordingRef.current = false;
           };
 
-          recorder.start();
+          recorder.start(100); // Request chunks every 100ms
           startTimeRef.current = Date.now(); // Set start time
           setIsRecording(true); // Triggers useEffect for timer
 

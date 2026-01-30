@@ -248,8 +248,7 @@ export const ChatProvider = ({ children }) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('chatId', activeChat._id);
-      // Note: We aren't sending duration to backend yet as schema might not support it, 
-      // but this fixes the local preview.
+      if (duration) formData.append('duration', duration);
 
       try {
           const { data: newMessage } = await api.post('/messages/upload', formData, {

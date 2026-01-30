@@ -8,7 +8,7 @@ const uploadMessage = async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        const { chatId } = req.body;
+        const { chatId, duration } = req.body;
         const senderId = req.user._id;
         
         // Robust Mimetype/Extension Check
@@ -36,6 +36,7 @@ const uploadMessage = async (req, res) => {
             content: type === 'audio' ? '🎤 Voice Message' : '📷 Image',
             contentType: type,
             fileUrl: fileUrl,
+            duration: duration ? Number(duration) : 0,
             disappearAt: disappearAt
         });
 
