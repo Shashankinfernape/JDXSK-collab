@@ -48,6 +48,11 @@ export const ChatProvider = ({ children }) => {
         const chatId = message.chatId;
         const currentMessages = prev[chatId] || [];
         
+        // STRICT Deduplication: If ID exists, ignore completely
+        if (currentMessages.some(m => m._id === message._id)) {
+            return prev;
+        }
+
         // Robust Sender Check
         const msgSenderId = message.senderId?._id || message.senderId;
         const isMyMessage = user && msgSenderId && msgSenderId.toString() === user._id.toString();
@@ -280,7 +285,11 @@ export const ChatProvider = ({ children }) => {
   };
 
   const sendMessageToChat = React.useCallback((targetChatId, text) => {
-      if (!user || !socket) return;
+      console.log("sendMessageToChat called:", { targetChatId, text, user: !!user, socket: !!socket });
+      if (!user || !socket) {
+          console.warn("Cannot send message: User or Socket missing");
+          return;
+      }
       const messageData = {
           chatId: targetChatId,
           senderId: user._id,

@@ -581,12 +581,18 @@ const VoiceAssistant = () => {
   const handleSend = (chatId, content) => {
       // Use REF to get the latest function instance
       if (sendMessageRef.current) {
+          console.log("VoiceAssistant: Sending message to", chatId);
+          setFeedback("Sending..."); // Immediate feedback
           sendMessageRef.current(chatId, content);
-          setFeedback("Sent!");
-          setPendingCommand(null);
-          setTimeout(() => setIsListening(false), 1500);
+          
+          setTimeout(() => {
+             setFeedback("Sent!");
+             setPendingCommand(null);
+             setTimeout(() => setIsListening(false), 1500);
+          }, 500);
       } else {
-          setFeedback("Error: Not connected");
+          console.error("VoiceAssistant: sendMessage function missing");
+          setFeedback("Error: Connection lost");
       }
   };
 

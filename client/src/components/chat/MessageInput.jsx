@@ -245,8 +245,10 @@ const MessageInput = () => {
 
               // STRICT CHECK: Must be > 0 bytes and at least 1 second (to avoid accidental clicks)
               if (audioBlob.size > 0 && duration >= 1) { 
-                  const ext = blobMimeType.includes('mp4') ? 'm4a' : 'webm';
-                  const file = new File([audioBlob], `voice_message.${ext}`, { type: blobMimeType });
+                  console.log("Sending valid voice message...");
+                  // Force audio/webm for consistency in storage
+                  const ext = 'webm';
+                  const file = new File([audioBlob], `voice_message.${ext}`, { type: 'audio/webm' });
                   sendFileMessage(file, duration); 
               } else {
                   console.warn("Recording discarded: Too short or empty.");
