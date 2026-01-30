@@ -221,34 +221,8 @@ export const ChatProvider = ({ children }) => {
   const sendFileMessage = async (file, duration = 0) => {
       if (!activeChat || !user) return;
       
-      // 1. Optimistic Update
-      const tempId = `temp-${Date.now()}`;
-      const previewUrl = URL.createObjectURL(file);
-      const type = file.type.startsWith('audio') || file.name.endsWith('.webm') ? 'audio' : 'image';
-      
-      const optimisticMessage = {
-          _id: tempId,
-          chatId: activeChat._id,
-          senderId: { 
-            _id: user._id, 
-            name: user.name, 
-            profilePic: user.profilePic 
-          },
-          content: type === 'audio' ? '🎤 Voice Message' : '📷 Image',
-          contentType: type,
-          fileUrl: previewUrl, // Local Blob URL
-          createdAt: new Date().toISOString(),
-          readBy: [],
-          deliveredTo: [],
-          // Pass duration for immediate UI feedback
-          duration: duration 
-      };
-
-      // Add temp message immediately
-      setMessages(prev => ({
-          ...prev,
-          [activeChat._id]: [...(prev[activeChat._id] || []), optimisticMessage]
-      }));
+      // 1. Log Upload Start (No Optimistic UI for Files to prevent dupes)
+      console.log("Uploading file...", file.type, file.size);
 
       const formData = new FormData();
       formData.append('file', file);
@@ -263,24 +237,18 @@ export const ChatProvider = ({ children }) => {
           // Socket emit
           socket.emit('sendMessage', newMessage);
           
-          // Replace temp message with real one
+          // Add REAL message directly (Dedup logic in setMessages will handle race with socket)
           setMessages(prev => {
               const chatMessages = prev[activeChat._id] || [];
-              const updatedMessages = chatMessages.map(msg => 
-                  msg._id === tempId ? newMessage : msg
-              );
-              return { ...prev, [activeChat._id]: updatedMessages };
+              if (chatMessages.some(m => m._id === newMessage._id)) return prev; // Already added by socket?
+              return { 
+                  ...prev, 
+                  [activeChat._id]: [...chatMessages, newMessage] 
+              };
           });
       } catch (error) {
           console.error("Failed to send file", error);
-          // Remove temp message on error
-          setMessages(prev => {
-              const chatMessages = prev[activeChat._id] || [];
-              return { 
-                  ...prev, 
-                  [activeChat._id]: chatMessages.filter(msg => msg._id !== tempId) 
-              };
-          });
+          // Show error toast or alert here if needed
       }
   };
 

@@ -235,20 +235,20 @@ const MessageInput = () => {
               if (processed) return;
               processed = true;
 
-              const blobMimeType = mimeType || 'audio/webm';
-              const audioBlob = new Blob(audioChunksRef.current, { type: blobMimeType });
+              const actualMimeType = recorder.mimeType || mimeType || 'audio/webm'; // Prefer actual recorder type
+              const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
               
               // Calculate duration from start time for accuracy
               const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
               
-              console.log("Recording stopped. Total Size:", audioBlob.size, "Duration:", duration, "Chunks:", audioChunksRef.current.length);
+              console.log("Recording stopped. Total Size:", audioBlob.size, "Duration:", duration, "Type:", actualMimeType);
 
               // STRICT CHECK: Must be > 0 bytes and at least 1 second (to avoid accidental clicks)
               if (audioBlob.size > 0 && duration >= 1) { 
                   console.log("Sending valid voice message...");
-                  // Force audio/webm for consistency in storage
-                  const ext = 'webm';
-                  const file = new File([audioBlob], `voice_message.${ext}`, { type: 'audio/webm' });
+                  // Use appropriate extension based on type
+                  const ext = actualMimeType.includes('mp4') ? 'm4a' : 'webm';
+                  const file = new File([audioBlob], `voice_message.${ext}`, { type: actualMimeType });
                   sendFileMessage(file, duration); 
               } else {
                   console.warn("Recording discarded: Too short or empty.");
