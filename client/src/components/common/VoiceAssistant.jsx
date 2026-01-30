@@ -5,7 +5,6 @@ import { FaMicrophone, FaMicrophoneSlash, FaTimes, FaRedo, FaCheck } from 'react
 import { RiSparklingFill } from 'react-icons/ri';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api'; // Import API for Global Search
 
 // --- Animations ---
 
@@ -480,7 +479,7 @@ const VoiceAssistant = () => {
     }
   };
 
-  const processCommand = async (text) => {
+  const processCommand = (text) => {
     if (!text) {
         setIsListening(false);
         return;
@@ -503,7 +502,6 @@ const VoiceAssistant = () => {
     // --- Manual Pattern Matching for Precision ---
     
     // 0. Special Case: "Ask how [Name] is [doing/etc]" (Split structure)
-    // Needs to come before generic "Ask [Name]" to avoid capturing "how [Name]" as the name.
     let pSpecial = /^ask\s+how\s+(.+?)\s+is\s+(.+)$/i.exec(lowerText);
     if (pSpecial) {
         rawName = pSpecial[1];
@@ -527,7 +525,6 @@ const VoiceAssistant = () => {
         let p3 = /^(.+?)\s+(?:ku|kitta)\s+(.+)$/i.exec(lowerText);
         if (p3) { 
             rawName = p3[1]; 
-            // Remove trailing verbs like 'sollu', 'anuppu' from content
             content = p3[2].replace(/\s+(?:sollu|anuppu|podu|kalu|nu|nnu)$/i, ''); 
         }
     }
@@ -549,44 +546,21 @@ const VoiceAssistant = () => {
         let targetChat = findBestMatch(cleanName);
         let partnerName = "";
 
-        // --- GLOBAL SEARCH FALLBACK ---
-        if (!targetChat) {
-             console.log("Local match failed. Trying Global Search...");
-             setFeedback(`Searching for "${cleanName}"...`);
-             try {
-                 const { data: users } = await api.get(`/users/search?q=${encodeURIComponent(cleanName)}`);
-                 if (users && users.length > 0) {
-                     const bestUser = users[0]; // Backend sorts by priority
-                     console.log("Global Match Found:", bestUser.name);
-                     
-                     // Create or Get Chat
-                     const { data: newChat } = await api.post('/chats', { recipientId: bestUser._id });
-                     targetChat = newChat;
-                     partnerName = bestUser.name;
-                     
-                     // Add to local context if needed (optional, context usually updates via socket)
-                 }
-             } catch (e) {
-                 console.error("Global search failed", e);
-             }
-        } else {
+        if (targetChat) {
              const currentUser = userRef.current;
              if (targetChat.isGroup) {
                  partnerName = targetChat.groupName;
              } else {
                  partnerName = targetChat.participants.find(p => p._id !== currentUser._id)?.name;
              }
-        }
-        
-        if (targetChat) {
             
             // --- APPLY POV TRANSFORMATION ---
-            // Only apply if it wasn't already transformed by the special case
             const finalMessage = pSpecial ? content : transformContent(content, isQuestion);
 
             setFeedback(`Confirm: Send to ${partnerName}?`);
             setPendingCommand({ targetChat, content: finalMessage }); // Use transformed message
             
+            // Auto-send if enabled
             const autoSend = localStorage.getItem('voice_auto_send') === 'true';
             if (autoSend) {
                 handleSend(targetChat._id, finalMessage);
