@@ -166,6 +166,8 @@ const VoiceAssistant = () => {
       "Try: 'Search Sunil'"
   ];
 
+  const transcriptRef = useRef('');
+
   useEffect(() => {
       if (isListening) {
           const interval = setInterval(() => {
@@ -195,35 +197,75 @@ const VoiceAssistant = () => {
   const recognitionRef = useRef(null);
   const silenceTimer = useRef(null);
 
-  // --- NEW SIMPLIFIED LOGIC ---
+  // --- FUZZY & PHONETIC HELPERS ---
 
-  // 1. Simple Word Normalizer
+  // 1. Levenshtein Distance (Spelling Similarity)
+  const getLevenshteinDistance = (a, b) => {
+      const matrix = [];
+      for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+      for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+      for (let i = 1; i <= b.length; i++) {
+          for (let j = 1; j <= a.length; j++) {
+              if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                  matrix[i][j] = matrix[i - 1][j - 1];
+              } else {
+                  matrix[i][j] = Math.min(
+                      matrix[i - 1][j - 1] + 1, // substitution
+                      Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1) // insertion/deletion
+                  );
+              }
+          }
+      }
+      return 1 - (matrix[b.length][a.length] / Math.max(a.length, b.length));
+  };
+
+  // 2. Custom Phonetic Key (Optimized for Indian/English names)
+  const getPhonetic = (str) => {
+      let s = str.toLowerCase().trim();
+      if (!s) return '';
+      s = s.replace(/[^a-z]/g, '')
+           .replace(/ee/g, 'i')
+           .replace(/oo/g, 'u')
+           .replace(/th/g, 't')
+           .replace(/ph/g, 'f')
+           .replace(/sh/g, 's')
+           .replace(/ch/g, 'k')
+           .replace(/ck/g, 'k')
+           .replace(/[z]/g, 's')
+           .replace(/[v]/g, 'w') // Indian v/w interchange
+           .replace(/(.)\1+/g, '$1'); // Remove doubles
+      // Remove vowels except start
+      const first = s[0];
+      const rest = s.slice(1).replace(/[aeiou]/g, '');
+      return first + rest;
+  };
+
   const normalize = (text) => text.toLowerCase().replace(/[.,?!]/g, '').trim();
 
-  // 2. Linear Processor
+  // 3. Linear Processor with FUZZY MATCHING
   const processCommand = useCallback(async (rawText) => {
       if (!rawText) { setIsListening(false); return; }
       
-      setFeedback("Processing..."); // Immediate Feedback
+      setFeedback("Processing...");
       const text = normalize(rawText);
       console.log("Voice Command (Clean):", text);
+      const textWords = text.split(' ');
 
       let targetName = null;
       let targetChat = null;
       let messageContent = "";
-      let commandType = "message"; // "message" or "open"
+      let commandType = "message"; 
 
       // A. Check for "Open/Search/Go To"
       if (text.startsWith("open") || text.startsWith("go to") || text.startsWith("search") || text.startsWith("show")) {
           commandType = "open";
-          // Remove command word
           const words = text.split(' ');
-          words.shift(); // Remove first word
-          if (words[0] === "to") words.shift(); // Remove "to" if "go to"
-          targetName = words.join(' '); // Remainder is name
+          words.shift(); 
+          if (words[0] === "to") words.shift(); 
+          targetName = words.join(' '); 
       } 
       
-      // B. Scan for Known Contacts (Longest Match First)
+      // B. FUZZY SCAN for Known Contacts
       if (!targetName) {
           const allContacts = [];
           chatsRef.current.forEach(c => {
@@ -235,41 +277,111 @@ const VoiceAssistant = () => {
               }
           });
 
-          // Sort by name length desc (e.g. "John Doe" before "John")
-          allContacts.sort((a, b) => b.name.length - a.name.length);
+          let bestMatch = null;
+          let highestScore = 0;
+          let matchedText = "";
 
           for (const contact of allContacts) {
-              const cName = normalize(contact.name);
-              // Check if the command *contains* this name
-              if (text.includes(cName)) {
-                  targetName = contact.name;
-                  targetChat = contact.chat;
-                  
-                  // Extract message: Remove name and command words
-                  let temp = text.replace(cName, "").trim();
-                  const fillers = ["say", "tell", "ask", "ping", "message", "text", "to", "that", "about", "msg", "send", "is", "are"];
-                  let words = temp.split(' ');
-                  
-                  // Clean from start
-                  while(words.length > 0 && fillers.includes(words[0])) words.shift();
-                  // Clean from end
-                  while(words.length > 0 && fillers.includes(words[words.length-1])) words.pop();
-                  
-                  messageContent = words.join(' ');
-                  break; 
+              const contactTokens = normalize(contact.name).split(/\s+/);
+              let matchedTokensCount = 0;
+              let totalSimilarity = 0;
+              let currentMatchText = [];
+
+              // Check each part of the contact's name against the transcript words
+              for (const token of contactTokens) {
+                  if (token.length < 2) continue; // Skip initials like "J" to avoid noise
+
+                  const tokenPhonetic = getPhonetic(token);
+                  let bestTokenScore = 0;
+                  let bestWordMatch = "";
+
+                  for (const word of textWords) {
+                      const wordPhonetic = getPhonetic(word);
+                      
+                      // 1. Phonetic Check
+                      let pScore = (tokenPhonetic === wordPhonetic) ? 1.0 : 0;
+                      
+                      // 2. Spelling Check
+                      const sScore = getLevenshteinDistance(token, word);
+                      
+                      // Combined Score
+                      const score = Math.max(pScore, sScore);
+
+                      if (score > bestTokenScore) {
+                          bestTokenScore = score;
+                          bestWordMatch = word;
+                      }
+                  }
+
+                  // Threshold for a "word match"
+                  if (bestTokenScore > 0.75) { // Strict enough to avoid "Hi" matching "He"
+                      matchedTokensCount++;
+                      totalSimilarity += bestTokenScore;
+                      currentMatchText.push(bestWordMatch);
+                  }
               }
+
+              // Evaluate the contact match
+              if (matchedTokensCount > 0) {
+                  // Weighted Score: (Matches / Total Name Parts) * Average Similarity
+                  // This favors "Jason" matching "Jason" (1/1) over "Jason" matching "Jason DX" (1/2)
+                  // BUT we want "Jason" to match "Jason DX" if "Jason" is the only option.
+                  
+                  // Strategy: If >= 1 token matches strongly, it's a candidate.
+                  // We pick the candidate with the highest TOTAL matched tokens, then similarity.
+                  
+                  // Boost score if the FIRST name matches (common case)
+                  const isFirstNameMatch = currentMatchText.includes(textWords.find(w => 
+                      getLevenshteinDistance(w, contactTokens[0]) > 0.8
+                  ));
+                  
+                  let finalScore = totalSimilarity; 
+                  if (isFirstNameMatch) finalScore += 0.5; // Boost first name matches
+
+                  if (finalScore > highestScore) {
+                      highestScore = finalScore;
+                      bestMatch = contact;
+                      matchedText = currentMatchText.join(' ');
+                  }
+              }
+          }
+
+          if (bestMatch && highestScore > 0.8) { // Minimum quality threshold
+              console.log(`Fuzzy Match: '${bestMatch.name}' (Score: ${highestScore.toFixed(2)})`);
+              targetName = bestMatch.name;
+              targetChat = bestMatch.chat;
+
+              // Extract message: Remove the matched words from the original text
+              // We construct a regex from the matched words to remove them specifically
+              const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              
+              // We remove the words found in the match from the transcript
+              // "Say hi to Jayson" -> matched "Jayson" -> remove "Jayson"
+              let temp = text;
+              // Split matchedText back into words to remove individually? 
+              // Safer: Remove the specific words found in transcript that contributed to the match
+              const foundWords = matchedText.split(' ');
+              for (const word of foundWords) {
+                  temp = temp.replace(new RegExp(`\\b${escapeRegExp(word)}\\b`, 'i'), "");
+              }
+              temp = temp.trim();
+
+              const fillers = ["say", "tell", "ask", "ping", "message", "text", "to", "that", "about", "msg", "send", "is", "are", "hi", "hey"];
+              let words = temp.split(/\s+/);
+              while(words.length > 0 && fillers.includes(words[0])) words.shift();
+              while(words.length > 0 && fillers.includes(words[words.length-1])) words.pop();
+              
+              messageContent = words.join(' ');
           }
       }
 
       // C. Global Search Fallback (if name extracted but no local chat found)
       if (!targetChat && targetName && commandType === "open") {
-           // We have a name from "Open X", try global search
            setFeedback(`Searching directory for "${targetName}"...`);
            try {
                const { data: users } = await api.get(`/users/search?q=${targetName}`);
                if (users && users.length > 0) {
                    const bestUser = users[0];
-                   // Create chat
                    const { data: newChat } = await api.post('/chats', { recipientId: bestUser._id });
                    targetChat = newChat;
                    if (addNewChatRef.current) addNewChatRef.current(newChat);
@@ -288,24 +400,24 @@ const VoiceAssistant = () => {
               if (selectChatRef.current) selectChatRef.current(targetChat);
               setTimeout(() => setIsListening(false), 1000);
           } else {
-              // Message Mode
-              if (!messageContent) messageContent = "👋"; // Default if empty?
+              if (!messageContent) messageContent = "👋"; 
               
-              // Simple POV fix
               messageContent = messageContent
                   .replace(/\bhe\b/g, "you")
                   .replace(/\bshe\b/g, "you")
                   .replace(/\bhis\b/g, "your")
                   .replace(/\bher\b/g, "your");
 
-              // Fix: Capitalize first letter
               messageContent = messageContent.charAt(0).toUpperCase() + messageContent.slice(1);
 
               setFeedback(`Sent to ${partnerName}: "${messageContent}"`);
               
-              // Direct Send (Reliable)
+              // Use REF to get the latest function instance
               if (sendMessageRef.current) {
-                  sendMessageRef.current(targetChat._id, messageContent);
+                  // INSTANT SEND (Optimistic)
+                  sendMessageRef.current(targetChat._id, messageContent).catch(err => {
+                     console.error("VoiceAssistant: Background Send Failed", err);
+                  });
               }
               setTimeout(() => setIsListening(false), 1500);
           }
@@ -313,9 +425,7 @@ const VoiceAssistant = () => {
           setFeedback("Couldn't find that contact.");
           setTimeout(() => setIsListening(false), 2000);
       }
-  }, []); // Dependencies are Refs, so array is empty
-
-  const transcriptRef = useRef(''); // CRITICAL: Access text without state lag
+  }, []);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -329,7 +439,7 @@ const VoiceAssistant = () => {
         setIsListening(true);
         setFeedback('Listening...');
         setTranscript('');
-        transcriptRef.current = ''; // Reset ref
+        transcriptRef.current = '';
         
         // Safety: Hard stop after 5 seconds of silence
         if (silenceTimer.current) clearTimeout(silenceTimer.current);
@@ -352,7 +462,7 @@ const VoiceAssistant = () => {
             currentText += event.results[i][0].transcript;
         }
         setTranscript(currentText);
-        transcriptRef.current = currentText; // Update ref immediately
+        transcriptRef.current = currentText;
 
         // Manual backup timer
         silenceTimer.current = setTimeout(() => {
@@ -362,13 +472,10 @@ const VoiceAssistant = () => {
 
       recognitionRef.current.onend = () => {
           setIsListening(false);
-          // DIRECT HANDOFF: Use ref to get text immediately
           const finalParam = transcriptRef.current;
           if (finalParam && finalParam.length > 1) {
               console.log("onend triggered. Processing:", finalParam);
               processCommand(finalParam);
-          } else {
-              console.log("onend triggered but empty transcript.");
           }
       };
       
@@ -378,9 +485,7 @@ const VoiceAssistant = () => {
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
-
-  // Removed the flaky useEffect([isListening, transcript]) 
+  }, []);
 
   const handleToggle = () => {
       if (isListening) {
