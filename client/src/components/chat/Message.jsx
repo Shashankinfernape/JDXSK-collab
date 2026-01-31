@@ -6,10 +6,15 @@ import { BiTime } from 'react-icons/bi';
 import { IoMdUndo } from 'react-icons/io'; 
 import AudioPlayer from './AudioPlayer'; // Import AudioPlayer
 
-const isProduction = window.location.hostname.includes('onrender.com');
+// --- FIX: Robust Production URL Check ---
+const isProduction = 
+    window.location.hostname.includes('onrender.com') || 
+    window.location.hostname.includes('vercel.app');
+
 const SERVER_URL = isProduction 
     ? "https://jdxsk-collab.onrender.com" 
     : `http://${window.location.hostname}:5000`; 
+// --- END FIX ---
 
 const SwipeContainer = styled.div`
   position: relative;

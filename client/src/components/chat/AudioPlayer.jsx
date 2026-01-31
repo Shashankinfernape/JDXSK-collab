@@ -85,9 +85,16 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
   const audioRef = useRef(null);
 
   useEffect(() => {
-    // If initialDuration changes (e.g. from backend), update it
     if (initialDuration) setDuration(initialDuration);
   }, [initialDuration]);
+
+  // Handle Seek Logic
+  const handleSeek = (newTime) => {
+      if (audioRef.current) {
+          audioRef.current.currentTime = newTime;
+          setCurrentTime(newTime);
+      }
+  };
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -135,7 +142,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
         audio.removeEventListener('timeupdate', handleTimeUpdate);
         audio.removeEventListener('ended', handleEnded);
     };
-  }, [src, duration, initialDuration]); // Added initialDuration to dep array to satisfy linter
+  }, [src, initialDuration, duration]); // kept deps simple but safe
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -175,7 +182,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
                 currentTime={currentTime}
                 duration={duration || 1} 
                 isPlaying={isPlaying}
-                isRecording={false}
+                onSeek={handleSeek}
              />
           </VisualizerWrapper>
           <BottomRow>

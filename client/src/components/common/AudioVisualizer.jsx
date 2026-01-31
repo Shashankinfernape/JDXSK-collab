@@ -1,6 +1,14 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { useTheme } from '../../context/ThemeContext';
+
+const VisualizerContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+  touch-action: none; /* Prevent scroll while dragging */
+`;
 
 const Canvas = styled.canvas`
   width: 100%;
@@ -8,85 +16,167 @@ const Canvas = styled.canvas`
   display: block;
 `;
 
-const AudioVisualizer = ({ currentTime, duration, isPlaying, isRecording }) => {
+const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
   const { theme } = useTheme();
+  const [isDragging, setIsDragging] = useState(false);
 
-  // Generate a static "fake" waveform pattern once
-  // This mimics the look of a pre-analyzed audio file
+  // Generate a pleasing static waveform pattern
   const bars = useMemo(() => {
-      const count = 45; // Number of bars
+      const count = 50; 
       const data = [];
       for (let i = 0; i < count; i++) {
-          // Generate a wave-like pattern with some randomness
-          // Sine wave base + random noise
-          const val = Math.sin(i * 0.2) * 0.5 + 0.5; 
-          const height = Math.max(0.2, val * Math.random() * 0.8 + 0.2); 
-          data.push(height);
+          // Symmetric mirroring for a nicer look
+          const x = i / count * Math.PI * 4; // 2 periods
+          const noise = Math.random() * 0.3;
+          const val = Math.abs(Math.sin(x)) * 0.6 + 0.2 + noise;
+          data.push(Math.min(1.0, val));
       }
       return data;
   }, []);
+
+  const handleInteraction = (clientX) => {
+      if (!containerRef.current || duration <= 0) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const percent = Math.min(1, Math.max(0, x / rect.width));
+      onSeek && onSeek(percent * duration);
+  };
+
+  const onMouseDown = (e) => {
+      setIsDragging(true);
+      handleInteraction(e.clientX);
+  };
+
+  const onMouseMove = (e) => {
+      if (isDragging) handleInteraction(e.clientX);
+  };
+
+  const onMouseUp = () => {
+      setIsDragging(false);
+  };
+
+  const onTouchStart = (e) => {
+      setIsDragging(true);
+      handleInteraction(e.touches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+      if (isDragging) handleInteraction(e.touches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+      setIsDragging(false);
+  };
+
+  // Add global listeners for drag release
+  useEffect(() => {
+      if (isDragging) {
+          window.addEventListener('mouseup', onMouseUp);
+          window.addEventListener('touchend', onTouchEnd);
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('touchmove', onTouchMove);
+      }
+      return () => {
+          window.removeEventListener('mouseup', onMouseUp);
+          window.removeEventListener('touchend', onTouchEnd);
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('touchmove', onTouchMove);
+      };
+  }, [isDragging]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
     
-    // Clear
+    // Handle High DPI displays
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const width = rect.width;
+    const height = rect.height;
+    
     ctx.clearRect(0, 0, width, height);
 
-    const barWidth = 3;
+    const barCount = bars.length;
     const gap = 2;
-    const totalBarWidth = barWidth + gap;
-    const totalBars = Math.floor(width / totalBarWidth);
+    const barWidth = (width - (gap * (barCount - 1))) / barCount;
     
     // Colors
-    const playedColor = isRecording ? '#ff3b30' : (theme.colors.primary || '#007AFF');
-    const pendingColor = isRecording ? 'rgba(255, 59, 48, 0.3)' : (theme.isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)');
+    const playedColor = theme.colors.primary || '#007AFF';
+    const pendingColor = theme.isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)';
+    const knobColor = theme.colors.textPrimary;
 
-    // Calculate Progress
-    // If recording, we might just show an animation or full pending
-    // If playing, we show progress
-    let progressPercent = 0;
-    if (duration > 0) {
-        progressPercent = currentTime / duration;
-    }
+    const progressPercent = duration > 0 ? currentTime / duration : 0;
     
-    // Draw Bars
-    for (let i = 0; i < totalBars; i++) {
-        // Recycle the static pattern if we have more bars than pattern
-        const patternIndex = i % bars.length;
-        const barHeightPercent = bars[patternIndex];
-        const barHeight = barHeightPercent * height;
+    // 1. Draw Bars
+    bars.forEach((heightPct, i) => {
+        const barHeight = heightPct * height * 0.8; // 80% height max
+        const x = i * (barWidth + gap);
+        const y = (height - barHeight) / 2;
         
-        const x = i * totalBarWidth;
-        const y = (height - barHeight) / 2; // Center vertically
+        // Check if this bar is "played"
+        // Use center of bar for comparison
+        const barCenterPercent = (i + 0.5) / barCount;
+        const isPlayed = barCenterPercent <= progressPercent;
 
-        // Determine color based on progress
-        const isPlayed = (i / totalBars) < progressPercent;
-        
         ctx.fillStyle = isPlayed ? playedColor : pendingColor;
         
-        // Draw rounded pill
-        // Since canvas roundRect is not supported everywhere yet, use standard rect or custom path
-        // Standard rect for speed/compatibility, looks fine at small scale
-        // To make it look rounded, we can draw a path with lineCap
+        // Rounded Rect
+        const radius = barWidth / 2;
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + barWidth - radius, y);
+        ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius);
+        ctx.lineTo(x + barWidth, y + barHeight - radius);
+        ctx.quadraticCurveTo(x + barWidth, y + barHeight, x + barWidth - radius, y + barHeight);
+        ctx.lineTo(x + radius, y + barHeight);
+        ctx.quadraticCurveTo(x, y + barHeight, x, y + barHeight - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.fill();
+    });
+
+    // 2. Draw Knob (Scrubber Head)
+    const knobX = progressPercent * width;
+    const knobY = height / 2;
+    
+    // Only draw knob if we have started playing or dragging
+    if (progressPercent > 0 || isDragging) {
+        ctx.shadowColor = "rgba(0,0,0,0.3)";
+        ctx.shadowBlur = 4;
         
         ctx.beginPath();
-        ctx.lineCap = 'round';
-        ctx.lineWidth = barWidth;
-        ctx.moveTo(x + barWidth/2, y);
-        ctx.lineTo(x + barWidth/2, y + barHeight);
-        ctx.strokeStyle = isPlayed ? playedColor : pendingColor;
+        ctx.arc(knobX, knobY, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#FFFFFF'; // Always white for contrast
+        ctx.fill();
+        
+        // Ring
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = playedColor;
         ctx.stroke();
+        
+        ctx.shadowBlur = 0;
     }
 
-  }, [currentTime, duration, isPlaying, isRecording, theme, bars]);
+  }, [currentTime, duration, isPlaying, theme, bars, isDragging]);
 
-  return <Canvas ref={canvasRef} width={200} height={30} />;
+  return (
+      <VisualizerContainer 
+        ref={containerRef}
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+      >
+          <Canvas ref={canvasRef} />
+      </VisualizerContainer>
+  );
 };
 
 export default AudioVisualizer;

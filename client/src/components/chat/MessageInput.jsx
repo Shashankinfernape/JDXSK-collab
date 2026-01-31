@@ -146,6 +146,7 @@ const MessageInput = () => {
   const [text, setText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // New uploading state
   const [recordingTime, setRecordingTime] = useState(0);
   
   const { sendMessage, sendFileMessage, replyingTo, setReplyingTo } = useChat();
@@ -153,16 +154,14 @@ const MessageInput = () => {
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  // const timerRef = useRef(null); // Removed: Handled by useEffect now
   const startTimeRef = useRef(0); 
-  const isRecordingRef = useRef(false); // Guard for start
-  const isStoppingRef = useRef(false); // Guard for stop (prevent double-fire)
+  const streamRef = useRef(null);
 
-  // --- Timer Logic Refactor ---
+  // --- Timer ---
   useEffect(() => {
       let interval;
       if (isRecording) {
-          setRecordingTime(0); // Reset UI immediately
+          setRecordingTime(0);
           interval = setInterval(() => {
               setRecordingTime(prev => prev + 1);
           }, 1000);
@@ -182,120 +181,62 @@ const MessageInput = () => {
       return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const recordingAbortedRef = useRef(false);
-
   const startRecording = async (e) => {
       if (e) e.preventDefault();
-      
-      // Prevent multiple starts or restarts while stopping
-      if (isRecordingRef.current || isStoppingRef.current) return;
-      
-      isRecordingRef.current = true;
-      isStoppingRef.current = false;
-      recordingAbortedRef.current = false;
-
-      // Add listeners immediately to catch early release
-      document.addEventListener('mouseup', stopRecording);
-      document.addEventListener('touchend', stopRecording);
+      if (isRecording || isUploading) return;
 
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          streamRef.current = stream;
           
-          // Check if user already released while we were waiting
-          if (recordingAbortedRef.current) {
-              stream.getTracks().forEach(track => track.stop());
-              isRecordingRef.current = false;
-              return;
-          }
-
-          let mimeType = 'audio/webm';
-          if (!MediaRecorder.isTypeSupported(mimeType)) {
-              console.warn("audio/webm not supported, checking alternatives");
-              if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
-              else if (MediaRecorder.isTypeSupported('video/webm')) mimeType = 'video/webm'; // Chrome fallback
-              else mimeType = ''; // Default
-          }
-          
+          const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
           const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
           
           mediaRecorderRef.current = recorder;
           audioChunksRef.current = [];
           
-          // Local flag to prevent double processing of the same recording instance
-          let processed = false;
-
           recorder.ondataavailable = (event) => {
-              if (event.data && event.data.size > 0) {
-                  // console.log("Chunk received:", event.data.size);
-                  audioChunksRef.current.push(event.data);
-              }
+              if (event.data.size > 0) audioChunksRef.current.push(event.data);
           };
 
-          recorder.onstop = () => {
-              if (processed) return;
-              processed = true;
-
-              const actualMimeType = recorder.mimeType || mimeType || 'audio/webm'; // Prefer actual recorder type
-              const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
-              
-              // Calculate duration from start time for accuracy
+          recorder.onstop = async () => {
+              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
               const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
               
-              console.log("Recording stopped. Total Size:", audioBlob.size, "Duration:", duration, "Type:", actualMimeType);
-
-              // STRICT CHECK: Must be > 0 bytes and at least 1 second (to avoid accidental clicks)
-              if (audioBlob.size > 0 && duration >= 1) { 
-                  console.log("Sending valid voice message...");
-                  // Use appropriate extension based on type
-                  const ext = actualMimeType.includes('mp4') ? 'm4a' : 'webm';
-                  const file = new File([audioBlob], `voice_message.${ext}`, { type: actualMimeType });
-                  sendFileMessage(file, duration); 
-              } else {
-                  console.warn("Recording discarded: Too short or empty.");
+              // Cleanup
+              if (streamRef.current) {
+                  streamRef.current.getTracks().forEach(track => track.stop());
               }
-              
-              stream.getTracks().forEach(track => track.stop());
-              isRecordingRef.current = false;
-              isStoppingRef.current = false;
+
+              if (audioBlob.size > 0 && duration >= 1) {
+                  setIsUploading(true);
+                  const file = new File([audioBlob], "voice.webm", { type: 'audio/webm' });
+                  try {
+                      await sendFileMessage(file, duration);
+                  } catch (err) {
+                      console.error("Upload failed", err);
+                  } finally {
+                      setIsUploading(false);
+                  }
+              }
+              setIsRecording(false);
           };
 
-          recorder.start(100); // Request chunks every 100ms
-          startTimeRef.current = Date.now(); // Set start time
-          setIsRecording(true); // Triggers useEffect for timer
+          recorder.start();
+          startTimeRef.current = Date.now();
+          setIsRecording(true);
 
       } catch (err) {
-          console.error("Mic access denied", err);
-          isRecordingRef.current = false;
-          isStoppingRef.current = false;
+          console.error("Microphone error:", err);
           setIsRecording(false);
-          document.removeEventListener('mouseup', stopRecording);
-          document.removeEventListener('touchend', stopRecording);
       }
   };
 
   const stopRecording = (e) => {
-      // Prevent double calling
-      if (isStoppingRef.current) return;
-      isStoppingRef.current = true;
-
       if (e) e.preventDefault();
-      
-      document.removeEventListener('mouseup', stopRecording);
-      document.removeEventListener('touchend', stopRecording);
-
-      // Signal abort in case startRecording is still initializing
-      recordingAbortedRef.current = true;
-
-      const recorder = mediaRecorderRef.current;
-      if (recorder && recorder.state !== 'inactive') {
-          recorder.stop();
-      } else {
-          // If recorder wasn't started yet or failed, reset flags
-          isRecordingRef.current = false;
-          isStoppingRef.current = false;
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
       }
-      
-      setIsRecording(false);
   };
 
   const handleSubmit = (e) => {
@@ -331,13 +272,10 @@ const MessageInput = () => {
                 <BsEmojiSmile /> 
             </IconButton>
             
-            {isRecording ? (
+            {isRecording || isUploading ? (
                 <RecordingIndicator>
                     <RecDot />
-                    <span>{formatTime(recordingTime)}</span>
-                    <span style={{ marginLeft: 'auto', marginRight: '10px', fontSize: '0.8rem', opacity: 0.7 }}>
-                        Release to send
-                    </span>
+                    <span>{isUploading ? "Sending..." : formatTime(recordingTime)}</span>
                 </RecordingIndicator>
             ) : (
                 <TextInput
@@ -357,7 +295,9 @@ const MessageInput = () => {
                     type="button" 
                     $recording={isRecording}
                     onMouseDown={startRecording}
+                    onMouseUp={stopRecording}
                     onTouchStart={startRecording}
+                    onTouchEnd={stopRecording}
                     onContextMenu={(e) => e.preventDefault()}
                 > 
                     <BsMicFill /> 
