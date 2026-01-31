@@ -114,9 +114,24 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
         ctx.strokeStyle = isPlayed ? playedColor : pendingColor;
         ctx.stroke();
     }
-    // No Knob drawn -> Classic Look
+    
+    // Draw WhatsApp-Style Knob (Tracker)
+    if (progressPercent >= 0 || isDragging) {
+        const knobX = Math.min(Math.max(progressPercent * width, 0), width);
+        const knobY = height / 2;
+        
+        ctx.beginPath();
+        ctx.arc(knobX, knobY, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = playedColor;
+        ctx.fill();
+        
+        // Add a border to make it pop against bars
+        ctx.strokeStyle = theme.colors.chatBackground || '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
 
-  }, [currentTime, duration, isPlaying, theme, bars]);
+  }, [currentTime, duration, isPlaying, theme, bars, isDragging]);
 
   return (
       <VisualizerContainer 
