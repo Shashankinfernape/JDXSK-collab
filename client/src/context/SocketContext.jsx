@@ -7,7 +7,11 @@ const SocketContext = createContext();
 const useSocketHook = () => useContext(SocketContext);
 
 // --- Dynamic URL Configuration (Matches api.js logic) ---
-const isProduction = window.location.hostname.includes('onrender.com');
+const isProduction = 
+    process.env.NODE_ENV === 'production' || 
+    window.location.hostname.includes('onrender.com') || 
+    window.location.hostname.includes('vercel.app');
+
 const SERVER_API_URL = process.env.REACT_APP_API_URL || (
     isProduction 
     ? "https://jdxsk-collab.onrender.com" 

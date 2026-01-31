@@ -1,10 +1,16 @@
 import axios from 'axios';
 
 // --- API URL Configuration ---
-const isProduction = window.location.hostname.includes('onrender.com');
-const BASE_URL = isProduction 
+const isProduction = 
+    process.env.NODE_ENV === 'production' || 
+    window.location.hostname.includes('onrender.com') || 
+    window.location.hostname.includes('vercel.app');
+
+const BASE_URL = process.env.REACT_APP_API_URL || (
+    isProduction 
     ? "https://jdxsk-collab.onrender.com" 
-    : `http://${window.location.hostname}:5000`;
+    : `http://${window.location.hostname}:5000`
+);
 
 // Set up a base instance of Axios
 const api = axios.create({

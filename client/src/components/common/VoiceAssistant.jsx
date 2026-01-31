@@ -501,10 +501,10 @@ const VoiceAssistant = () => {
 
     // --- DEBUGGING ---
     console.log("Voice Command:", lowerText);
-    // const localNames = chatsRef.current.map(c => 
-    //    c.participants.find(p => p._id !== userRef.current?._id)?.name
-    // );
-    // console.log("Available Local Contacts:", localNames);
+    const localNames = chatsRef.current.map(c => 
+        c.participants.find(p => p._id !== userRef.current?._id)?.name
+    );
+    console.log("Available Local Contacts:", localNames);
 
     // --- Manual Pattern Matching for Precision ---
     
@@ -632,8 +632,9 @@ const VoiceAssistant = () => {
                 
                 if (shouldAutoSend) {
                     setTimeout(() => {
+                        console.log("Auto-sending to:", targetChat._id);
                         handleSend(targetChat._id, finalMessage);
-                    }, 100);
+                    }, 10);
                 }
             } else {
                  setFeedback(`What should I say to ${partnerName}?`);
@@ -653,6 +654,7 @@ const VoiceAssistant = () => {
 
   const handleSend = async (chatId, content) => {
       // Use REF to get the latest function instance
+      console.log("handleSend Triggered for:", chatId);
       if (sendMessageRef.current && userRef.current) {
           console.log("VoiceAssistant: Sending message to", chatId);
           setFeedback("Sending..."); 
