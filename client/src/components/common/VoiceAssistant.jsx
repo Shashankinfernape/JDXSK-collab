@@ -326,6 +326,19 @@ const VoiceAssistant = () => {
         setIsListening(true);
         setFeedback('Listening...');
         setTranscript('');
+        
+        // Safety: Hard stop after 5 seconds of silence if nothing happens
+        if (silenceTimer.current) clearTimeout(silenceTimer.current);
+        silenceTimer.current = setTimeout(() => {
+            console.log("Safety timeout: Stopping...");
+            if (recognitionRef.current) recognitionRef.current.stop();
+        }, 5000);
+      };
+
+      // Native Silence Detection (Faster than manual timer)
+      recognitionRef.current.onspeechend = () => {
+          console.log("Speech ended (Native detection)");
+          if (recognitionRef.current) recognitionRef.current.stop();
       };
 
       recognitionRef.current.onresult = (event) => {
@@ -337,14 +350,14 @@ const VoiceAssistant = () => {
         }
         setTranscript(currentText);
 
-        // Auto-submit after silence
+        // Manual backup timer (reset on every word)
         silenceTimer.current = setTimeout(() => {
             if (recognitionRef.current) recognitionRef.current.stop();
-        }, 1500); // 1.5s silence triggers stop
+        }, 1000); 
       };
 
       recognitionRef.current.onend = () => {
-          // Trigger processing logic via effect or check here
+          setIsListening(false); // CRITICAL FIX: Sync state to trigger processing
       };
       
       recognitionRef.current.onerror = (e) => {
