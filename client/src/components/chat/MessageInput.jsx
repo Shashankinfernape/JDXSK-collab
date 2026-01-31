@@ -87,20 +87,20 @@ const CloseButton = styled.button`
 `;
 
 const InputRow = styled.form`
-  display: flex; align-items: center; padding: 6px 12px; min-height: 48px;
+  display: flex; align-items: center; padding: 4px 8px; min-height: 42px;
 `;
 
 const IconButton = styled.button`
   background: transparent; border: none; color: ${props => props.theme.colors.icon};
-  cursor: pointer; font-size: 1.4rem; display: flex; align-items: center;
-  padding: 8px; border-radius: 50%; transition: color 0.2s ease; margin-right: 4px;
+  cursor: pointer; font-size: 1.3rem; display: flex; align-items: center;
+  padding: 6px; border-radius: 50%; transition: color 0.2s ease; margin-right: 4px;
   &:hover { color: ${props => props.theme.colors.iconActive}; background-color: ${props => props.theme.colors.hoverBackground}; }
 `;
 
 const SendButton = styled.button`
   background-color: ${props => props.theme.colors.primary};
-  color: #FFFFFF; border: none; width: 42px; height: 42px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+  color: #FFFFFF; border: none; width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
   cursor: pointer; transition: transform 0.2s, filter 0.2s; margin-left: 4px; flex-shrink: 0;
   &:hover { filter: brightness(1.1); transform: scale(1.05); }
   &:active { transform: scale(0.95); }
@@ -112,33 +112,33 @@ const MicButton = styled(SendButton)`
   background-color: ${props => props.theme.colors.primary}; 
   
   ${props => props.$recording && css`
-    transform: scale(1.2);
+    transform: scale(1.1);
     /* Subtle pulse in theme color */
     animation: ${pulse} 1.5s infinite;
   `}
 `;
 
 const TextInput = styled.input`
-  flex: 1; background: transparent; border: none; padding: 8px 4px;
-  color: ${props => props.theme.colors.textPrimary}; font-size: 0.95rem; outline: none;
+  flex: 1; background: transparent; border: none; padding: 6px 4px;
+  color: ${props => props.theme.colors.textPrimary}; font-size: 0.9rem; outline: none;
   &::placeholder { color: ${props => props.theme.colors.textSecondary}; }
 `;
 
 const RecordingIndicator = styled.div`
-  flex: 1; display: flex; align-items: center; gap: 12px;
+  flex: 1; display: flex; align-items: center; gap: 8px;
   color: ${props => props.theme.colors.textPrimary};
-  font-weight: 700; font-size: 1.1rem;
-  padding-left: 10px;
-  animation: ${slideUp} 0.2s ease-out;
+  font-weight: 600; font-size: 0.95rem;
+  padding-left: 6px;
+  /* Removed slideUp for compactness */
   
   span:first-of-type {
       color: #ff3b30; /* Red timer text for urgency/clarity */
-      min-width: 45px;
+      min-width: 40px;
   }
 `;
 
 const RecDot = styled.div`
-  width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%;
+  width: 8px; height: 8px; background-color: #ff3b30; border-radius: 50%;
   animation: ${pulse} 1s infinite;
 `;
 
