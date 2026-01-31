@@ -38,10 +38,10 @@ const ControlButton = styled.button`
 
 const VisualizerWrapper = styled.div`
   flex: 1;
-  height: 20px; 
+  height: 30px; 
   display: flex;
   align-items: center;
-  margin-top: 2px;
+  margin-top: 0;
 `;
 
 const InfoCol = styled.div`
