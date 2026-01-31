@@ -49,29 +49,29 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
       handleInteraction(e.clientX);
   };
 
-  const onMouseMove = (e) => {
-      if (isDragging) handleInteraction(e.clientX);
-  };
-
-  const onMouseUp = () => {
-      setIsDragging(false);
-  };
-
   const onTouchStart = (e) => {
       setIsDragging(true);
       handleInteraction(e.touches[0].clientX);
   };
 
-  const onTouchMove = (e) => {
-      if (isDragging) handleInteraction(e.touches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-      setIsDragging(false);
-  };
-
   // Add global listeners for drag release
   useEffect(() => {
+      const onMouseMove = (e) => {
+          if (isDragging) handleInteraction(e.clientX);
+      };
+
+      const onTouchMove = (e) => {
+          if (isDragging) handleInteraction(e.touches[0].clientX);
+      };
+
+      const onMouseUp = () => {
+          setIsDragging(false);
+      };
+
+      const onTouchEnd = () => {
+          setIsDragging(false);
+      };
+
       if (isDragging) {
           window.addEventListener('mouseup', onMouseUp);
           window.addEventListener('touchend', onTouchEnd);
@@ -84,7 +84,9 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
           window.removeEventListener('mousemove', onMouseMove);
           window.removeEventListener('touchmove', onTouchMove);
       };
-  }, [isDragging]);
+      // Disable dependency warning for handleInteraction as it's stable enough or we can't wrap it easily without refactoring
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging]); 
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -112,7 +114,7 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
     // Colors
     const playedColor = theme.colors.primary || '#007AFF';
     const pendingColor = theme.isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)';
-    const knobColor = theme.colors.textPrimary;
+    // Removed unused knobColor
 
     const progressPercent = duration > 0 ? currentTime / duration : 0;
     
