@@ -38,7 +38,7 @@ const ControlButton = styled.button`
 
 const VisualizerWrapper = styled.div`
   flex: 1;
-  height: 24px; 
+  height: 30px; 
   display: flex;
   align-items: center;
   margin-top: 0;

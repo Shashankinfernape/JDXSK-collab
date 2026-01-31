@@ -99,7 +99,7 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
     for (let i = 0; i < totalBars; i++) {
         const patternIndex = i % bars.length;
         const barHeightPercent = bars[patternIndex];
-        const barHeight = barHeightPercent * height * 0.8; // Scale to 80%
+        const barHeight = barHeightPercent * height;
         
         const x = i * totalBarWidth;
         const y = (height - barHeight) / 2;
