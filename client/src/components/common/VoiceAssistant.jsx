@@ -242,6 +242,94 @@ const VoiceAssistant = () => {
 
   const normalize = (text) => text.toLowerCase().replace(/[.,?!]/g, '').trim();
 
+  // --- ADVANCED POV TRANSFORMER (Natural Language Engine) ---
+  const transformContent = (rawText, isQuestion = false) => {
+      let text = rawText.trim();
+      if (!text) return "";
+
+      // 1. COMPLEX MAPPINGS (Specific Grammar Rules)
+      const grammarRules = [
+          // State of Being ("Ask if he is okay" -> "Are you okay?")
+          { regex: /\bif (?:he|she|it) is\b/gi, replace: "are you" },
+          { regex: /\bif (?:he|she|it) was\b/gi, replace: "were you" },
+          { regex: /\bif (?:he|she|it) will be\b/gi, replace: "will you be" },
+          
+          // Availability/Action ("Ask if he can go" -> "Can you go?")
+          { regex: /\bif (?:he|she|it) can\b/gi, replace: "can you" },
+          { regex: /\bif (?:he|she|it) could\b/gi, replace: "could you" },
+          { regex: /\bif (?:he|she|it) would\b/gi, replace: "would you" },
+          { regex: /\bif (?:he|she|it) should\b/gi, replace: "should you" },
+          
+          // Do/Does ("Ask if he wants" -> "Do you want")
+          { regex: /\bif (?:he|she|it) (likes|wants|needs|has|knows|thinks)\b/gi, replace: (_, v) => `do you ${v.slice(0, -1)}` }, // Remove 's'
+          { regex: /\bif (?:he|she|it) (went|saw|did|took|made)\b/gi, replace: (_, v) => `did you ${v}` }, // Past tense logic is hard, generic fallback:
+          
+          // Wh- Questions ("Ask what he is doing" -> "What are you doing?")
+          { regex: /\bwhat (?:he|she|it) is\b/gi, replace: "what are you" },
+          { regex: /\bwhere (?:he|she|it) is\b/gi, replace: "where are you" },
+          { regex: /\bwho (?:he|she|it) is\b/gi, replace: "who are you" },
+          { regex: /\bhow (?:he|she|it) is\b/gi, replace: "how are you" },
+          { regex: /\bwhen (?:he|she|it) is\b/gi, replace: "when are you" },
+          { regex: /\bwhy (?:he|she|it) is\b/gi, replace: "why are you" },
+
+          // Future/Continuous ("Ask where he is going" -> "Where are you going?")
+          { regex: /\b(what|where|when|how|why) (?:he|she|it) (will|can|could|should)\b/gi, replace: "$1 $2 you" },
+          
+          // Tell/Imperative ("Tell him to call me" -> "Call me")
+          { regex: /^to\s+/i, replace: "" }, // Remove leading "to"
+          { regex: /\bthat\s+/i, replace: "" }, // Remove "that" connector ("Tell him that...")
+      ];
+
+      let transformed = text;
+      let matchedRule = false;
+
+      for (const rule of grammarRules) {
+          if (rule.regex.test(transformed)) {
+              transformed = transformed.replace(rule.regex, rule.replace);
+              matchedRule = true;
+          }
+      }
+
+      // 2. GENERAL PRONOUN SWAP (Fallback)
+      // Only runs on words not already transformed to avoid double-processing if possible,
+      // but simplistic replacement is usually safe after grammar rules.
+      transformed = transformed
+          .replace(/\bhe\b/gi, "you")
+          .replace(/\bshe\b/gi, "you")
+          .replace(/\bhim\b/gi, "you")
+          .replace(/\bher\b/gi, "you") // Can be "her" object or "her" possessive... tricky. Context matters.
+          .replace(/\bhis\b/gi, "your")
+          // "her" -> "your" (Possessive) vs "her" -> "you" (Object).
+          // "Call her" -> "Call you". "It is her car" -> "It is your car".
+          // We'll favor "your" if followed by a noun? Too complex. Defaulting to "you" covers most interaction.
+          .replace(/\b(hers)\b/gi, "yours");
+
+      // 3. AUTO-CORRECT GRAMMAR (Post-Swap Cleanup)
+      // "you is" -> "you are"
+      transformed = transformed
+          .replace(/\byou is\b/gi, "you are")
+          .replace(/\byou was\b/gi, "you were")
+          .replace(/\byou has\b/gi, "you have")
+          .replace(/\byou likes\b/gi, "you like")
+          .replace(/\byou wants\b/gi, "you want")
+          .replace(/\byou needs\b/gi, "you need");
+
+      // 4. CLEANUP & CAPITALIZATION
+      transformed = transformed.trim();
+      transformed = transformed.charAt(0).toUpperCase() + transformed.slice(1);
+
+      // 5. QUESTION MARK INFERENCE
+      // If it starts with typical question words or we knew it was an "Ask" command
+      const questionStarters = ["do", "are", "is", "can", "could", "would", "should", "will", "did", "have", "has", "what", "where", "when", "who", "why", "how"];
+      const startsWithQuestion = questionStarters.some(q => transformed.toLowerCase().startsWith(q));
+      
+      if ((isQuestion || startsWithQuestion) && !transformed.endsWith('?')) {
+          transformed += '?';
+      }
+
+      return transformed;
+  };
+
   // 3. Linear Processor with FUZZY MATCHING
   const processCommand = useCallback(async (rawText) => {
       if (!rawText) { setIsListening(false); return; }
@@ -255,6 +343,7 @@ const VoiceAssistant = () => {
       let targetChat = null;
       let messageContent = "";
       let commandType = "message"; 
+      let isQuestion = rawText.toLowerCase().startsWith("ask"); // Infer intent
 
       // A. Check for "Open/Search/Go To"
       if (text.startsWith("open") || text.startsWith("go to") || text.startsWith("search") || text.startsWith("show")) {
@@ -323,13 +412,6 @@ const VoiceAssistant = () => {
 
               // Evaluate the contact match
               if (matchedTokensCount > 0) {
-                  // Weighted Score: (Matches / Total Name Parts) * Average Similarity
-                  // This favors "Jason" matching "Jason" (1/1) over "Jason" matching "Jason DX" (1/2)
-                  // BUT we want "Jason" to match "Jason DX" if "Jason" is the only option.
-                  
-                  // Strategy: If >= 1 token matches strongly, it's a candidate.
-                  // We pick the candidate with the highest TOTAL matched tokens, then similarity.
-                  
                   // Boost score if the FIRST name matches (common case)
                   const isFirstNameMatch = currentMatchText.includes(textWords.find(w => 
                       getLevenshteinDistance(w, contactTokens[0]) > 0.8
@@ -352,14 +434,9 @@ const VoiceAssistant = () => {
               targetChat = bestMatch.chat;
 
               // Extract message: Remove the matched words from the original text
-              // We construct a regex from the matched words to remove them specifically
-              const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\\]/g, '\\$&');
               
-              // We remove the words found in the match from the transcript
-              // "Say hi to Jayson" -> matched "Jayson" -> remove "Jayson"
               let temp = text;
-              // Split matchedText back into words to remove individually? 
-              // Safer: Remove the specific words found in transcript that contributed to the match
               const foundWords = matchedText.split(' ');
               for (const word of foundWords) {
                   temp = temp.replace(new RegExp(`\\b${escapeRegExp(word)}\\b`, 'i'), "");
@@ -402,13 +479,8 @@ const VoiceAssistant = () => {
           } else {
               if (!messageContent) messageContent = "👋"; 
               
-              messageContent = messageContent
-                  .replace(/\bhe\b/g, "you")
-                  .replace(/\bshe\b/g, "you")
-                  .replace(/\bhis\b/g, "your")
-                  .replace(/\bher\b/g, "your");
-
-              messageContent = messageContent.charAt(0).toUpperCase() + messageContent.slice(1);
+              // --- APPLY ADVANCED POV TRANSFORMER ---
+              messageContent = transformContent(messageContent, isQuestion);
 
               setFeedback(`Sent to ${partnerName}: "${messageContent}"`);
               
