@@ -166,7 +166,16 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
 
   return (
     <PlayerContainer>
-      <audio ref={audioRef} src={src} preload="metadata" crossOrigin="anonymous" />
+      <audio 
+        ref={audioRef} 
+        src={src} 
+        preload="metadata" 
+        crossOrigin="anonymous"
+        onError={(e) => {
+            console.error("Audio Error:", src, e.currentTarget.error);
+            setIsPlaying(false);
+        }}
+      />
       
       {senderProfilePic && (
           <ProfilePic src={senderProfilePic} alt="Sender" />

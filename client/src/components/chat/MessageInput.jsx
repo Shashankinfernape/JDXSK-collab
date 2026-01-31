@@ -272,10 +272,13 @@ const MessageInput = () => {
                 <BsEmojiSmile /> 
             </IconButton>
             
-            {isRecording || isUploading ? (
+            {isRecording ? (
                 <RecordingIndicator>
                     <RecDot />
-                    <span>{isUploading ? "Sending..." : formatTime(recordingTime)}</span>
+                    <span>{formatTime(recordingTime)}</span>
+                    <span style={{ marginLeft: 'auto', marginRight: '10px', fontSize: '0.8rem', opacity: 0.7 }}>
+                        Release to send
+                    </span>
                 </RecordingIndicator>
             ) : (
                 <TextInput
@@ -294,6 +297,8 @@ const MessageInput = () => {
                 <MicButton 
                     type="button" 
                     $recording={isRecording}
+                    disabled={isUploading} // Disable while sending
+                    style={{ opacity: isUploading ? 0.5 : 1 }}
                     onMouseDown={startRecording}
                     onMouseUp={stopRecording}
                     onTouchStart={startRecording}
