@@ -99,7 +99,7 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
     for (let i = 0; i < totalBars; i++) {
         const patternIndex = i % bars.length;
         const barHeightPercent = bars[patternIndex];
-        const barHeight = barHeightPercent * height;
+        const barHeight = barHeightPercent * height * 0.8; // Scale to 80%
         
         const x = i * totalBarWidth;
         const y = (height - barHeight) / 2;
@@ -112,22 +112,6 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
         ctx.moveTo(x + barWidth/2, y);
         ctx.lineTo(x + barWidth/2, y + barHeight);
         ctx.strokeStyle = isPlayed ? playedColor : pendingColor;
-        ctx.stroke();
-    }
-    
-    // Draw WhatsApp-Style Knob (Tracker)
-    if (progressPercent >= 0 || isDragging) {
-        const knobX = Math.min(Math.max(progressPercent * width, 0), width);
-        const knobY = height / 2;
-        
-        ctx.beginPath();
-        ctx.arc(knobX, knobY, 6, 0, 2 * Math.PI);
-        ctx.fillStyle = playedColor;
-        ctx.fill();
-        
-        // Add a border to make it pop against bars
-        ctx.strokeStyle = theme.colors.chatBackground || '#FFFFFF';
-        ctx.lineWidth = 2;
         ctx.stroke();
     }
 
