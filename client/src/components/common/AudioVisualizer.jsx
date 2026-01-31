@@ -84,7 +84,8 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
     
     ctx.clearRect(0, 0, width, height);
 
-    const barWidth = 3;
+    // COMPACT SETTINGS
+    const barWidth = 2; // Thinner bars for sleek look
     const gap = 2;
     const totalBarWidth = barWidth + gap;
     const totalBars = Math.floor(width / totalBarWidth);
@@ -95,14 +96,18 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
 
     const progressPercent = duration > 0 ? currentTime / duration : 0;
     
-    // Draw Original Vertical Bars
+    // Draw Compact Centered Bars
     for (let i = 0; i < totalBars; i++) {
+        // Recycle pattern
         const patternIndex = i % bars.length;
-        const barHeightPercent = bars[patternIndex];
-        const barHeight = barHeightPercent * height;
+        const rawHeight = bars[patternIndex];
+        
+        // CRITICAL FIX: Scale height to 60% of container to prevent "huge" look
+        // Standardize amplitude so it looks like a voice note, not a wall
+        const barHeight = Math.max(4, rawHeight * height * 0.6); 
         
         const x = i * totalBarWidth;
-        const y = (height - barHeight) / 2;
+        const y = (height - barHeight) / 2; // Perfect vertical center
 
         const isPlayed = (i / totalBars) < progressPercent;
         
@@ -114,6 +119,8 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
         ctx.strokeStyle = isPlayed ? playedColor : pendingColor;
         ctx.stroke();
     }
+    
+    // No Knob - Just clean bars
 
   }, [currentTime, duration, isPlaying, theme, bars, isDragging]);
 
