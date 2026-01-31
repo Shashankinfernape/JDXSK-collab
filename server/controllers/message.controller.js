@@ -1,5 +1,80 @@
 const Message = require('../models/message.model');
 const Chat = require('../models/chat.model');
+const { getIo, getSocketId } = require('../socket/socket');
+
+// Send Text Message (REST API)
+const sendMessage = async (req, res) => {
+    try {
+        const { chatId, content, replyTo } = req.body;
+        const senderId = req.user._id;
+
+        if (!chatId || !content) {
+             return res.status(400).json({ message: "ChatId and content are required" });
+        }
+
+        const chatDoc = await Chat.findById(chatId);
+        if (!chatDoc) {
+            return res.status(404).json({ message: "Chat not found" });
+        }
+
+        let disappearAt = null;
+        if (chatDoc.disappearingMessages) {
+            disappearAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        }
+
+        const newMessage = await Message.create({
+            chatId,
+            senderId,
+            content,
+            contentType: 'text',
+            replyTo: replyTo || null,
+            disappearAt
+        });
+
+        await Chat.findByIdAndUpdate(chatId, { lastMessage: newMessage._id });
+
+        const populatedMessage = await Message.findById(newMessage._id)
+            .populate('senderId', 'name profilePic email')
+            .populate('replyTo', 'content senderId'); // Populate reply if needed
+
+        // --- Real-time Socket Emits ---
+        try {
+            const io = getIo();
+            
+            chatDoc.participants.forEach(participantId => {
+                const socketId = getSocketId(participantId.toString());
+                if (socketId) {
+                    // Send to everyone (sender + recipient)
+                    io.to(socketId).emit('receiveMessage', populatedMessage);
+                    io.to(socketId).emit('updateChatList', populatedMessage);
+                    
+                    // Delivery Receipt Logic (for Recipient)
+                    if (participantId.toString() !== senderId.toString()) {
+                         Message.findByIdAndUpdate(newMessage._id, 
+                             { $addToSet: { deliveredTo: participantId } }
+                         ).then(updatedMsg => {
+                             const senderSocketId = getSocketId(senderId.toString());
+                             if (senderSocketId) {
+                                 io.to(senderSocketId).emit('messageDelivered', { 
+                                     messageId: newMessage._id, 
+                                     chatId: chatId,
+                                     deliveredTo: participantId 
+                                 });
+                             }
+                         });
+                    }
+                }
+            });
+        } catch (socketError) {
+            console.error("Socket emit failed in controller (non-fatal):", socketError);
+        }
+
+        res.status(201).json(populatedMessage);
+    } catch (error) {
+        console.error("SendMessage Error:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
 
 // Upload Message (Image/Audio)
 const uploadMessage = async (req, res) => {
@@ -45,6 +120,18 @@ const uploadMessage = async (req, res) => {
             .populate('chatId');
 
         await Chat.findByIdAndUpdate(chatId, { lastMessage: newMessage._id });
+        
+        // --- Socket Logic for File Uploads (Copied to keep consistent) ---
+        try {
+            const io = getIo();
+            chatDoc.participants.forEach(participantId => {
+                const socketId = getSocketId(participantId.toString());
+                if (socketId) {
+                    io.to(socketId).emit('receiveMessage', fullMessage);
+                    io.to(socketId).emit('updateChatList', fullMessage);
+                }
+            });
+        } catch (e) { console.error("Socket emit error on upload", e); }
 
         res.status(201).json(fullMessage);
     } catch (error) {
@@ -54,5 +141,6 @@ const uploadMessage = async (req, res) => {
 };
 
 module.exports = {
+    sendMessage,
     uploadMessage,
 };

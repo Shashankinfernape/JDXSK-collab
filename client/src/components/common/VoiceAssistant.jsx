@@ -651,15 +651,15 @@ const VoiceAssistant = () => {
     }
   };
 
-  const handleSend = (chatId, content) => {
+  const handleSend = async (chatId, content) => {
       // Use REF to get the latest function instance
       if (sendMessageRef.current && userRef.current) {
           console.log("VoiceAssistant: Sending message to", chatId);
           setFeedback("Sending..."); 
           
           try {
-            // INSTANT SEND - Fire and forget for UI speed
-            sendMessageRef.current(chatId, content);
+            // Await the API call for true reliability feedback
+            await sendMessageRef.current(chatId, content);
             
             // FAST FEEDBACK
             setFeedback("Sent!");

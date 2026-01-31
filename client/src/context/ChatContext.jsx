@@ -191,31 +191,65 @@ export const ChatProvider = ({ children }) => {
   };
 
   // ... (sendMessage and addNewChat are unchanged from the previous step) ...
-  const sendMessage = (text) => {
-    if (!activeChat || !user || !socket) return;
+  const sendMessage = async (text) => {
+    if (!activeChat || !user) return; // Socket check not strictly required for REST, but good for online status
+    
     const messageData = {
       chatId: activeChat._id,
       senderId: user._id, 
       content: text,
       replyTo: replyingTo ? { _id: replyingTo._id, content: replyingTo.content, senderName: replyingTo.senderId.name } : null
     };
-    socket.emit('sendMessage', messageData);
-    // Optimistic UI Update
+
+    // 1. Optimistic UI Update
     const optimisticMessage = {
       ...messageData,
-      _id: `temp-${Math.random()}`,
+      _id: `temp-${Math.random()}`, // Temporary ID
       createdAt: new Date().toISOString(),
       senderId: { 
         _id: user._id, 
         name: user.name,
         profilePic: user.profilePic,
-      }
+      },
+      // We need to match the structure for replyingTo if present
+      replyTo: replyingTo ? replyingTo : null 
     };
+
     setMessages(prev => ({
       ...prev,
       [activeChat._id]: [...(prev[activeChat._id] || []), optimisticMessage],
     }));
     setReplyingTo(null); 
+
+    // 2. Reliable REST API Call
+    try {
+        // We use POST /messages instead of socket.emit
+        // The server will save to DB AND emit 'receiveMessage' via socket
+        const { data: savedMessage } = await api.post('/messages', {
+            chatId: activeChat._id,
+            content: text,
+            replyTo: replyingTo ? replyingTo._id : null
+        });
+        
+        // 3. Reconcile Optimistic Message (Optional but good)
+        // The socket listener 'receiveMessage' will likely handle this replacement 
+        // via the deduplication logic we added earlier (temp- ID check).
+        // But we can also manually replace it here if socket is slow.
+        setMessages(prev => {
+            const currentMessages = prev[activeChat._id] || [];
+            const tempIndex = currentMessages.findIndex(m => m._id === optimisticMessage._id);
+            if (tempIndex !== -1) {
+                const updated = [...currentMessages];
+                updated[tempIndex] = savedMessage;
+                return { ...prev, [activeChat._id]: updated };
+            }
+            return prev;
+        });
+
+    } catch (error) {
+        console.error("Failed to send message via API", error);
+        // TODO: Mark message as failed in UI
+    }
   };
 
   const sendFileMessage = async (file, duration = 0) => {
@@ -234,8 +268,8 @@ export const ChatProvider = ({ children }) => {
               headers: { 'Content-Type': 'multipart/form-data' }
           });
           
-          // Socket emit
-          socket.emit('sendMessage', newMessage);
+          // Socket emit NO LONGER NEEDED (Server emits on upload)
+          // socket.emit('sendMessage', newMessage); 
           
           // Add REAL message directly (Dedup logic in setMessages will handle race with socket)
           setMessages(prev => {
@@ -252,39 +286,47 @@ export const ChatProvider = ({ children }) => {
       }
   };
 
-  const sendMessageToChat = React.useCallback((targetChatId, text) => {
-      console.log("sendMessageToChat called:", { targetChatId, text, user: !!user, socket: !!socket });
-      if (!user || !socket) {
-          console.warn("Cannot send message: User or Socket missing");
+  const sendMessageToChat = React.useCallback(async (targetChatId, text) => {
+      console.log("sendMessageToChat called (REST):", { targetChatId, text, user: !!user });
+      if (!user) {
+          console.warn("Cannot send message: User missing");
           return;
       }
-      const messageData = {
-          chatId: targetChatId,
-          senderId: user._id,
-          content: text,
-          // Forwarded messages typically don't carry reply context to the new chat
-          replyTo: null 
-      };
-      socket.emit('sendMessage', messageData);
 
       // Optimistic Update if we are in that chat
+      // (Moved up for immediate feedback)
+      let tempId = `temp-${Math.random()}`;
       if (activeChat && activeChat._id === targetChatId) {
           const optimisticMessage = {
-              ...messageData,
-              _id: `temp-${Math.random()}`,
-              createdAt: new Date().toISOString(),
+              chatId: targetChatId,
               senderId: { 
                   _id: user._id, 
                   name: user.name,
                   profilePic: user.profilePic,
-              }
+              },
+              content: text,
+              createdAt: new Date().toISOString(),
+              _id: tempId,
+              replyTo: null 
           };
           setMessages(prev => ({
               ...prev,
               [targetChatId]: [...(prev[targetChatId] || []), optimisticMessage],
           }));
       }
-  }, [user, socket, activeChat]);
+
+      try {
+           await api.post('/messages', {
+              chatId: targetChatId,
+              content: text,
+              replyTo: null 
+           });
+           // Success! Socket will deliver the real message.
+      } catch(e) {
+          console.error("VoiceAssistant Send Failed:", e);
+      }
+
+  }, [user, activeChat]); // Removed socket dependency
   
   const deleteMessage = async (messageIds) => {
       // Optimistic Update

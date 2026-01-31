@@ -4,6 +4,9 @@ const messageController = require('../controllers/message.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 const upload = require('../middleware/upload.middleware');
 
+// Send Text Message
+router.post('/', authMiddleware, messageController.sendMessage);
+
 // Upload Audio or Image
 router.post('/upload', authMiddleware, upload.single('file'), messageController.uploadMessage);
 
