@@ -7,7 +7,7 @@ const VisualizerContainer = styled.div`
   height: 100%;
   position: relative;
   cursor: pointer;
-  touch-action: none; /* Prevent scroll while dragging */
+  touch-action: none;
 `;
 
 const Canvas = styled.canvas`
@@ -22,16 +22,15 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
   const { theme } = useTheme();
   const [isDragging, setIsDragging] = useState(false);
 
-  // Generate a pleasing static waveform pattern
+  // RESTORED: Original "Random Bar" Pattern (Compact Look)
   const bars = useMemo(() => {
-      const count = 50; 
+      const count = 45; // Original count
       const data = [];
       for (let i = 0; i < count; i++) {
-          // Symmetric mirroring for a nicer look
-          const x = i / count * Math.PI * 4; // 2 periods
-          const noise = Math.random() * 0.3;
-          const val = Math.abs(Math.sin(x)) * 0.6 + 0.2 + noise;
-          data.push(Math.min(1.0, val));
+          // Original Algorithm: Sine + Random Noise
+          const val = Math.sin(i * 0.2) * 0.5 + 0.5; 
+          const height = Math.max(0.2, val * Math.random() * 0.8 + 0.2); 
+          data.push(height);
       }
       return data;
   }, []);
@@ -44,33 +43,14 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
       onSeek && onSeek(percent * duration);
   };
 
-  const onMouseDown = (e) => {
-      setIsDragging(true);
-      handleInteraction(e.clientX);
-  };
+  const onMouseDown = (e) => { setIsDragging(true); handleInteraction(e.clientX); };
+  const onTouchStart = (e) => { setIsDragging(true); handleInteraction(e.touches[0].clientX); };
 
-  const onTouchStart = (e) => {
-      setIsDragging(true);
-      handleInteraction(e.touches[0].clientX);
-  };
-
-  // Add global listeners for drag release
   useEffect(() => {
-      const onMouseMove = (e) => {
-          if (isDragging) handleInteraction(e.clientX);
-      };
-
-      const onTouchMove = (e) => {
-          if (isDragging) handleInteraction(e.touches[0].clientX);
-      };
-
-      const onMouseUp = () => {
-          setIsDragging(false);
-      };
-
-      const onTouchEnd = () => {
-          setIsDragging(false);
-      };
+      const onMouseMove = (e) => { if (isDragging) handleInteraction(e.clientX); };
+      const onTouchMove = (e) => { if (isDragging) handleInteraction(e.touches[0].clientX); };
+      const onMouseUp = () => setIsDragging(false);
+      const onTouchEnd = () => setIsDragging(false);
 
       if (isDragging) {
           window.addEventListener('mouseup', onMouseUp);
@@ -84,17 +64,14 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
           window.removeEventListener('mousemove', onMouseMove);
           window.removeEventListener('touchmove', onTouchMove);
       };
-      // Disable dependency warning for handleInteraction as it's stable enough or we can't wrap it easily without refactoring
       // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging]); 
+  }, [isDragging]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    
-    // Handle High DPI displays
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     
@@ -107,68 +84,39 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
     
     ctx.clearRect(0, 0, width, height);
 
-    const barCount = bars.length;
+    const barWidth = 3;
     const gap = 2;
-    const barWidth = (width - (gap * (barCount - 1))) / barCount;
+    const totalBarWidth = barWidth + gap;
+    const totalBars = Math.floor(width / totalBarWidth);
     
-    // Colors
+    // Colors (Original)
     const playedColor = theme.colors.primary || '#007AFF';
     const pendingColor = theme.isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)';
-    // Removed unused knobColor
 
     const progressPercent = duration > 0 ? currentTime / duration : 0;
     
-    // 1. Draw Bars
-    bars.forEach((heightPct, i) => {
-        const barHeight = heightPct * height * 0.8; // 80% height max
-        const x = i * (barWidth + gap);
+    // Draw Original Vertical Bars
+    for (let i = 0; i < totalBars; i++) {
+        const patternIndex = i % bars.length;
+        const barHeightPercent = bars[patternIndex];
+        const barHeight = barHeightPercent * height;
+        
+        const x = i * totalBarWidth;
         const y = (height - barHeight) / 2;
-        
-        // Check if this bar is "played"
-        // Use center of bar for comparison
-        const barCenterPercent = (i + 0.5) / barCount;
-        const isPlayed = barCenterPercent <= progressPercent;
 
-        ctx.fillStyle = isPlayed ? playedColor : pendingColor;
-        
-        // Rounded Rect
-        const radius = barWidth / 2;
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + barWidth - radius, y);
-        ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius);
-        ctx.lineTo(x + barWidth, y + barHeight - radius);
-        ctx.quadraticCurveTo(x + barWidth, y + barHeight, x + barWidth - radius, y + barHeight);
-        ctx.lineTo(x + radius, y + barHeight);
-        ctx.quadraticCurveTo(x, y + barHeight, x, y + barHeight - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.fill();
-    });
-
-    // 2. Draw Knob (Scrubber Head)
-    const knobX = progressPercent * width;
-    const knobY = height / 2;
-    
-    // Only draw knob if we have started playing or dragging
-    if (progressPercent > 0 || isDragging) {
-        ctx.shadowColor = "rgba(0,0,0,0.3)";
-        ctx.shadowBlur = 4;
+        const isPlayed = (i / totalBars) < progressPercent;
         
         ctx.beginPath();
-        ctx.arc(knobX, knobY, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = '#FFFFFF'; // Always white for contrast
-        ctx.fill();
-        
-        // Ring
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = playedColor;
+        ctx.lineCap = 'round';
+        ctx.lineWidth = barWidth;
+        ctx.moveTo(x + barWidth/2, y);
+        ctx.lineTo(x + barWidth/2, y + barHeight);
+        ctx.strokeStyle = isPlayed ? playedColor : pendingColor;
         ctx.stroke();
-        
-        ctx.shadowBlur = 0;
     }
+    // No Knob drawn -> Classic Look
 
-  }, [currentTime, duration, isPlaying, theme, bars, isDragging]);
+  }, [currentTime, duration, isPlaying, theme, bars]);
 
   return (
       <VisualizerContainer 
