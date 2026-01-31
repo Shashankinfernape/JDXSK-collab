@@ -125,21 +125,26 @@ const TextInput = styled.input`
 `;
 
 const RecordingIndicator = styled.div`
-  flex: 1; display: flex; align-items: center; gap: 8px;
+  flex: 1; 
+  display: flex; 
+  align-items: center; 
+  gap: 10px;
   color: ${props => props.theme.colors.textPrimary};
-  font-weight: 600; font-size: 0.95rem;
-  padding-left: 6px;
-  /* Removed slideUp for compactness */
+  font-weight: 500; /* Match text weight */
+  font-size: 0.9rem; /* Exact match with TextInput */
+  padding: 6px 4px; /* Exact match with TextInput */
   
   span:first-of-type {
-      color: #ff3b30; /* Red timer text for urgency/clarity */
-      min-width: 40px;
+      color: #ff3b30; 
+      min-width: 35px;
+      font-feature-settings: "tnum"; /* Monospace numbers for timer */
   }
 `;
 
 const RecDot = styled.div`
   width: 8px; height: 8px; background-color: #ff3b30; border-radius: 50%;
   animation: ${pulse} 1s infinite;
+  margin-left: 2px; /* Slight offset to align with text cursor pos */
 `;
 
 const MessageInput = () => {
