@@ -164,15 +164,20 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  useEffect(() => {
+    // Debug Log
+    // console.log("AudioPlayer mounted with src:", src);
+  }, [src]);
+
   return (
     <PlayerContainer>
       <audio 
         ref={audioRef} 
         src={src} 
         preload="metadata" 
-        crossOrigin="anonymous"
+        crossOrigin="anonymous" 
         onError={(e) => {
-            console.error("Audio Error:", src, e.currentTarget.error);
+            console.error("Audio Playback Error:", src, e.currentTarget.error);
             setIsPlaying(false);
         }}
       />

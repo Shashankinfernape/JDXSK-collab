@@ -297,8 +297,6 @@ const MessageInput = () => {
                 <MicButton 
                     type="button" 
                     $recording={isRecording}
-                    disabled={isUploading} // Disable while sending
-                    style={{ opacity: isUploading ? 0.5 : 1 }}
                     onMouseDown={startRecording}
                     onMouseUp={stopRecording}
                     onTouchStart={startRecording}
