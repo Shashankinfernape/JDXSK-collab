@@ -281,12 +281,12 @@ const VoiceAssistant = () => {
       ];
 
       let transformed = text;
-      let matchedRule = false;
+      // let matchedRule = false; // Removed unused variable
 
       for (const rule of grammarRules) {
           if (rule.regex.test(transformed)) {
               transformed = transformed.replace(rule.regex, rule.replace);
-              matchedRule = true;
+              // matchedRule = true;
           }
       }
 
