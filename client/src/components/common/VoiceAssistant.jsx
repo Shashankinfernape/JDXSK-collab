@@ -5,6 +5,7 @@ import { FaMicrophone, FaMicrophoneSlash, FaTimes, FaRedo, FaCheck } from 'react
 import { RiSparklingFill } from 'react-icons/ri';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
 // --- Animations ---
 
@@ -165,9 +166,9 @@ const VoiceAssistant = () => {
   const [hintIndex, setHintIndex] = useState(0);
   const hints = [
       "Try: 'Ping Eshwar: Are you free?'",
-      "Try: 'Alice ku hi anuppu' (Tanglish)",
-      "Try: 'Let Bob know I'm driving'",
-      "Try: 'Shoot a msg to John: Call me'"
+      "Try: 'Open Alice'",
+      "Try: 'Tell Bob I am driving'",
+      "Try: 'Search Sunil'"
   ];
 
   useEffect(() => {
@@ -180,19 +181,23 @@ const VoiceAssistant = () => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening]);
 
-  const { chats, sendMessageToChat } = useChat();
+  const { chats, sendMessageToChat, addNewChat, selectChat } = useChat();
   const { user } = useAuth();
   
   // Use Refs for dependencies to avoid re-initializing SpeechRecognition
   const chatsRef = useRef(chats);
   const sendMessageRef = useRef(sendMessageToChat);
+  const addNewChatRef = useRef(addNewChat);
+  const selectChatRef = useRef(selectChat);
   const userRef = useRef(user);
 
   useEffect(() => {
       chatsRef.current = chats;
       sendMessageRef.current = sendMessageToChat;
+      addNewChatRef.current = addNewChat;
+      selectChatRef.current = selectChat;
       userRef.current = user;
-  }, [chats, sendMessageToChat, user]);
+  }, [chats, sendMessageToChat, addNewChat, selectChat, user]);
   
   const recognitionRef = useRef(null);
   const silenceTimer = useRef(null);
@@ -312,7 +317,7 @@ const VoiceAssistant = () => {
         // Threshold: 0.85 (Jaro-Winkler is usually high, so we set a high bar)
         console.log(`Matching '${target}' vs '${fullName}': Score=${score.toFixed(2)}`);
         
-        if (score > bestScore && score > 0.65) { // Lowered threshold slightly
+        if (score > bestScore && score > 0.65) { 
             bestScore = score;
             bestMatch = chat;
         }
@@ -479,7 +484,7 @@ const VoiceAssistant = () => {
     }
   };
 
-  const processCommand = (text) => {
+  const processCommand = async (text) => {
     if (!text) {
         setIsListening(false);
         return;
@@ -490,6 +495,7 @@ const VoiceAssistant = () => {
     
     let rawName = '';
     let content = '';
+    let commandType = 'message'; // message, open, search
     const isQuestion = lowerText.startsWith('ask');
 
     // --- DEBUGGING ---
@@ -501,26 +507,35 @@ const VoiceAssistant = () => {
 
     // --- Manual Pattern Matching for Precision ---
     
-    // 0. Special Case: "Ask how [Name] is [doing/etc]" (Split structure)
-    let pSpecial = /^ask\s+how\s+(.+?)\s+is\s+(.+)$/i.exec(lowerText);
-    if (pSpecial) {
-        rawName = pSpecial[1];
-        content = "How are you " + pSpecial[2] + "?";
+    // 0. "Open/Go to [Name]"
+    let pOpen = /^(?:open|go\s+to|show)\s+(.+)$/i.exec(lowerText);
+    if (pOpen && !content) {
+        rawName = pOpen[1];
+        commandType = 'open';
     }
 
-    // 1. "Say [Message] to [Name]"
+    // 1. Special Case: "Ask how [Name] is [doing/etc]" (Split structure)
+    if (!rawName) {
+        let pSpecial = /^ask\s+how\s+(.+?)\s+is\s+(.+)$/i.exec(lowerText);
+        if (pSpecial) {
+            rawName = pSpecial[1];
+            content = "How are you " + pSpecial[2] + "?";
+        }
+    }
+
+    // 2. "Say [Message] to [Name]"
     if (!rawName) {
         let p1 = /^(?:say|send)\s+(.+)\s+to\s+(.+)$/i.exec(lowerText);
         if (p1) { content = p1[1]; rawName = p1[2]; }
     }
     
-    // 2. "Tell/Ping/Message [Name] [Message]"
+    // 3. "Tell/Ping/Message [Name] [Message]"
     if (!rawName) {
         let p2 = /^(?:tell|ask|ping|message|text|let)\s+(.+?)(?:\s+know)?\s+(?:that|saying|:)?\s*(.+)$/i.exec(lowerText);
         if (p2) { rawName = p2[1]; content = p2[2]; }
     }
 
-    // 3. Tanglish: "[Name] ku [Message] sollu"
+    // 4. Tanglish: "[Name] ku [Message] sollu"
     if (!rawName) {
         let p3 = /^(.+?)\s+(?:ku|kitta)\s+(.+)$/i.exec(lowerText);
         if (p3) { 
@@ -529,7 +544,7 @@ const VoiceAssistant = () => {
         }
     }
     
-    // 4. "Call [Name]"
+    // 5. "Call [Name]"
     if (!rawName) {
         let p4 = /^call\s+(.+)$/i.exec(lowerText);
         if (p4) {
@@ -538,13 +553,53 @@ const VoiceAssistant = () => {
         }
     }
 
-    if (rawName && content) {
+    // 6. "Search [Name]"
+    if (!rawName) {
+        let pSearch = /^search\s+(.+)$/i.exec(lowerText);
+        if (pSearch) {
+            rawName = pSearch[1];
+            commandType = 'open'; // Implies searching then opening
+        }
+    }
+
+    if (rawName) {
         // CLEANUP: Remove punctuation like '?' or '.' from name
         const cleanName = rawName.trim().replace(/[?.!]+$/, "");
         console.log(`Cleaned Name: '${cleanName}'`);
 
+        // 1. Try Local Match
         let targetChat = findBestMatch(cleanName);
         let partnerName = "";
+
+        // 2. If No Local Match, Try Global Search
+        if (!targetChat) {
+            setFeedback(`Searching directory for "${cleanName}"...`);
+            try {
+                const { data: users } = await api.get(`/users/search?q=${cleanName}`);
+                if (users && users.length > 0) {
+                    const bestUser = users[0]; // Take first result
+                    console.log("Global search found:", bestUser.name);
+                    
+                    // Check if we already have a chat with this user that was somehow missed locally
+                    // (e.g. strict name match vs fuzzy match issue, or stale state)
+                    targetChat = chatsRef.current.find(c => 
+                        !c.isGroup && c.participants.some(p => p._id === bestUser._id)
+                    );
+
+                    if (!targetChat) {
+                        console.log("Creating new chat with:", bestUser.name);
+                        // Create new chat
+                        const { data: newChat } = await api.post('/chats', { recipientId: bestUser._id });
+                        if (newChat) {
+                            targetChat = newChat;
+                            if (addNewChatRef.current) addNewChatRef.current(newChat);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Global search failed", err);
+            }
+        }
 
         if (targetChat) {
              const currentUser = userRef.current;
@@ -554,22 +609,37 @@ const VoiceAssistant = () => {
                  partnerName = targetChat.participants.find(p => p._id !== currentUser._id)?.name;
              }
             
-            // --- APPLY POV TRANSFORMATION ---
-            const finalMessage = pSpecial ? content : transformContent(content, isQuestion);
-
-            setFeedback(`Confirm: Send to ${partnerName}?`);
-            setPendingCommand({ targetChat, content: finalMessage }); // Use transformed message
-            
-            // Auto-send (Default to TRUE now to restore expected workflow)
-            // We can still respect 'false' if explicitly set, but default is true
-            const autoSendSetting = localStorage.getItem('voice_auto_send');
-            const shouldAutoSend = autoSendSetting === null || autoSendSetting === 'true';
-            
-            if (shouldAutoSend) {
-                handleSend(targetChat._id, finalMessage);
+            // --- ACTION: OPEN CHAT ---
+            if (commandType === 'open') {
+                setFeedback(`Opening chat with ${partnerName}...`);
+                if (selectChatRef.current) selectChatRef.current(targetChat);
+                setTimeout(() => setIsListening(false), 1000);
+                return;
             }
+
+            // --- ACTION: SEND MESSAGE ---
+            if (content) {
+                // --- APPLY POV TRANSFORMATION ---
+                const finalMessage = transformContent(content, isQuestion);
+
+                setFeedback(`Confirm: Send to ${partnerName}?`);
+                setPendingCommand({ targetChat, content: finalMessage }); 
+                
+                // Auto-send 
+                const autoSendSetting = localStorage.getItem('voice_auto_send');
+                const shouldAutoSend = autoSendSetting === null || autoSendSetting === 'true';
+                
+                if (shouldAutoSend) {
+                    handleSend(targetChat._id, finalMessage);
+                }
+            } else {
+                 setFeedback(`What should I say to ${partnerName}?`);
+                 // Maybe keep listening here? For now just stop.
+                 setTimeout(() => setIsListening(false), 2000);
+            }
+
         } else {
-            setFeedback(`Found no contact close to "${cleanName}"`);
+            setFeedback(`Found no contact for "${cleanName}"`);
             setTimeout(() => setIsListening(false), 3000);
         }
     } else {
@@ -582,14 +652,15 @@ const VoiceAssistant = () => {
       // Use REF to get the latest function instance
       if (sendMessageRef.current) {
           console.log("VoiceAssistant: Sending message to", chatId);
-          setFeedback("Sending..."); // Immediate feedback
+          setFeedback("Sending..."); 
+          
+          // INSTANT SEND - Fire and forget for UI speed
           sendMessageRef.current(chatId, content);
           
-          setTimeout(() => {
-             setFeedback("Sent!");
-             setPendingCommand(null);
-             setTimeout(() => setIsListening(false), 1500);
-          }, 500);
+          // FAST FEEDBACK
+          setFeedback("Sent!");
+          setPendingCommand(null);
+          setTimeout(() => setIsListening(false), 800); // Reduced from 1500 + 500
       } else {
           console.error("VoiceAssistant: sendMessage function missing");
           setFeedback("Error: Connection lost");
