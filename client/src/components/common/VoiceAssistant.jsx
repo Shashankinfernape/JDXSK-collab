@@ -253,12 +253,32 @@ const VoiceAssistant = () => {
     return jaro + prefix * 0.1 * (1 - jaro);
   };
 
-  // 2. Simple Phonetic Key (remove vowels, double letters)
+  // 2. Advanced Phonetic Key (Soundex-lite)
   const getPhonetic = (str) => {
-      return str.toLowerCase()
-          .replace(/[^a-z]/g, '')
-          .replace(/[aeiouy]/g, '') // remove vowels
-          .replace(/(.)\1+/g, '$1'); // remove doubles
+      let s = str.toLowerCase().trim();
+      if (!s) return '';
+      
+      // 1. Standardize starts
+      if (s.startsWith('kn')) s = 'n' + s.slice(2);
+      if (s.startsWith('ph')) s = 'f' + s.slice(2);
+      
+      // 2. Consonant Mapping (Aggressive)
+      s = s.replace(/ph/g, 'f')
+           .replace(/gh/g, 'f')
+           .replace(/ch/g, 'k')
+           .replace(/sh/g, 's')
+           .replace(/ck/g, 'k')
+           .replace(/dg/g, 'g')
+           .replace(/[cjq]/g, 'k') // Force soft c/q to k for simple comparison
+           .replace(/[z]/g, 's');  // z -> s
+           
+      // 3. Remove non-leading vowels & noisy letters (h, w, y)
+      const first = s[0];
+      let rest = s.slice(1);
+      rest = rest.replace(/[aeiouwhy]/g, '') 
+                 .replace(/(.)\1+/g, '$1'); // Dedupe
+                 
+      return first + rest;
   };
 
   const findBestMatch = (rawName) => {
@@ -292,33 +312,34 @@ const VoiceAssistant = () => {
         let score = 0;
 
         // A. Jaro-Winkler Score (Base)
-        // Check both full name and first name
         const scoreFull = getJaroWinkler(target, fullName);
         const scoreFirst = getJaroWinkler(target, firstName);
         score = Math.max(scoreFull, scoreFirst);
 
-        // B. Phonetic Bonus
+        // B. Phonetic Bonus (The "Smart" Layer)
+        // If it sounds the same, it gets a HUGE boost.
         const pFull = getPhonetic(fullName);
         const pFirst = getPhonetic(firstName);
+        
         if (targetPhonetic === pFull || targetPhonetic === pFirst) {
-            score += 0.15; // Significant boost for "sounding" the same
+            score += 0.25; // Boost 'Jayson' -> 'Jason' to > 0.9
         }
 
-        // C. Recency Boost (Context Awareness)
+        // C. Exact Start Bonus
+        if (fullName.startsWith(target)) score += 0.1;
+
+        // D. Recency Boost
         if (chat.lastMessage && chat.lastMessage.createdAt) {
             const lastMsgTime = new Date(chat.lastMessage.createdAt).getTime();
-            const now = Date.now();
-            const hoursSince = (now - lastMsgTime) / (1000 * 60 * 60);
-            
-            if (hoursSince < 24) score += 0.1;       // Super active (today)
-            else if (hoursSince < 72) score += 0.05; // Recent (3 days)
+            const hoursSince = (Date.now() - lastMsgTime) / (1000 * 60 * 60);
+            if (hoursSince < 48) score += 0.05; 
         }
 
         // Update Winner
-        // Threshold: 0.85 (Jaro-Winkler is usually high, so we set a high bar)
+        // Threshold: 0.75 (Strict for random noise, but Phonetic boost allows fuzzy names)
         // console.log(`Matching '${target}' vs '${fullName}': Score=${score.toFixed(2)}`);
         
-        if (score > bestScore && score > 0.65) { 
+        if (score > bestScore && score > 0.75) { 
             bestScore = score;
             bestMatch = chat;
         }
@@ -499,67 +520,97 @@ const VoiceAssistant = () => {
     let commandType = 'message'; // message, open, search
     const isQuestion = lowerText.startsWith('ask');
 
-    // --- DEBUGGING ---
-    console.log("Voice Command:", lowerText);
-    // const localNames = chatsRef.current.map(c => 
-    //    c.participants.find(p => p._id !== userRef.current?._id)?.name
-    // );
-    // console.log("Available Local Contacts:", localNames);
-
-    // --- Manual Pattern Matching for Precision ---
+    // --- 1. Explicit Commands (High Priority) ---
     
-    // 0. "Open/Go to [Name]"
+    // "Open/Go to [Name]"
     let pOpen = /^(?:open|go\s+to|show)\s+(.+)$/i.exec(lowerText);
-    if (pOpen && !content) {
+    if (pOpen) {
         rawName = pOpen[1];
         commandType = 'open';
     }
 
-    // 1. Special Case: "Ask how [Name] is [doing/etc]" (Split structure)
-    if (!rawName) {
-        let pSpecial = /^ask\s+how\s+(.+?)\s+is\s+(.+)$/i.exec(lowerText);
-        if (pSpecial) {
-            rawName = pSpecial[1];
-            content = "How are you " + pSpecial[2] + "?";
-        }
-    }
-
-    // 2. "Say [Message] to [Name]"
-    if (!rawName) {
-        let p1 = /^(?:say|send)\s+(.+)\s+to\s+(.+)$/i.exec(lowerText);
-        if (p1) { content = p1[1]; rawName = p1[2]; }
-    }
-    
-    // 3. "Tell/Ping/Message [Name] [Message]"
-    if (!rawName) {
-        let p2 = /^(?:tell|ask|ping|message|text|let)\s+(.+?)(?:\s+know)?\s+(?:that|saying|:)?\s*(.+)$/i.exec(lowerText);
-        if (p2) { rawName = p2[1]; content = p2[2]; }
-    }
-
-    // 4. Tanglish: "[Name] ku [Message] sollu"
-    if (!rawName) {
-        let p3 = /^(.+?)\s+(?:ku|kitta)\s+(.+)$/i.exec(lowerText);
-        if (p3) { 
-            rawName = p3[1]; 
-            content = p3[2].replace(/\s+(?:sollu|anuppu|podu|kalu|nu|nnu)$/i, ''); 
-        }
-    }
-    
-    // 5. "Call [Name]"
-    if (!rawName) {
-        let p4 = /^call\s+(.+)$/i.exec(lowerText);
-        if (p4) {
-            rawName = p4[1];
-            content = "📞 Call me";
-        }
-    }
-
-    // 6. "Search [Name]"
+    // "Search [Name]"
     if (!rawName) {
         let pSearch = /^search\s+(.+)$/i.exec(lowerText);
         if (pSearch) {
             rawName = pSearch[1];
-            commandType = 'open'; // Implies searching then opening
+            commandType = 'open';
+        }
+    }
+    
+    // "Call [Name]"
+    if (!rawName) {
+        let pCall = /^call\s+(.+)$/i.exec(lowerText);
+        if (pCall) {
+            rawName = pCall[1];
+            content = "📞 Call me";
+        }
+    }
+
+    // --- 2. Contact-First Parsing (Smart Extraction) ---
+    // Solves: "Say hi Jason" (where regex fails)
+    if (!rawName) {
+        const contacts = chatsRef.current.map(c => {
+             const p = c.participants.find(p => p._id !== userRef.current?._id);
+             return p ? p.name.toLowerCase() : '';
+        }).filter(n => n);
+
+        // Sort by length desc to match "Shashank Kumar" before "Shashank"
+        contacts.sort((a, b) => b.length - a.length);
+
+        for (const contactName of contacts) {
+             // Strict Word Boundary Match: Ensures 'Ali' doesn't match 'Alice'
+             // Escape special regex chars in name just in case
+             const safeName = contactName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+             const regex = new RegExp(`\\b${safeName}\\b`, 'i');
+             
+             if (regex.test(lowerText)) {
+                 rawName = contactName;
+                 console.log(`Smart Match: Found contact '${rawName}' in text`);
+                 
+                 // Extract Message: Remove name and clean up
+                 let temp = lowerText.replace(regex, "").trim(); // Use regex to replace correct instance
+                 
+                 // Remove common prefixes/fillers
+                 const fillers = [
+                     "say", "tell", "ask", "ping", "message", "text", "let", 
+                     "to", "that", "saying", "know", "send", "about", "msg", "shoot", "a"
+                 ];
+                 
+                 let words = temp.split(/\s+/);
+                 while (words.length > 0 && fillers.includes(words[0])) {
+                     words.shift();
+                 }
+                 // Remove trailing fillers if any (rare but possible)
+                 while (words.length > 0 && fillers.includes(words[words.length-1])) {
+                     words.pop();
+                 }
+                 
+                 content = words.join(' ');
+                 break; // Stop after finding the longest contact match
+             }
+        }
+    }
+
+    // --- 3. Regex Fallback (For new/unknown contacts) ---
+    if (!rawName) {
+        // "Say [Message] to [Name]"
+        let p1 = /^(?:say|send)\s+(.+)\s+to\s+(.+)$/i.exec(lowerText);
+        if (p1) { content = p1[1]; rawName = p1[2]; }
+        
+        // "Tell/Ping [Name] [Message]"
+        if (!rawName) {
+            let p2 = /^(?:tell|ask|ping|message|text|let)\s+(.+?)(?:\s+know)?\s+(?:that|saying|:)?\s*(.+)$/i.exec(lowerText);
+            if (p2) { rawName = p2[1]; content = p2[2]; }
+        }
+
+        // Tanglish: "[Name] ku [Message] sollu"
+        if (!rawName) {
+            let p3 = /^(.+?)\s+(?:ku|kitta)\s+(.+)$/i.exec(lowerText);
+            if (p3) { 
+                rawName = p3[1]; 
+                content = p3[2].replace(/\s+(?:sollu|anuppu|podu|kalu|nu|nnu)$/i, ''); 
+            }
         }
     }
 
@@ -582,7 +633,6 @@ const VoiceAssistant = () => {
                     console.log("Global search found:", bestUser.name);
                     
                     // Check if we already have a chat with this user that was somehow missed locally
-                    // (e.g. strict name match vs fuzzy match issue, or stale state)
                     targetChat = chatsRef.current.find(c => 
                         !c.isGroup && c.participants.some(p => p._id === bestUser._id)
                     );
