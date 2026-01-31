@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useChat } from '../../context/ChatContext'; // Import useChat
 import Message from './Message';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { BsChatText } from 'react-icons/bs';
 
 const MessageListContainer = styled.div`
   flex: 1;
@@ -11,6 +12,28 @@ const MessageListContainer = styled.div`
   display: flex;
   flex-direction: column;
   background: ${props => props.theme.colors.chatBackground}; 
+`;
+
+const EmptyState = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: ${props => props.theme.colors.textSecondary};
+  opacity: 0.7;
+  gap: 1rem;
+  
+  svg {
+    font-size: 3rem;
+    color: ${props => props.theme.colors.primary};
+    opacity: 0.5;
+  }
+  
+  p {
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
 `;
 
 // --- Date Separators ---
@@ -74,46 +97,58 @@ const MessageList = () => {
     return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const hasMessages = messages && messages.length > 0;
+
   return (
     <MessageListContainer $replyingTo={replyingTo}>
-      <div style={{ height: '10px' }} /> 
+      {!hasMessages && (
+          <EmptyState>
+              <BsChatText />
+              <p>Start a conversation</p>
+          </EmptyState>
+      )}
 
-      {messages && messages.map((msg, index) => {
-         if (!msg || !msg.createdAt) {
-           console.warn("Skipping invalid message object:", msg);
-           return null;
-         }
+      {hasMessages && (
+          <>
+            <div style={{ height: '10px' }} /> 
+            {messages.map((msg, index) => {
+                if (!msg || !msg.createdAt) {
+                console.warn("Skipping invalid message object:", msg);
+                return null;
+                }
 
-        const messageDateStr = new Date(msg.createdAt).toDateString();
-        const showDateSeparator = messageDateStr !== lastDate;
-        lastDate = messageDateStr;
+                const messageDateStr = new Date(msg.createdAt).toDateString();
+                const showDateSeparator = messageDateStr !== lastDate;
+                lastDate = messageDateStr;
 
-        const isSelected = selectedMessages.includes(msg._id);
+                const isSelected = selectedMessages.includes(msg._id);
 
-        // Check if next message is from same sender (for spacing)
-        const nextMsg = messages[index + 1];
-        const isSequence = nextMsg && nextMsg.senderId?._id === msg.senderId?._id;
+                // Check if next message is from same sender (for spacing)
+                const nextMsg = messages[index + 1];
+                const isSequence = nextMsg && nextMsg.senderId?._id === msg.senderId?._id;
 
-        return (
-          <React.Fragment key={msg._id || `temp-${index}`}>
-            {showDateSeparator && (
-              <DateSeparator>
-                <span>{formatDate(msg.createdAt)}</span>
-              </DateSeparator>
-            )}
-            <Message 
-                message={msg} 
-                isSelected={isSelected}
-                isSelectionMode={isSelectionMode}
-                onSelect={toggleMessageSelection}
-                onReply={setReplyingTo}
-                isSequence={isSequence}
-            />
-          </React.Fragment>
-        );
-      })}
-      <div style={{ height: '10px' }} /> 
-      <div ref={endOfMessagesRef} />
+                return (
+                <React.Fragment key={msg._id || `temp-${index}`}>
+                    {showDateSeparator && (
+                    <DateSeparator>
+                        <span>{formatDate(msg.createdAt)}</span>
+                    </DateSeparator>
+                    )}
+                    <Message 
+                        message={msg} 
+                        isSelected={isSelected}
+                        isSelectionMode={isSelectionMode}
+                        onSelect={toggleMessageSelection}
+                        onReply={setReplyingTo}
+                        isSequence={isSequence}
+                    />
+                </React.Fragment>
+                );
+            })}
+            <div style={{ height: '10px' }} /> 
+            <div ref={endOfMessagesRef} />
+          </>
+      )}
     </MessageListContainer>
   );
 };

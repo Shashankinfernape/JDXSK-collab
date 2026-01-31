@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext'; // Added useChat
 import userService from '../../services/user.service';
 import chatService from '../../services/chat.service';
 import { IoMdArrowBack } from 'react-icons/io';
@@ -284,6 +285,7 @@ async function getCroppedImg(imageSrc, pixelCrop, rotation = 0) {
 // --- Main Component ---
 const ProfileDrawer = ({ isOpen, onClose, targetUser, activeChat, onStartChat, onSwitchUser }) => {
   const { user: currentUser, updateUser } = useAuth();
+  const { addNewChat } = useChat(); // Use Chat Context for immediate list update
   
   // Local State for fetched data
   const [fetchedUser, setFetchedUser] = useState(null);
@@ -400,6 +402,17 @@ const ProfileDrawer = ({ isOpen, onClose, targetUser, activeChat, onStartChat, o
               setIsFollowing(true);
               setLocalFollowers(prev => prev + 1); // Increase count
               await userService.followUser(targetUser._id);
+              
+              // NEW: Immediately ensure chat exists and add to list
+              // This fixes the issue where followed users don't appear in sidebar
+              try {
+                  const { data: newChat } = await api.post('/chats', { recipientId: targetUser._id });
+                  if (newChat) {
+                      addNewChat(newChat);
+                  }
+              } catch (chatError) {
+                  console.error("Failed to add chat on follow", chatError);
+              }
           }
           
           // Refresh Current User to update "Following" list in own profile
