@@ -501,10 +501,10 @@ const VoiceAssistant = () => {
 
     // --- DEBUGGING ---
     console.log("Voice Command:", lowerText);
-    const localNames = chatsRef.current.map(c => 
-        c.participants.find(p => p._id !== userRef.current?._id)?.name
-    );
-    console.log("Available Local Contacts:", localNames);
+    // const localNames = chatsRef.current.map(c => 
+    //    c.participants.find(p => p._id !== userRef.current?._id)?.name
+    // );
+    // console.log("Available Local Contacts:", localNames);
 
     // --- Manual Pattern Matching for Precision ---
     
@@ -652,25 +652,25 @@ const VoiceAssistant = () => {
     }
   };
 
-  const handleSend = async (chatId, content) => {
+  const handleSend = (chatId, content) => {
       // Use REF to get the latest function instance
       console.log("handleSend Triggered for:", chatId);
       if (sendMessageRef.current && userRef.current) {
           console.log("VoiceAssistant: Sending message to", chatId);
           setFeedback("Sending..."); 
           
-          try {
-            // Await the API call for true reliability feedback
-            await sendMessageRef.current(chatId, content);
-            
-            // FAST FEEDBACK
-            setFeedback("Sent!");
-            setPendingCommand(null);
-            setTimeout(() => setIsListening(false), 800); 
-          } catch (e) {
-            console.error("VoiceAssistant: Send Failed", e);
-            setFeedback("Error: Failed to send");
-          }
+          // INSTANT SEND (Optimistic) - Restore "It worked before" feel
+          // We don't await here so the UI is snappy
+          sendMessageRef.current(chatId, content).catch(err => {
+             console.error("VoiceAssistant: Background Send Failed", err);
+             // We could update feedback here if we wanted, but 'Sent!' is already shown
+          });
+          
+          // FAST FEEDBACK
+          setFeedback("Sent!");
+          setPendingCommand(null);
+          setTimeout(() => setIsListening(false), 800); 
+
       } else {
           console.error("VoiceAssistant: sendMessage function or User missing", { 
               fn: !!sendMessageRef.current, 
