@@ -192,6 +192,7 @@ const VoiceAssistant = () => {
   const userRef = useRef(user);
 
   useEffect(() => {
+      // console.log("VoiceAssistant: Refs Updated", { chatsLen: chats.length, user: !!user, sendFn: !!sendMessageToChat });
       chatsRef.current = chats;
       sendMessageRef.current = sendMessageToChat;
       addNewChatRef.current = addNewChat;
@@ -315,7 +316,7 @@ const VoiceAssistant = () => {
 
         // Update Winner
         // Threshold: 0.85 (Jaro-Winkler is usually high, so we set a high bar)
-        console.log(`Matching '${target}' vs '${fullName}': Score=${score.toFixed(2)}`);
+        // console.log(`Matching '${target}' vs '${fullName}': Score=${score.toFixed(2)}`);
         
         if (score > bestScore && score > 0.65) { 
             bestScore = score;
@@ -503,7 +504,7 @@ const VoiceAssistant = () => {
     const localNames = chatsRef.current.map(c => 
         c.participants.find(p => p._id !== userRef.current?._id)?.name
     );
-    console.log("Available Local Contacts:", localNames);
+    // console.log("Available Local Contacts:", localNames);
 
     // --- Manual Pattern Matching for Precision ---
     
@@ -630,7 +631,9 @@ const VoiceAssistant = () => {
                 const shouldAutoSend = autoSendSetting === null || autoSendSetting === 'true';
                 
                 if (shouldAutoSend) {
-                    handleSend(targetChat._id, finalMessage);
+                    setTimeout(() => {
+                        handleSend(targetChat._id, finalMessage);
+                    }, 100);
                 }
             } else {
                  setFeedback(`What should I say to ${partnerName}?`);
@@ -650,20 +653,28 @@ const VoiceAssistant = () => {
 
   const handleSend = (chatId, content) => {
       // Use REF to get the latest function instance
-      if (sendMessageRef.current) {
+      if (sendMessageRef.current && userRef.current) {
           console.log("VoiceAssistant: Sending message to", chatId);
           setFeedback("Sending..."); 
           
-          // INSTANT SEND - Fire and forget for UI speed
-          sendMessageRef.current(chatId, content);
-          
-          // FAST FEEDBACK
-          setFeedback("Sent!");
-          setPendingCommand(null);
-          setTimeout(() => setIsListening(false), 800); // Reduced from 1500 + 500
+          try {
+            // INSTANT SEND - Fire and forget for UI speed
+            sendMessageRef.current(chatId, content);
+            
+            // FAST FEEDBACK
+            setFeedback("Sent!");
+            setPendingCommand(null);
+            setTimeout(() => setIsListening(false), 800); 
+          } catch (e) {
+            console.error("VoiceAssistant: Send Failed", e);
+            setFeedback("Error: Failed to send");
+          }
       } else {
-          console.error("VoiceAssistant: sendMessage function missing");
-          setFeedback("Error: Connection lost");
+          console.error("VoiceAssistant: sendMessage function or User missing", { 
+              fn: !!sendMessageRef.current, 
+              user: !!userRef.current 
+          });
+          setFeedback("Error: Not Connected");
       }
   };
 
