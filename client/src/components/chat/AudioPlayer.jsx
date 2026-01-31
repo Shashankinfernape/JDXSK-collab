@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FaPlay, FaPause } from 'react-icons/fa';
 import AudioVisualizer from '../common/AudioVisualizer';
@@ -6,14 +6,14 @@ import AudioVisualizer from '../common/AudioVisualizer';
 const PlayerContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 240px; 
+  gap: 10px;
+  width: 260px; 
   padding: 4px 0;
 `;
 
 const ProfilePic = styled.img`
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -24,24 +24,25 @@ const ControlButton = styled.button`
   border: none;
   color: ${props => props.$isMe ? 'rgba(255,255,255,0.95)' : props.theme.colors.primary};
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   
-  &:hover { opacity: 0.9; transform: scale(1.1); }
+  &:hover { opacity: 0.9; transform: scale(1.05); }
   transition: all 0.2s ease;
 `;
 
 const VisualizerWrapper = styled.div`
   flex: 1;
-  height: 30px; 
+  height: 40px; 
   display: flex;
   align-items: center;
-  margin-top: 0;
+  /* Ensure no margin disrupts vertical center */
+  margin: 0;
 `;
 
 const InfoCol = styled.div`
@@ -50,6 +51,13 @@ const InfoCol = styled.div`
   justify-content: center;
   gap: 0px;
   flex: 1;
+  /* Ensure InfoCol height doesn't break alignment, though it might grow with Duration.
+     For perfect center alignment of Waveform with Avatar, Duration should technically effectively be an overlay or separate.
+     But standard flex behavior will center InfoCol (Visualizer + Duration) against Avatar.
+     If Visualizer is 40px and Avatar is 40px, adding Duration makes InfoCol > 40px.
+     Avatar will center against the >40px block.
+     This is usually desired.
+  */
 `;
 
 const BottomRow = styled.div`
@@ -57,25 +65,24 @@ const BottomRow = styled.div`
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-top: 1px;
+  margin-top: -4px; /* Pull duration up slightly into the waveform gap */
+  padding-right: 4px;
 `;
 
 const Duration = styled.span`
-  font-size: 0.75rem;
-  color: ${props => props.$isMe ? '#FFFFFF' : props.theme.colors.textSecondary};
-  margin-left: 2px;
+  font-size: 0.7rem;
+  color: ${props => props.$isMe ? 'rgba(255,255,255,0.8)' : props.theme.colors.textSecondary};
   line-height: 1;
-  font-weight: 600;
-  opacity: 0.95;
+  font-weight: 500;
   min-width: 35px;
-  text-align: right;
 `;
 
 const FooterContainer = styled.div`
     display: flex;
     align-items: center;
     line-height: 1;
-    opacity: 1;
+    opacity: 0.8;
+    transform: scale(0.9);
 `;
 
 const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDuration }) => {
@@ -83,6 +90,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(initialDuration || 0);
   const audioRef = useRef(null);
+  const animationRef = useRef(null);
 
   useEffect(() => {
     if (initialDuration) setDuration(initialDuration);
@@ -96,15 +104,21 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
       }
   };
 
+  const updateProgress = useCallback(() => {
+      if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime);
+          animationRef.current = requestAnimationFrame(updateProgress);
+      }
+  }, []);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    // Reset state when source changes
-    setIsPlaying(false);
-    setCurrentTime(0);
-    // Don't reset duration to 0 if we have initialDuration
-    if (!initialDuration) setDuration(0); 
+    // Reset
+    if (!isPlaying) {
+        cancelAnimationFrame(animationRef.current);
+    }
 
     const updateDuration = () => {
         if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
@@ -112,49 +126,47 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
         }
     };
 
-    const handleTimeUpdate = () => {
-        setCurrentTime(audio.currentTime);
-        // If we didn't get duration earlier, try again (sometimes it comes late)
-        if (!duration || duration === Infinity) {
-            updateDuration();
-        }
-    };
-
     const handleEnded = () => {
         setIsPlaying(false);
         setCurrentTime(0);
+        cancelAnimationFrame(animationRef.current);
+    };
+
+    const handlePlay = () => {
+        setIsPlaying(true);
+        animationRef.current = requestAnimationFrame(updateProgress);
+    };
+
+    const handlePause = () => {
+        setIsPlaying(false);
+        cancelAnimationFrame(animationRef.current);
     };
 
     // Events
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('durationchange', updateDuration);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
     
-    // Check immediately in case it's already loaded (e.g. cache/blob)
-    if (audio.readyState >= 1) {
-        updateDuration();
-    }
+    if (audio.readyState >= 1) updateDuration();
 
     return () => {
         audio.removeEventListener('loadedmetadata', updateDuration);
         audio.removeEventListener('durationchange', updateDuration);
-        audio.removeEventListener('timeupdate', handleTimeUpdate);
         audio.removeEventListener('ended', handleEnded);
+        audio.removeEventListener('play', handlePlay);
+        audio.removeEventListener('pause', handlePause);
+        cancelAnimationFrame(animationRef.current);
     };
-  }, [src, initialDuration, duration]); // kept deps simple but safe
+  }, [src, isPlaying, updateProgress]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
     
-    if (isPlaying) {
-      audio.pause();
-    }
-    else {
-      audio.play().catch(e => console.error("Playback failed", e));
-    }
-    setIsPlaying(!isPlaying);
+    if (isPlaying) audio.pause();
+    else audio.play().catch(e => console.error("Playback failed", e));
   };
 
   const formatTime = (time) => {
@@ -163,11 +175,6 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
-
-  useEffect(() => {
-    // Debug Log
-    // console.log("AudioPlayer mounted with src:", src);
-  }, [src]);
 
   return (
     <PlayerContainer>
@@ -187,7 +194,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
       )}
 
       <ControlButton onClick={togglePlay} $isMe={isMe}>
-        {isPlaying ? <FaPause /> : <FaPlay />}
+        {isPlaying ? <FaPause /> : <FaPlay style={{ marginLeft: '4px' }} />}
       </ControlButton>
       
       <InfoCol>
