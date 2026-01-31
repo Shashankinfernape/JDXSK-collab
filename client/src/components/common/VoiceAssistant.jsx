@@ -501,9 +501,9 @@ const VoiceAssistant = () => {
 
     // --- DEBUGGING ---
     console.log("Voice Command:", lowerText);
-    const localNames = chatsRef.current.map(c => 
-        c.participants.find(p => p._id !== userRef.current?._id)?.name
-    );
+    // const localNames = chatsRef.current.map(c => 
+    //    c.participants.find(p => p._id !== userRef.current?._id)?.name
+    // );
     // console.log("Available Local Contacts:", localNames);
 
     // --- Manual Pattern Matching for Precision ---
