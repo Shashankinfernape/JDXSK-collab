@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import styled, { keyframes, css } from 'styled-components';
-import { FaMicrophone, FaMicrophoneSlash, FaTimes, FaRedo, FaCheck } from 'react-icons/fa';
+import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import { RiSparklingFill } from 'react-icons/ri';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
@@ -47,14 +47,12 @@ const TriggerButton = styled.button`
     transform: translateY(-2px);
   }
 
-  /* Active State */
   ${props => props.$isListening && css`
     color: ${props.theme.colors.primary};
     background-color: ${props.theme.colors.hoverBackground};
     box-shadow: 0 0 15px ${props.theme.colors.primary}40;
   `}
 
-  /* Sparkle Icon absolute positioning */
   .sparkle {
     position: absolute;
     top: 4px;
@@ -64,13 +62,12 @@ const TriggerButton = styled.button`
   }
 `;
 
-// Overlay for "Listening" state (Google Assistant style)
 const Overlay = styled.div`
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100vw;
-  height: 300px; /* Partial height like a drawer */
+  height: 300px;
   background: ${props => props.theme.colors.panelBackground};
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
@@ -79,7 +76,7 @@ const Overlay = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 10000; /* Increased to ensure it covers message bar */
+  z-index: 10000;
   padding: 2rem;
   animation: ${fadeIn} 0.3s ease-out;
   border-top: 1px solid ${props => props.theme.colors.border};
@@ -160,10 +157,8 @@ const VoiceAssistant = () => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [feedback, setFeedback] = useState('Listening...');
-  const [pendingCommand, setPendingCommand] = useState(null);
-  
-  // Hint Rotation
   const [hintIndex, setHintIndex] = useState(0);
+
   const hints = [
       "Try: 'Ping Eshwar: Are you free?'",
       "Try: 'Open Alice'",
@@ -178,13 +173,11 @@ const VoiceAssistant = () => {
           }, 4000);
           return () => clearInterval(interval);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isListening]);
+  }, [isListening, hints.length]);
 
   const { chats, sendMessageToChat, addNewChat, selectChat } = useChat();
   const { user } = useAuth();
   
-  // Use Refs for dependencies to avoid re-initializing SpeechRecognition
   const chatsRef = useRef(chats);
   const sendMessageRef = useRef(sendMessageToChat);
   const addNewChatRef = useRef(addNewChat);
@@ -192,7 +185,6 @@ const VoiceAssistant = () => {
   const userRef = useRef(user);
 
   useEffect(() => {
-      // console.log("VoiceAssistant: Refs Updated", { chatsLen: chats.length, user: !!user, sendFn: !!sendMessageToChat });
       chatsRef.current = chats;
       sendMessageRef.current = sendMessageToChat;
       addNewChatRef.current = addNewChat;
@@ -202,570 +194,191 @@ const VoiceAssistant = () => {
   
   const recognitionRef = useRef(null);
   const silenceTimer = useRef(null);
-  const noSpeechTimer = useRef(null); // Safety timeout
 
-  // --- ADVANCED NAME MATCHING (Jaro-Winkler + Recency + Phonetic) ---
-  
-  // 1. Jaro-Winkler Distance (0.0 = no match, 1.0 = perfect match)
-  const getJaroWinkler = (s1, s2) => {
-    if (s1.length === 0 || s2.length === 0) return 0;
-    
-    // Simple Jaro implementation
-    const matchWindow = Math.floor(Math.max(s1.length, s2.length) / 2) - 1;
-    const matches1 = new Array(s1.length).fill(false);
-    const matches2 = new Array(s2.length).fill(false);
-    let mCount = 0;
-    
-    for (let i = 0; i < s1.length; i++) {
-        const start = Math.max(0, i - matchWindow);
-        const end = Math.min(i + matchWindow + 1, s2.length);
-        for (let j = start; j < end; j++) {
-            if (!matches2[j] && s1[i] === s2[j]) {
-                matches1[i] = true;
-                matches2[j] = true;
-                mCount++;
-                break;
-            }
-        }
-    }
-    
-    if (mCount === 0) return 0;
-    
-    let tCount = 0;
-    let k = 0;
-    for (let i = 0; i < s1.length; i++) {
-        if (matches1[i]) {
-            while (!matches2[k]) k++;
-            if (s1[i] !== s2[k]) tCount++;
-            k++;
-        }
-    }
-    const t = tCount / 2;
-    const jaro = (mCount / s1.length + mCount / s2.length + (mCount - t) / mCount) / 3;
-    
-    // Winkler Boost (Prefix bonus)
-    let prefix = 0;
-    for (let i = 0; i < Math.min(4, Math.min(s1.length, s2.length)); i++) {
-        if (s1[i] === s2[i]) prefix++;
-        else break;
-    }
-    
-    return jaro + prefix * 0.1 * (1 - jaro);
-  };
+  // --- NEW SIMPLIFIED LOGIC ---
 
-  // 2. Advanced Phonetic Key (Soundex-lite)
-  const getPhonetic = (str) => {
-      let s = str.toLowerCase().trim();
-      if (!s) return '';
+  // 1. Simple Word Normalizer
+  const normalize = (text) => text.toLowerCase().replace(/[.,?!]/g, '').trim();
+
+  // 2. Linear Processor
+  const processCommand = useCallback(async (rawText) => {
+      if (!rawText) { setIsListening(false); return; }
       
-      // 1. Standardize starts
-      if (s.startsWith('kn')) s = 'n' + s.slice(2);
-      if (s.startsWith('ph')) s = 'f' + s.slice(2);
+      const text = normalize(rawText);
+      console.log("Voice Command (Clean):", text);
+
+      let targetName = null;
+      let targetChat = null;
+      let messageContent = "";
+      let commandType = "message"; // "message" or "open"
+
+      // A. Check for "Open/Search/Go To"
+      if (text.startsWith("open") || text.startsWith("go to") || text.startsWith("search") || text.startsWith("show")) {
+          commandType = "open";
+          // Remove command word
+          const words = text.split(' ');
+          words.shift(); // Remove first word
+          if (words[0] === "to") words.shift(); // Remove "to" if "go to"
+          targetName = words.join(' '); // Remainder is name
+      } 
       
-      // 2. Consonant Mapping (Aggressive)
-      s = s.replace(/ph/g, 'f')
-           .replace(/gh/g, 'f')
-           .replace(/ch/g, 'k')
-           .replace(/sh/g, 's')
-           .replace(/ck/g, 'k')
-           .replace(/dg/g, 'g')
-           .replace(/[cjq]/g, 'k') // Force soft c/q to k for simple comparison
-           .replace(/[z]/g, 's');  // z -> s
-           
-      // 3. Remove non-leading vowels & noisy letters (h, w, y)
-      const first = s[0];
-      let rest = s.slice(1);
-      rest = rest.replace(/[aeiouwhy]/g, '') 
-                 .replace(/(.)\1+/g, '$1'); // Dedupe
-                 
-      return first + rest;
-  };
+      // B. Scan for Known Contacts (Longest Match First)
+      if (!targetName) {
+          const allContacts = [];
+          chatsRef.current.forEach(c => {
+              if (c.isGroup) {
+                  allContacts.push({ name: c.groupName, chat: c });
+              } else {
+                  const p = c.participants.find(p => p._id !== userRef.current?._id);
+                  if (p) allContacts.push({ name: p.name, chat: c });
+              }
+          });
 
-  const findBestMatch = (rawName) => {
-    if (!rawName) return null;
-    const normalize = (s) => s.toLowerCase().trim();
-    const target = normalize(rawName);
-    const targetPhonetic = getPhonetic(target);
-    
-    let bestMatch = null;
-    let bestScore = 0;
+          // Sort by name length desc (e.g. "John Doe" before "John")
+          allContacts.sort((a, b) => b.name.length - a.name.length);
 
-    // Use REF here
-    chatsRef.current.forEach(chat => {
-        const currentUser = userRef.current;
-        if (!currentUser) return;
-
-        let nameToCheck = '';
-        if (chat.isGroup) {
-            nameToCheck = chat.groupName;
-        } else {
-            const partner = chat.participants.find(p => p._id !== currentUser._id);
-            nameToCheck = partner?.name;
-        }
-
-        if (!nameToCheck) return;
-        
-        const fullName = normalize(nameToCheck);
-        const firstName = fullName.split(' ')[0];
-        
-        // --- SCORING SYSTEM ---
-        let score = 0;
-
-        // A. Jaro-Winkler Score (Base)
-        const scoreFull = getJaroWinkler(target, fullName);
-        const scoreFirst = getJaroWinkler(target, firstName);
-        score = Math.max(scoreFull, scoreFirst);
-
-        // B. Phonetic Bonus (The "Smart" Layer)
-        // If it sounds the same, it gets a HUGE boost.
-        const pFull = getPhonetic(fullName);
-        const pFirst = getPhonetic(firstName);
-        
-        if (targetPhonetic === pFull || targetPhonetic === pFirst) {
-            score += 0.25; // Boost 'Jayson' -> 'Jason' to > 0.9
-        }
-
-        // C. Exact Start Bonus
-        if (fullName.startsWith(target)) score += 0.1;
-
-        // D. Recency Boost
-        if (chat.lastMessage && chat.lastMessage.createdAt) {
-            const lastMsgTime = new Date(chat.lastMessage.createdAt).getTime();
-            const hoursSince = (Date.now() - lastMsgTime) / (1000 * 60 * 60);
-            if (hoursSince < 48) score += 0.05; 
-        }
-
-        // Update Winner
-        // Threshold: 0.75 (Strict for random noise, but Phonetic boost allows fuzzy names)
-        // console.log(`Matching '${target}' vs '${fullName}': Score=${score.toFixed(2)}`);
-        
-        if (score > bestScore && score > 0.75) { 
-            bestScore = score;
-            bestMatch = chat;
-        }
-    });
-
-    return bestMatch;
-  };
-
-  // --- POV Transformer (3rd Person -> 1st Person) ---
-  const transformContent = (rawText, isQuestion = false) => {
-      let text = rawText.trim();
-      
-      // 1. "Ask [Name] IF HE IS free" -> "Are you free?"
-      const indirectMap = [
-          { regex: /^if\s+(?:he|she)\s+is\b/i, replace: "Are you" },
-          { regex: /^if\s+(?:he|she)\s+are\b/i, replace: "Are you" },
-          { regex: /^if\s+(?:he|she)\s+was\b/i, replace: "Were you" },
-          { regex: /^if\s+(?:he|she)\s+were\b/i, replace: "Were you" },
-          { regex: /^if\s+(?:he|she)\s+will\b/i, replace: "Will you" },
-          { regex: /^if\s+(?:he|she)\s+can\b/i, replace: "Can you" },
-          { regex: /^if\s+(?:he|she)\s+could\b/i, replace: "Could you" },
-          { regex: /^if\s+(?:he|she)\s+should\b/i, replace: "Should you" },
-          { regex: /^if\s+(?:he|she)\s+has\b/i, replace: "Have you" },
-          { regex: /^if\s+(?:he|she)\s+needs\b/i, replace: "Do you need" },
-          { regex: /^if\s+(?:he|she)\s+wants\b/i, replace: "Do you want" },
-          { regex: /^if\s+(?:he|she)\s+likes\b/i, replace: "Do you like" },
-          // New: "how he is" -> "how are you"
-          { regex: /^how\s+(?:he|she)\s+is\b/i, replace: "How are you" },
-          { regex: /^how\s+is\s+(?:he|she)\b/i, replace: "How are you" },
-          { regex: /^where\s+(?:he|she)\s+is\b/i, replace: "Where are you" },
-      ];
-
-      for (let rule of indirectMap) {
-          if (rule.regex.test(text)) {
-              let transformed = text.replace(rule.regex, rule.replace);
-              if (!transformed.endsWith('?')) transformed += '?';
-              return transformed;
+          for (const contact of allContacts) {
+              const cName = normalize(contact.name);
+              // Check if the command *contains* this name
+              if (text.includes(cName)) {
+                  targetName = contact.name;
+                  targetChat = contact.chat;
+                  
+                  // Extract message: Remove name and command words
+                  let temp = text.replace(cName, "").trim();
+                  const fillers = ["say", "tell", "ask", "ping", "message", "text", "to", "that", "about", "msg", "send", "is", "are"];
+                  let words = temp.split(' ');
+                  
+                  // Clean from start
+                  while(words.length > 0 && fillers.includes(words[0])) words.shift();
+                  // Clean from end
+                  while(words.length > 0 && fillers.includes(words[words.length-1])) words.pop();
+                  
+                  messageContent = words.join(' ');
+                  break; 
+              }
           }
       }
 
-      // 2. "Tell [Name] TO call me" -> "Call me" (Imperative)
-      if (/^to\s+\w+/i.test(text)) {
-          let clean = text.replace(/^to\s+/i, "");
-          text = clean.charAt(0).toUpperCase() + clean.slice(1);
+      // C. Global Search Fallback (if name extracted but no local chat found)
+      if (!targetChat && targetName && commandType === "open") {
+           // We have a name from "Open X", try global search
+           setFeedback(`Searching directory for "${targetName}"...`);
+           try {
+               const { data: users } = await api.get(`/users/search?q=${targetName}`);
+               if (users && users.length > 0) {
+                   const bestUser = users[0];
+                   // Create chat
+                   const { data: newChat } = await api.post('/chats', { recipientId: bestUser._id });
+                   targetChat = newChat;
+                   if (addNewChatRef.current) addNewChatRef.current(newChat);
+               }
+           } catch(e) { console.error(e); }
       }
 
-      // 3. "Tell [Name] THAT I am here" -> "I am here" (Declarative connector)
-      else if (/^that\s+/i.test(text)) {
-          text = text.replace(/^that\s+/i, "");
-      }
-      
-      // 4. "Ask [Name] ABOUT the meeting" -> "What about the meeting?"
-      else if (/^about\s+/i.test(text)) {
-           text = "What " + text;
-      }
+      // D. Execute
+      if (targetChat) {
+          const partnerName = targetChat.isGroup 
+              ? targetChat.groupName 
+              : targetChat.participants.find(p => p._id !== userRef.current?._id)?.name;
 
-      // Final Polish
-      let result = text.charAt(0).toUpperCase() + text.slice(1);
-      
-      // Ensure question mark for Ask commands
-      if (isQuestion && !result.endsWith('?')) {
-          result += '?';
+          if (commandType === "open") {
+              setFeedback(`Opening ${partnerName}`);
+              if (selectChatRef.current) selectChatRef.current(targetChat);
+              setTimeout(() => setIsListening(false), 1000);
+          } else {
+              // Message Mode
+              if (!messageContent) messageContent = "👋"; // Default if empty?
+              
+              // Simple POV fix
+              messageContent = messageContent
+                  .replace(/\bhe\b/g, "you")
+                  .replace(/\bshe\b/g, "you")
+                  .replace(/\bhis\b/g, "your")
+                  .replace(/\bher\b/g, "your");
+
+              // Fix: Capitalize first letter
+              messageContent = messageContent.charAt(0).toUpperCase() + messageContent.slice(1);
+
+              setFeedback(`Sent to ${partnerName}: "${messageContent}"`);
+              
+              // Direct Send (Reliable)
+              if (sendMessageRef.current) {
+                  sendMessageRef.current(targetChat._id, messageContent);
+              }
+              setTimeout(() => setIsListening(false), 1500);
+          }
+      } else {
+          setFeedback("Couldn't find that contact.");
+          setTimeout(() => setIsListening(false), 2000);
       }
+  }, []); // Dependencies are Refs, so array is empty
 
-      return result;
-  };
-
-  // --- Logic ---
-  
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
+      recognitionRef.current.continuous = false; // Changed to false for "One Shot" reliability
       recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-IN'; // Better for Indian names & Tanglish
+      recognitionRef.current.lang = 'en-US';
 
       recognitionRef.current.onstart = () => {
         setIsListening(true);
         setFeedback('Listening...');
         setTranscript('');
-        setPendingCommand(null);
-        
-        // Safety: If no speech for 8 seconds, stop.
-        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
-        noSpeechTimer.current = setTimeout(() => {
-            if (!transcript) { // If still empty
-                setFeedback("I didn't hear anything.");
-                setTimeout(() => setIsListening(false), 2000);
-                if (recognitionRef.current) recognitionRef.current.stop();
-            }
-        }, 8000);
-      };
-
-      recognitionRef.current.onend = () => {
-        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
-        if (silenceTimer.current) clearTimeout(silenceTimer.current);
-        
-        // If we are still "listening" in state but the API stopped (e.g. silence),
-        // we usually want to stop UI too unless we have auto-restart logic.
-        // For now, let's sync state.
-        if (!pendingCommand) {
-             setIsListening(false);
-        }
       };
 
       recognitionRef.current.onresult = (event) => {
-        // Clear safety timer as soon as we hear something
-        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
-
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
+        if (silenceTimer.current) clearTimeout(silenceTimer.current);
         
-        const currentText = (finalTranscript || interimTranscript).trim();
+        let currentText = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            currentText += event.results[i][0].transcript;
+        }
         setTranscript(currentText);
 
-        if (silenceTimer.current) clearTimeout(silenceTimer.current);
-        
-        if (currentText.length > 3) {
-             silenceTimer.current = setTimeout(() => {
-                 recognitionRef.current.stop(); 
-                 processCommand(currentText);   
-             }, 2000); 
-        }
+        // Auto-submit after silence
+        silenceTimer.current = setTimeout(() => {
+            if (recognitionRef.current) recognitionRef.current.stop();
+        }, 1500); // 1.5s silence triggers stop
       };
 
-      recognitionRef.current.onerror = (event) => {
-        console.error("Speech error", event.error);
-        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
-        if (event.error !== 'no-speech') {
-             setFeedback('Error: ' + event.error);
-             setTimeout(() => setIsListening(false), 2000);
-        }
+      recognitionRef.current.onend = () => {
+          // Trigger processing logic via effect or check here
+      };
+      
+      recognitionRef.current.onerror = (e) => {
+          console.error(e);
+          setIsListening(false);
       };
     }
-    return () => {
-        if (silenceTimer.current) clearTimeout(silenceTimer.current);
-        if (noSpeechTimer.current) clearTimeout(noSpeechTimer.current);
-        // CRITICAL FIX: Abort the recognition instance on unmount/update to prevent phantom listeners
-        if (recognitionRef.current) recognitionRef.current.abort();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingCommand]); // Clean dependency: only restart if UI state changes
+  }, []);
 
-  const toggleListening = () => {
-    if (isListening) {
-      if (recognitionRef.current) recognitionRef.current.stop();
-      processCommand(transcript);
-    } else {
-      try {
-        if (recognitionRef.current) recognitionRef.current.start();
-      } catch (e) {
-        console.error("Start error", e);
+  // Trigger processing when listening stops IF we have text
+  useEffect(() => {
+      if (!isListening && transcript.length > 2) {
+          processCommand(transcript);
       }
-    }
-  };
+  }, [isListening, transcript, processCommand]);
 
-  const processCommand = async (text) => {
-    if (!text) {
-        setIsListening(false);
-        return;
-    }
-
-    const lowerText = text.toLowerCase().trim();
-    console.log("Processing Voice Command:", lowerText);
-    
-    let rawName = '';
-    let content = '';
-    let commandType = 'message'; // message, open, search
-    const isQuestion = lowerText.startsWith('ask');
-
-    // --- 1. Explicit Commands (High Priority) ---
-    
-    // "Open/Go to [Name]"
-    let pOpen = /^(?:open|go\s+to|show)\s+(.+)$/i.exec(lowerText);
-    if (pOpen) {
-        rawName = pOpen[1];
-        commandType = 'open';
-    }
-
-    // "Search [Name]"
-    if (!rawName) {
-        let pSearch = /^search\s+(.+)$/i.exec(lowerText);
-        if (pSearch) {
-            rawName = pSearch[1];
-            commandType = 'open';
-        }
-    }
-    
-    // "Call [Name]"
-    if (!rawName) {
-        let pCall = /^call\s+(.+)$/i.exec(lowerText);
-        if (pCall) {
-            rawName = pCall[1];
-            content = "📞 Call me";
-        }
-    }
-
-    // --- 2. Contact-First Parsing (Smart Extraction) ---
-    // Solves: "Say hi Jason" (where regex fails)
-    if (!rawName) {
-        const contacts = chatsRef.current.map(c => {
-             const p = c.participants.find(p => p._id !== userRef.current?._id);
-             return p ? p.name.toLowerCase() : '';
-        }).filter(n => n);
-
-        // Sort by length desc to match "Shashank Kumar" before "Shashank"
-        contacts.sort((a, b) => b.length - a.length);
-
-        for (const contactName of contacts) {
-             // Strict Word Boundary Match: Ensures 'Ali' doesn't match 'Alice'
-             // Escape special regex chars in name just in case
-             const safeName = contactName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-             const regex = new RegExp(`\\b${safeName}\\b`, 'i');
-             
-             if (regex.test(lowerText)) {
-                 rawName = contactName;
-                 console.log(`Smart Match: Found contact '${rawName}' in text`);
-                 
-                 // Extract Message: Remove name and clean up
-                 let temp = lowerText.replace(regex, "").trim(); // Use regex to replace correct instance
-                 
-                 // Remove common prefixes/fillers
-                 const fillers = [
-                     "say", "tell", "ask", "ping", "message", "text", "let", 
-                     "to", "that", "saying", "know", "send", "about", "msg", "shoot", "a"
-                 ];
-                 
-                 let words = temp.split(/\s+/);
-                 while (words.length > 0 && fillers.includes(words[0])) {
-                     words.shift();
-                 }
-                 // Remove trailing fillers if any (rare but possible)
-                 while (words.length > 0 && fillers.includes(words[words.length-1])) {
-                     words.pop();
-                 }
-                 
-                 content = words.join(' ');
-                 break; // Stop after finding the longest contact match
-             }
-        }
-    }
-
-    // --- 3. Regex Fallback (For new/unknown contacts) ---
-    if (!rawName) {
-        // "Say [Message] to [Name]"
-        let p1 = /^(?:say|send)\s+(.+)\s+to\s+(.+)$/i.exec(lowerText);
-        if (p1) { content = p1[1]; rawName = p1[2]; }
-        
-        // "Tell/Ping [Name] [Message]"
-        if (!rawName) {
-            let p2 = /^(?:tell|ask|ping|message|text|let)\s+(.+?)(?:\s+know)?\s+(?:that|saying|:)?\s*(.+)$/i.exec(lowerText);
-            if (p2) { rawName = p2[1]; content = p2[2]; }
-        }
-
-        // Tanglish: "[Name] ku [Message] sollu"
-        if (!rawName) {
-            let p3 = /^(.+?)\s+(?:ku|kitta)\s+(.+)$/i.exec(lowerText);
-            if (p3) { 
-                rawName = p3[1]; 
-                content = p3[2].replace(/\s+(?:sollu|anuppu|podu|kalu|nu|nnu)$/i, ''); 
-            }
-        }
-    }
-
-    if (rawName) {
-        // CLEANUP: Remove punctuation like '?' or '.' from name
-        const cleanName = rawName.trim().replace(/[?.!]+$/, "");
-        console.log(`Cleaned Name: '${cleanName}'`);
-
-        // 1. Try Local Match
-        let targetChat = findBestMatch(cleanName);
-        let partnerName = "";
-
-        // 2. If No Local Match, Try Global Search
-        if (!targetChat) {
-            setFeedback(`Searching directory for "${cleanName}"...`);
-            try {
-                const { data: users } = await api.get(`/users/search?q=${cleanName}`);
-                if (users && users.length > 0) {
-                    const bestUser = users[0]; // Take first result
-                    console.log("Global search found:", bestUser.name);
-                    
-                    // Check if we already have a chat with this user that was somehow missed locally
-                    targetChat = chatsRef.current.find(c => 
-                        !c.isGroup && c.participants.some(p => p._id === bestUser._id)
-                    );
-
-                    if (!targetChat) {
-                        console.log("Creating new chat with:", bestUser.name);
-                        // Create new chat
-                        const { data: newChat } = await api.post('/chats', { recipientId: bestUser._id });
-                        if (newChat) {
-                            targetChat = newChat;
-                            if (addNewChatRef.current) addNewChatRef.current(newChat);
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error("Global search failed", err);
-            }
-        }
-
-        if (targetChat) {
-             const currentUser = userRef.current;
-             if (targetChat.isGroup) {
-                 partnerName = targetChat.groupName;
-             } else {
-                 partnerName = targetChat.participants.find(p => p._id !== currentUser._id)?.name;
-             }
-            
-            // --- ACTION: OPEN CHAT ---
-            if (commandType === 'open') {
-                setFeedback(`Opening chat with ${partnerName}...`);
-                if (selectChatRef.current) selectChatRef.current(targetChat);
-                setTimeout(() => setIsListening(false), 1000);
-                return;
-            }
-
-            // --- ACTION: SEND MESSAGE ---
-            if (content) {
-                // --- APPLY POV TRANSFORMATION ---
-                const finalMessage = transformContent(content, isQuestion);
-
-                setFeedback(`Confirm: Send to ${partnerName}?`);
-                setPendingCommand({ targetChat, content: finalMessage }); 
-                
-                // Auto-send 
-                const autoSendSetting = localStorage.getItem('voice_auto_send');
-                const shouldAutoSend = autoSendSetting === null || autoSendSetting === 'true';
-                
-                if (shouldAutoSend) {
-                    setTimeout(() => {
-                        console.log("Auto-sending to:", targetChat._id);
-                        handleSend(targetChat._id, finalMessage);
-                    }, 10);
-                }
-            } else {
-                 setFeedback(`What should I say to ${partnerName}?`);
-                 // Maybe keep listening here? For now just stop.
-                 setTimeout(() => setIsListening(false), 2000);
-            }
-
-        } else {
-            setFeedback(`Found no contact for "${cleanName}"`);
-            setTimeout(() => setIsListening(false), 3000);
-        }
-    } else {
-        setFeedback("Didn't catch that. Try 'Ping [Name] [Message]'");
-        setTimeout(() => setIsListening(false), 3000);
-    }
-  };
-
-  const handleSend = (chatId, content) => {
-      // Use REF to get the latest function instance
-      console.log("handleSend Triggered for:", chatId);
-      if (sendMessageRef.current && userRef.current) {
-          console.log("VoiceAssistant: Sending message to", chatId);
-          setFeedback("Sending..."); 
-          
-          // INSTANT SEND (Optimistic) - Restore "It worked before" feel
-          // We don't await here so the UI is snappy
-          sendMessageRef.current(chatId, content).catch(err => {
-             console.error("VoiceAssistant: Background Send Failed", err);
-             // We could update feedback here if we wanted, but 'Sent!' is already shown
-          });
-          
-          // FAST FEEDBACK
-          setFeedback("Sent!");
-          setPendingCommand(null);
-          setTimeout(() => setIsListening(false), 800); 
-
+  const handleToggle = () => {
+      if (isListening) {
+          if (recognitionRef.current) recognitionRef.current.stop();
+          setIsListening(false);
       } else {
-          console.error("VoiceAssistant: sendMessage function or User missing", { 
-              fn: !!sendMessageRef.current, 
-              user: !!userRef.current 
-          });
-          setFeedback("Error: Not Connected");
-      }
-  };
-
-  const handleConfirm = () => {
-      if (pendingCommand) {
-          handleSend(pendingCommand.targetChat._id, pendingCommand.content);
-      }
-  };
-
-  const handleCancel = () => {
-      setIsListening(false);
-      setPendingCommand(null);
-  };
-
-  const handleRetry = () => {
-      setPendingCommand(null);
-      setTranscript('');
-      setFeedback('Listening...');
-      setIsListening(true);
-      if (recognitionRef.current) {
           try {
-              recognitionRef.current.start();
+            setTranscript('');
+            if (recognitionRef.current) recognitionRef.current.start();
           } catch(e) { console.error(e); }
       }
   };
 
-  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-      return null; // Or render nothing if not supported
-  }
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) return null;
 
   return (
     <>
       <AssistantContainer>
-        <TriggerButton 
-            onClick={toggleListening} 
-            title="AI Voice Assistant" 
-            $isListening={isListening}
-            onContextMenu={(e) => e.preventDefault()}
-        >
+        <TriggerButton onClick={handleToggle} $isListening={isListening}>
             {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
             <RiSparklingFill className="sparkle" />
         </TriggerButton>
@@ -774,48 +387,18 @@ const VoiceAssistant = () => {
       {isListening && ReactDOM.createPortal(
           <Overlay>
               <StatusText>{feedback}</StatusText>
-              
-              {!pendingCommand && (
-                  <WaveContainer>
-                    <WaveBar delay={0} />
-                    <WaveBar delay={0.2} />
-                    <WaveBar delay={0.4} />
-                    <WaveBar delay={0.1} />
-                    <WaveBar delay={0.3} />
-                  </WaveContainer>
-              )}
-
-              {transcript && !pendingCommand && (
-                  <TranscriptText>"{transcript}"</TranscriptText>
-              )}
-
-              {pendingCommand && (
-                  <>
-                    <TranscriptText>"{pendingCommand.content}"</TranscriptText>
-                    <ActionButtons>
-                        <ActionButton onClick={handleCancel} title="Cancel">
-                            <FaTimes />
-                        </ActionButton>
-                        <ActionButton onClick={handleRetry} title="Retry">
-                            <FaRedo />
-                        </ActionButton>
-                        <ActionButton primary onClick={handleConfirm} title="Send">
-                            <FaCheck />
-                        </ActionButton>
-                    </ActionButtons>
-                  </>
-              )}
-              
-              {!pendingCommand && (
-                <>
-                    <ActionButtons>
-                        <ActionButton onClick={toggleListening}>
-                            Stop Listening
-                        </ActionButton>
-                    </ActionButtons>
-                    <HintText>{hints[hintIndex]}</HintText>
-                </>
-              )}
+              <WaveContainer>
+                <WaveBar delay={0} />
+                <WaveBar delay={0.2} />
+                <WaveBar delay={0.4} />
+                <WaveBar delay={0.1} />
+                <WaveBar delay={0.3} />
+              </WaveContainer>
+              <TranscriptText>"{transcript}"</TranscriptText>
+              <ActionButtons>
+                  <ActionButton onClick={handleToggle}>Cancel</ActionButton>
+              </ActionButtons>
+              <HintText>{hints[hintIndex]}</HintText>
           </Overlay>,
           document.body
       )}
