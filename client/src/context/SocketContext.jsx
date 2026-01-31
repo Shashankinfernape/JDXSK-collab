@@ -6,9 +6,14 @@ const SocketContext = createContext();
 
 const useSocketHook = () => useContext(SocketContext);
 
-// --- Revert to using Environment Variable ---
-// Ensure REACT_APP_API_URL is correctly set in your Vercel/Render client environment
-const SERVER_API_URL = process.env.REACT_APP_API_URL || "https://jdxsk-collab.onrender.com"; // Fallback for production
+// --- Dynamic URL Configuration (Matches api.js logic) ---
+const isProduction = window.location.hostname.includes('onrender.com');
+const SERVER_API_URL = process.env.REACT_APP_API_URL || (
+    isProduction 
+    ? "https://jdxsk-collab.onrender.com" 
+    : `http://${window.location.hostname}:5000`
+);
+// --- END Dynamic URL Configuration ---
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
