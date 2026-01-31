@@ -204,6 +204,7 @@ const VoiceAssistant = () => {
   const processCommand = useCallback(async (rawText) => {
       if (!rawText) { setIsListening(false); return; }
       
+      setFeedback("Processing..."); // Immediate Feedback
       const text = normalize(rawText);
       console.log("Voice Command (Clean):", text);
 
@@ -314,11 +315,13 @@ const VoiceAssistant = () => {
       }
   }, []); // Dependencies are Refs, so array is empty
 
+  const transcriptRef = useRef(''); // CRITICAL: Access text without state lag
+
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false; // Changed to false for "One Shot" reliability
+      recognitionRef.current.continuous = false; 
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'en-US';
 
@@ -326,8 +329,9 @@ const VoiceAssistant = () => {
         setIsListening(true);
         setFeedback('Listening...');
         setTranscript('');
+        transcriptRef.current = ''; // Reset ref
         
-        // Safety: Hard stop after 5 seconds of silence if nothing happens
+        // Safety: Hard stop after 5 seconds of silence
         if (silenceTimer.current) clearTimeout(silenceTimer.current);
         silenceTimer.current = setTimeout(() => {
             console.log("Safety timeout: Stopping...");
@@ -335,9 +339,8 @@ const VoiceAssistant = () => {
         }, 5000);
       };
 
-      // Native Silence Detection (Faster than manual timer)
       recognitionRef.current.onspeechend = () => {
-          console.log("Speech ended (Native detection)");
+          console.log("Speech ended (Native)");
           if (recognitionRef.current) recognitionRef.current.stop();
       };
 
@@ -349,15 +352,24 @@ const VoiceAssistant = () => {
             currentText += event.results[i][0].transcript;
         }
         setTranscript(currentText);
+        transcriptRef.current = currentText; // Update ref immediately
 
-        // Manual backup timer (reset on every word)
+        // Manual backup timer
         silenceTimer.current = setTimeout(() => {
             if (recognitionRef.current) recognitionRef.current.stop();
         }, 1000); 
       };
 
       recognitionRef.current.onend = () => {
-          setIsListening(false); // CRITICAL FIX: Sync state to trigger processing
+          setIsListening(false);
+          // DIRECT HANDOFF: Use ref to get text immediately
+          const finalParam = transcriptRef.current;
+          if (finalParam && finalParam.length > 1) {
+              console.log("onend triggered. Processing:", finalParam);
+              processCommand(finalParam);
+          } else {
+              console.log("onend triggered but empty transcript.");
+          }
       };
       
       recognitionRef.current.onerror = (e) => {
@@ -365,14 +377,10 @@ const VoiceAssistant = () => {
           setIsListening(false);
       };
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
 
-  // Trigger processing when listening stops IF we have text
-  useEffect(() => {
-      if (!isListening && transcript.length > 2) {
-          processCommand(transcript);
-      }
-  }, [isListening, transcript, processCommand]);
+  // Removed the flaky useEffect([isListening, transcript]) 
 
   const handleToggle = () => {
       if (isListening) {
@@ -381,6 +389,7 @@ const VoiceAssistant = () => {
       } else {
           try {
             setTranscript('');
+            transcriptRef.current = '';
             if (recognitionRef.current) recognitionRef.current.start();
           } catch(e) { console.error(e); }
       }
