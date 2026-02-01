@@ -6,10 +6,19 @@ import AudioVisualizer from '../common/AudioVisualizer';
 const PlayerContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 16px; 
-  width: 290px; 
-  min-width: 250px;
-  padding: 10px 8px 8px 8px; /* Balanced padding */
+  gap: 12px; 
+  width: 320px; 
+  min-width: 280px;
+  padding: 10px 8px 8px 8px;
+`;
+
+const ProfilePic = styled.img`
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.1); /* Subtle border for separation */
 `;
 
 const ControlButton = styled.button`
@@ -17,12 +26,12 @@ const ControlButton = styled.button`
   border: none;
   color: ${props => props.$isMe ? 'rgba(255,255,255,1)' : props.theme.colors.textBubbleOther};
   cursor: pointer;
-  font-size: 2.2rem; /* Larger, clearer icon */
+  font-size: 1.6rem; /* Balanced size */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   
   &:hover { opacity: 0.9; transform: scale(1.05); }
@@ -34,21 +43,21 @@ const VisualizerWrapper = styled.div`
   height: 24px; 
   display: flex;
   align-items: center;
-  margin: 0 0 2px 0; /* Tiny margin bottom */
+  margin: 0 0 2px 0; 
 `;
 
 const InfoCol = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 42px; /* Fixed height to match button/balance */
+  height: 42px; 
   flex: 1;
 `;
 
 const BottomRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-end; /* Align bottom */
+  align-items: flex-end; 
   width: 100%;
   padding-right: 0px;
 `;
@@ -67,10 +76,10 @@ const FooterContainer = styled.div`
     align-items: center;
     line-height: 1;
     opacity: 0.9;
-    transform: translateY(2px); /* Slight adjustment to align with text messages */
+    transform: translateY(2px); 
 `;
 
-const AudioPlayer = ({ src, isMe, footer, duration: initialDuration }) => {
+const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDuration }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(initialDuration || 0);
@@ -174,6 +183,10 @@ const AudioPlayer = ({ src, isMe, footer, duration: initialDuration }) => {
         }}
       />
       
+      {senderProfilePic && (
+          <ProfilePic src={senderProfilePic} alt="Sender" />
+      )}
+
       <ControlButton onClick={togglePlay} $isMe={isMe}>
         {isPlaying ? <FaPause /> : <FaPlay style={{ marginLeft: '4px' }} />}
       </ControlButton>
