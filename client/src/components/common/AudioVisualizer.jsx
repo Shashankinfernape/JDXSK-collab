@@ -85,8 +85,8 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
     ctx.clearRect(0, 0, width, height);
 
     // COMPACT SETTINGS
-    const barWidth = 2; // Thinner bars for sleek look
-    const gap = 2;
+    const barWidth = 3; // Thicker bars for solid look
+    const gap = 2; // Tight gap
     const totalBarWidth = barWidth + gap;
     const totalBars = Math.floor(width / totalBarWidth);
     
@@ -94,12 +94,12 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
     // If isMe (sent message), use White for played, Faint White for pending
     // If !isMe (received), use Primary for played, Faint Gray/White for pending
     const playedColor = isMe 
-        ? 'rgba(255, 255, 255, 0.95)' 
+        ? 'rgba(255, 255, 255, 1.0)' 
         : (theme.colors.primary || '#007AFF');
         
     const pendingColor = isMe
-        ? 'rgba(255, 255, 255, 0.4)'
-        : (theme.isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)');
+        ? 'rgba(255, 255, 255, 0.5)'
+        : (theme.isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)');
 
     const progressPercent = duration > 0 ? currentTime / duration : 0;
     
@@ -109,9 +109,8 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
         const patternIndex = i % bars.length;
         const rawHeight = bars[patternIndex];
         
-        // CRITICAL FIX: Scale height to 50% of container to prevent "huge" look
-        // Standardize amplitude so it looks like a voice note, not a wall
-        const barHeight = Math.max(3, rawHeight * height * 0.5); 
+        // CRITICAL FIX: Scale height to 65% of container for balance
+        const barHeight = Math.max(4, rawHeight * height * 0.65); 
         
         const x = i * totalBarWidth;
         const y = (height - barHeight) / 2; // Perfect vertical center

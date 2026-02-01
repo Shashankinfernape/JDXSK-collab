@@ -6,22 +6,23 @@ import AudioVisualizer from '../common/AudioVisualizer';
 const PlayerContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 240px; 
-  padding: 8px 4px 6px 4px;
+  gap: 16px; 
+  width: 290px; 
+  min-width: 250px;
+  padding: 10px 8px 8px 8px; /* Balanced padding */
 `;
 
 const ControlButton = styled.button`
   background: none;
   border: none;
-  color: ${props => props.$isMe ? 'rgba(255,255,255,0.95)' : props.theme.colors.textBubbleOther};
+  color: ${props => props.$isMe ? 'rgba(255,255,255,1)' : props.theme.colors.textBubbleOther};
   cursor: pointer;
-  font-size: 1.8rem;
+  font-size: 2.2rem; /* Larger, clearer icon */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   
   &:hover { opacity: 0.9; transform: scale(1.05); }
@@ -30,7 +31,7 @@ const ControlButton = styled.button`
 
 const VisualizerWrapper = styled.div`
   flex: 1;
-  height: 30px; 
+  height: 32px; 
   display: flex;
   align-items: center;
   margin: 0;
@@ -40,22 +41,21 @@ const InfoCol = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
   flex: 1;
 `;
 
 const BottomRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end; /* Align bottom */
   width: 100%;
-  margin-top: 2px; 
-  padding-right: 2px;
+  padding-right: 0px;
 `;
 
 const Duration = styled.span`
-  font-size: 0.7rem;
-  color: ${props => props.$isMe ? 'rgba(255,255,255,0.8)' : props.theme.colors.textSecondary};
+  font-size: 0.75rem;
+  color: ${props => props.$isMe ? 'rgba(255,255,255,0.9)' : props.theme.colors.textSecondary};
   line-height: 1;
   font-weight: 400;
   min-width: 35px;
@@ -66,8 +66,8 @@ const FooterContainer = styled.div`
     display: flex;
     align-items: center;
     line-height: 1;
-    opacity: 0.8;
-    transform: scale(0.9);
+    opacity: 0.9;
+    transform: translateY(2px); /* Slight adjustment to align with text messages */
 `;
 
 const AudioPlayer = ({ src, isMe, footer, duration: initialDuration }) => {
