@@ -6,19 +6,19 @@ import AudioVisualizer from '../common/AudioVisualizer';
 const PlayerContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px; 
-  width: 320px; 
-  min-width: 280px;
-  padding: 10px 8px 8px 8px;
+  gap: 8px; 
+  width: 310px; 
+  min-width: 270px;
+  padding: 6px 4px 4px 4px;
 `;
 
 const ProfilePic = styled.img`
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border: 2px solid rgba(255,255,255,0.1); /* Subtle border for separation */
+  border: 1.5px solid rgba(255,255,255,0.15);
 `;
 
 const ControlButton = styled.button`
@@ -26,12 +26,12 @@ const ControlButton = styled.button`
   border: none;
   color: ${props => props.$isMe ? 'rgba(255,255,255,1)' : props.theme.colors.textBubbleOther};
   cursor: pointer;
-  font-size: 1.6rem; /* Balanced size */
+  font-size: 1.5rem; 
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   
   &:hover { opacity: 0.9; transform: scale(1.05); }
@@ -40,26 +40,28 @@ const ControlButton = styled.button`
 
 const VisualizerWrapper = styled.div`
   width: 100%;
-  height: 24px; 
+  height: 22px; 
   display: flex;
   align-items: center;
-  margin: 0 0 2px 0; 
+  margin: 0;
 `;
 
 const InfoCol = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  height: 42px; 
+  justify-content: center;
+  gap: 2px;
+  height: 38px; 
   flex: 1;
 `;
 
 const BottomRow = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-end; 
+  align-items: center;
   width: 100%;
-  padding-right: 0px;
+  padding-right: 2px;
+  margin-top: -2px;
 `;
 
 const Duration = styled.span`
