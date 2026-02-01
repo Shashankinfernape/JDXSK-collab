@@ -6,30 +6,22 @@ import AudioVisualizer from '../common/AudioVisualizer';
 const PlayerContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 260px; 
-  padding: 4px 0;
-`;
-
-const ProfilePic = styled.img`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
+  gap: 12px;
+  width: 240px; 
+  padding: 8px 4px 6px 4px;
 `;
 
 const ControlButton = styled.button`
   background: none;
   border: none;
-  color: ${props => props.$isMe ? 'rgba(255,255,255,0.95)' : props.theme.colors.primary};
+  color: ${props => props.$isMe ? 'rgba(255,255,255,0.95)' : props.theme.colors.textBubbleOther};
   cursor: pointer;
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   
   &:hover { opacity: 0.9; transform: scale(1.05); }
@@ -38,10 +30,9 @@ const ControlButton = styled.button`
 
 const VisualizerWrapper = styled.div`
   flex: 1;
-  height: 40px; 
+  height: 30px; 
   display: flex;
   align-items: center;
-  /* Ensure no margin disrupts vertical center */
   margin: 0;
 `;
 
@@ -49,15 +40,8 @@ const InfoCol = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0px;
+  gap: 2px;
   flex: 1;
-  /* Ensure InfoCol height doesn't break alignment, though it might grow with Duration.
-     For perfect center alignment of Waveform with Avatar, Duration should technically effectively be an overlay or separate.
-     But standard flex behavior will center InfoCol (Visualizer + Duration) against Avatar.
-     If Visualizer is 40px and Avatar is 40px, adding Duration makes InfoCol > 40px.
-     Avatar will center against the >40px block.
-     This is usually desired.
-  */
 `;
 
 const BottomRow = styled.div`
@@ -65,16 +49,17 @@ const BottomRow = styled.div`
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-top: -4px; /* Pull duration up slightly into the waveform gap */
-  padding-right: 4px;
+  margin-top: 2px; 
+  padding-right: 2px;
 `;
 
 const Duration = styled.span`
   font-size: 0.7rem;
   color: ${props => props.$isMe ? 'rgba(255,255,255,0.8)' : props.theme.colors.textSecondary};
   line-height: 1;
-  font-weight: 500;
+  font-weight: 400;
   min-width: 35px;
+  margin-left: 2px;
 `;
 
 const FooterContainer = styled.div`
@@ -85,7 +70,7 @@ const FooterContainer = styled.div`
     transform: scale(0.9);
 `;
 
-const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDuration }) => {
+const AudioPlayer = ({ src, isMe, footer, duration: initialDuration }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(initialDuration || 0);
@@ -189,10 +174,6 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
         }}
       />
       
-      {senderProfilePic && (
-          <ProfilePic src={senderProfilePic} alt="Sender" />
-      )}
-
       <ControlButton onClick={togglePlay} $isMe={isMe}>
         {isPlaying ? <FaPause /> : <FaPlay style={{ marginLeft: '4px' }} />}
       </ControlButton>
@@ -204,6 +185,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
                 duration={duration || 1} 
                 isPlaying={isPlaying}
                 onSeek={handleSeek}
+                isMe={isMe}
              />
           </VisualizerWrapper>
           <BottomRow>

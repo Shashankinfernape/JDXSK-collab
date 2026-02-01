@@ -16,7 +16,7 @@ const Canvas = styled.canvas`
   display: block;
 `;
 
-const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
+const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const { theme } = useTheme();
@@ -90,9 +90,16 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
     const totalBarWidth = barWidth + gap;
     const totalBars = Math.floor(width / totalBarWidth);
     
-    // Colors (Original)
-    const playedColor = theme.colors.primary || '#007AFF';
-    const pendingColor = theme.isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)';
+    // Colors
+    // If isMe (sent message), use White for played, Faint White for pending
+    // If !isMe (received), use Primary for played, Faint Gray/White for pending
+    const playedColor = isMe 
+        ? 'rgba(255, 255, 255, 0.95)' 
+        : (theme.colors.primary || '#007AFF');
+        
+    const pendingColor = isMe
+        ? 'rgba(255, 255, 255, 0.4)'
+        : (theme.isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)');
 
     const progressPercent = duration > 0 ? currentTime / duration : 0;
     
@@ -102,9 +109,9 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
         const patternIndex = i % bars.length;
         const rawHeight = bars[patternIndex];
         
-        // CRITICAL FIX: Scale height to 60% of container to prevent "huge" look
+        // CRITICAL FIX: Scale height to 50% of container to prevent "huge" look
         // Standardize amplitude so it looks like a voice note, not a wall
-        const barHeight = Math.max(4, rawHeight * height * 0.6); 
+        const barHeight = Math.max(3, rawHeight * height * 0.5); 
         
         const x = i * totalBarWidth;
         const y = (height - barHeight) / 2; // Perfect vertical center
@@ -122,7 +129,7 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek }) => {
     
     // No Knob - Just clean bars
 
-  }, [currentTime, duration, isPlaying, theme, bars, isDragging]);
+  }, [currentTime, duration, isPlaying, theme, bars, isDragging, isMe]);
 
   return (
       <VisualizerContainer 
