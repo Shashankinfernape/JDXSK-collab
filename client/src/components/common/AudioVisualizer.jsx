@@ -126,7 +126,26 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
         ctx.stroke();
     }
     
-    // No Knob - Just clean bars
+    // Draw Cursor Line & Handle
+    if (duration > 0) {
+        const cursorX = progressPercent * width;
+        
+        // Line
+        ctx.beginPath();
+        ctx.moveTo(cursorX, 0);
+        ctx.lineTo(cursorX, height);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = isMe ? '#FFFFFF' : (theme.colors.primary || '#007AFF');
+        ctx.globalAlpha = 0.8; 
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+
+        // Handle (Knob)
+        ctx.beginPath();
+        ctx.arc(cursorX, height / 2, 4, 0, Math.PI * 2);
+        ctx.fillStyle = isMe ? '#FFFFFF' : (theme.colors.primary || '#007AFF');
+        ctx.fill();
+    }
 
   }, [currentTime, duration, isPlaying, theme, bars, isDragging, isMe]);
 

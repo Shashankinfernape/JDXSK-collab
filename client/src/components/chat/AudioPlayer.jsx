@@ -178,7 +178,6 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
         ref={audioRef} 
         src={src} 
         preload="metadata" 
-        crossOrigin="anonymous" 
         onError={(e) => {
             console.error("Audio Playback Error:", src, e.currentTarget.error);
             setIsPlaying(false);
