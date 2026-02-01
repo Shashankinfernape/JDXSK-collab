@@ -30,18 +30,18 @@ const ControlButton = styled.button`
 `;
 
 const VisualizerWrapper = styled.div`
-  flex: 1;
-  height: 32px; 
+  width: 100%;
+  height: 24px; 
   display: flex;
   align-items: center;
-  margin: 0;
+  margin: 0 0 2px 0; /* Tiny margin bottom */
 `;
 
 const InfoCol = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 4px;
+  justify-content: space-between;
+  height: 42px; /* Fixed height to match button/balance */
   flex: 1;
 `;
 

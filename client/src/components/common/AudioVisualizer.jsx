@@ -109,8 +109,8 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
         const patternIndex = i % bars.length;
         const rawHeight = bars[patternIndex];
         
-        // CRITICAL FIX: Scale height to 65% of container for balance
-        const barHeight = Math.max(4, rawHeight * height * 0.65); 
+        // CRITICAL FIX: Scale height to 85% of container for balance in compact view
+        const barHeight = Math.max(3, rawHeight * height * 0.85); 
         
         const x = i * totalBarWidth;
         const y = (height - barHeight) / 2; // Perfect vertical center
