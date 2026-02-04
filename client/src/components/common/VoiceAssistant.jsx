@@ -414,7 +414,7 @@ const transformContent = (rawText, isQuestion = false) => {
               messageContent = transformContent(messageContent, isQuestion);
 
               // Check Auto-send preference
-              const autoSend = localStorage.getItem('autoSend') !== 'false'; // Default to true
+              const autoSend = localStorage.getItem('voice_auto_send') === 'true'; 
 
               if (autoSend) {
                   setFeedback(`Sent to ${partnerName}: "${messageContent}"`);
