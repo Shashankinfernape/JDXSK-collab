@@ -119,16 +119,6 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
     const validDuration = (duration > 0 && !isNaN(duration) && duration !== Infinity) ? duration : 0;
     const progressPercent = validDuration > 0 ? currentTime / validDuration : 0;
     
-    // 1. Draw Background Track Line (Subtle)
-    ctx.beginPath();
-    ctx.moveTo(hPadding, height / 2);
-    ctx.lineTo(width - hPadding, height / 2);
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = pendingColor;
-    ctx.globalAlpha = 0.5;
-    ctx.stroke();
-    ctx.globalAlpha = 1.0;
-
     // 2. Draw Waveform Bars
     for (let i = 0; i < totalBars; i++) {
         const patternIndex = i % bars.length;

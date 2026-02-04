@@ -26,6 +26,11 @@ const fadeIn = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
+const typing = keyframes`
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-5px); opacity: 1; }
+`;
+
 // --- Styled Components ---
 const AssistantContainer = styled.div`
   display: flex;
@@ -38,8 +43,8 @@ const TriggerButton = styled.button`
     ? `linear-gradient(135deg, ${props.theme.colors.primary}, ${props.theme.colors.primary}dd)`
     : 'transparent'};
   border: none;
-  width: 40px;
-  height: 40px;
+  width: 32px; /* Standard sidebar icon size (IconButton 1.5rem + minimal padding) */
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -48,7 +53,7 @@ const TriggerButton = styled.button`
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
-  padding: 4px;
+  padding: 0; 
 
   &:hover {
     background: ${props => props.$isListening 
@@ -58,7 +63,7 @@ const TriggerButton = styled.button`
   }
 
   svg:first-child {
-    font-size: 1.5rem;
+    font-size: 1.5rem; /* Matches Spotify/Apple icon size */
     filter: ${props => props.$isListening ? 'drop-shadow(0 0 5px rgba(255,255,255,0.5))' : 'none'};
   }
 
@@ -69,8 +74,8 @@ const TriggerButton = styled.button`
 
   .sparkle {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: -2px;
+    right: -2px;
     font-size: 0.8rem;
     color: ${props => props.$isListening ? '#FFFFFF' : props.theme.colors.primary};
     filter: drop-shadow(0 0 2px rgba(0,0,0,0.1));
@@ -132,6 +137,23 @@ const WaveBar = styled.div`
   animation-delay: ${props => props.delay}s;
 `;
 
+const TypingIndicator = styled.div`
+  display: flex;
+  gap: 6px;
+  height: 40px;
+  align-items: center;
+  margin-bottom: 2rem;
+`;
+
+const Dot = styled.div`
+  width: 10px;
+  height: 10px;
+  background: ${props => props.theme.colors.primary};
+  border-radius: 50%;
+  animation: ${typing} 1s infinite ease-in-out;
+  animation-delay: ${props => props.delay}s;
+`;
+
 const ActionButtons = styled.div`
   display: flex;
   gap: 1rem;
@@ -171,6 +193,7 @@ const HintText = styled.p`
 
 const VoiceAssistant = () => {
   const [isListening, setIsListening] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [feedback, setFeedback] = useState('Listening...');
   const [hintIndex, setHintIndex] = useState(0);
@@ -211,11 +234,9 @@ const VoiceAssistant = () => {
   }, [chats, sendMessageToChat, addNewChat, selectChat, user]);
   
   const recognitionRef = useRef(null);
-  const silenceTimer = useRef(null);
 
   // --- FUZZY & PHONETIC HELPERS ---
 
-  // 1. Levenshtein Distance (Spelling Similarity)
   const getLevenshteinDistance = (a, b) => {
       const matrix = [];
       for (let i = 0; i <= b.length; i++) matrix[i] = [i];
@@ -226,8 +247,8 @@ const VoiceAssistant = () => {
                   matrix[i][j] = matrix[i - 1][j - 1];
               } else {
                   matrix[i][j] = Math.min(
-                      matrix[i - 1][j - 1] + 1, // substitution
-                      Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1) // insertion/deletion
+                      matrix[i - 1][j - 1] + 1,
+                      Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
                   );
               }
           }
@@ -235,22 +256,14 @@ const VoiceAssistant = () => {
       return 1 - (matrix[b.length][a.length] / Math.max(a.length, b.length));
   };
 
-  // 2. Custom Phonetic Key (Optimized for Indian/English names)
   const getPhonetic = (str) => {
       let s = str.toLowerCase().trim();
       if (!s) return '';
       s = s.replace(/[^a-z]/g, '')
-           .replace(/ee/g, 'i')
-           .replace(/oo/g, 'u')
-           .replace(/th/g, 't')
-           .replace(/ph/g, 'f')
-           .replace(/sh/g, 's')
-           .replace(/ch/g, 'k')
-           .replace(/ck/g, 'k')
-           .replace(/[z]/g, 's')
-           .replace(/[v]/g, 'w') // Indian v/w interchange
-           .replace(/(.)\1+/g, '$1'); // Remove doubles
-      // Remove vowels except start
+           .replace(/ee/g, 'i').replace(/oo/g, 'u').replace(/th/g, 't')
+           .replace(/ph/g, 'f').replace(/sh/g, 's').replace(/ch/g, 'k')
+           .replace(/ck/g, 'k').replace(/[z]/g, 's').replace(/[v]/g, 'w')
+           .replace(/(.)\1+/g, '$1');
       const first = s[0];
       const rest = s.slice(1).replace(/[aeiou]/g, '');
       return first + rest;
@@ -258,110 +271,61 @@ const VoiceAssistant = () => {
 
   const normalize = (text) => text.toLowerCase().replace(/[.,?!]/g, '').trim();
 
-  // --- ADVANCED POV TRANSFORMER (Natural Language Engine) ---
   const transformContent = (rawText, isQuestion = false) => {
       let text = rawText.trim();
       if (!text) return "";
-
-      // 1. COMPLEX MAPPINGS (Specific Grammar Rules)
       const grammarRules = [
-          // State of Being ("Ask if he is okay" -> "Are you okay?")
           { regex: /\bif (?:he|she|it) is\b/gi, replace: "are you" },
           { regex: /\bif (?:he|she|it) was\b/gi, replace: "were you" },
           { regex: /\bif (?:he|she|it) will be\b/gi, replace: "will you be" },
-          
-          // Availability/Action ("Ask if he can go" -> "Can you go?")
           { regex: /\bif (?:he|she|it) can\b/gi, replace: "can you" },
           { regex: /\bif (?:he|she|it) could\b/gi, replace: "could you" },
           { regex: /\bif (?:he|she|it) would\b/gi, replace: "would you" },
           { regex: /\bif (?:he|she|it) should\b/gi, replace: "should you" },
-          
-          // Do/Does ("Ask if he wants" -> "Do you want")
-          { regex: /\bif (?:he|she|it) (likes|wants|needs|has|knows|thinks)\b/gi, replace: (_, v) => `do you ${v.slice(0, -1)}` }, // Remove 's'
-          { regex: /\bif (?:he|she|it) (went|saw|did|took|made)\b/gi, replace: (_, v) => `did you ${v}` }, // Past tense logic is hard, generic fallback:
-          
-          // Wh- Questions ("Ask what he is doing" -> "What are you doing?")
+          { regex: /\bif (?:he|she|it) (likes|wants|needs|has|knows|thinks)\b/gi, replace: (_, v) => `do you ${v.slice(0, -1)}` },
+          { regex: /\bif (?:he|she|it) (went|saw|did|took|made)\b/gi, replace: (_, v) => `did you ${v}` },
           { regex: /\bwhat (?:he|she|it) is\b/gi, replace: "what are you" },
           { regex: /\bwhere (?:he|she|it) is\b/gi, replace: "where are you" },
           { regex: /\bwho (?:he|she|it) is\b/gi, replace: "who are you" },
           { regex: /\bhow (?:he|she|it) is\b/gi, replace: "how are you" },
           { regex: /\bwhen (?:he|she|it) is\b/gi, replace: "when are you" },
           { regex: /\bwhy (?:he|she|it) is\b/gi, replace: "why are you" },
-
-          // Future/Continuous ("Ask where he is going" -> "Where are you going?")
           { regex: /\b(what|where|when|how|why) (?:he|she|it) (will|can|could|should)\b/gi, replace: "$1 $2 you" },
-          
-          // Tell/Imperative ("Tell him to call me" -> "Call me")
-          { regex: /^to\s+/i, replace: "" }, // Remove leading "to"
-          { regex: /\bthat\s+/i, replace: "" }, // Remove "that" connector ("Tell him that...")
+          { regex: /^to\s+/i, replace: "" },
+          { regex: /\bthat\s+/i, replace: "" },
       ];
-
       let transformed = text;
-      // let matchedRule = false; // Removed unused variable
-
       for (const rule of grammarRules) {
-          if (rule.regex.test(transformed)) {
-              transformed = transformed.replace(rule.regex, rule.replace);
-              // matchedRule = true;
-          }
+          if (rule.regex.test(transformed)) transformed = transformed.replace(rule.regex, rule.replace);
       }
-
-      // 2. GENERAL PRONOUN SWAP (Fallback)
-      // Only runs on words not already transformed to avoid double-processing if possible,
-      // but simplistic replacement is usually safe after grammar rules.
       transformed = transformed
-          .replace(/\bhe\b/gi, "you")
-          .replace(/\bshe\b/gi, "you")
-          .replace(/\bhim\b/gi, "you")
-          .replace(/\bher\b/gi, "you") // Can be "her" object or "her" possessive... tricky. Context matters.
-          .replace(/\bhis\b/gi, "your")
-          // "her" -> "your" (Possessive) vs "her" -> "you" (Object).
-          // "Call her" -> "Call you". "It is her car" -> "It is your car".
-          // We'll favor "your" if followed by a noun? Too complex. Defaulting to "you" covers most interaction.
-          .replace(/\b(hers)\b/gi, "yours");
-
-      // 3. AUTO-CORRECT GRAMMAR (Post-Swap Cleanup)
-      // "you is" -> "you are"
+          .replace(/\bhe\b/gi, "you").replace(/\bshe\b/gi, "you")
+          .replace(/\bhim\b/gi, "you").replace(/\bher\b/gi, "you")
+          .replace(/\bhis\b/gi, "your").replace(/\b(hers)\b/gi, "yours");
       transformed = transformed
-          .replace(/\byou is\b/gi, "you are")
-          .replace(/\byou was\b/gi, "you were")
-          .replace(/\byou has\b/gi, "you have")
-          .replace(/\byou likes\b/gi, "you like")
-          .replace(/\byou wants\b/gi, "you want")
-          .replace(/\byou needs\b/gi, "you need");
-
-      // 4. CLEANUP & CAPITALIZATION
+          .replace(/\byou is\b/gi, "you are").replace(/\byou was\b/gi, "you were")
+          .replace(/\byou has\b/gi, "you have").replace(/\byou likes\b/gi, "you like")
+          .replace(/\byou wants\b/gi, "you want").replace(/\byou needs\b/gi, "you need");
       transformed = transformed.trim();
       transformed = transformed.charAt(0).toUpperCase() + transformed.slice(1);
-
-      // 5. QUESTION MARK INFERENCE
-      // If it starts with typical question words or we knew it was an "Ask" command
       const questionStarters = ["do", "are", "is", "can", "could", "would", "should", "will", "did", "have", "has", "what", "where", "when", "who", "why", "how"];
       const startsWithQuestion = questionStarters.some(q => transformed.toLowerCase().startsWith(q));
-      
-      if ((isQuestion || startsWithQuestion) && !transformed.endsWith('?')) {
-          transformed += '?';
-      }
-
+      if ((isQuestion || startsWithQuestion) && !transformed.endsWith('?')) transformed += '?';
       return transformed;
   };
 
-  // 3. Linear Processor with FUZZY MATCHING
   const processCommand = useCallback(async (rawText) => {
-      if (!rawText) { setIsListening(false); return; }
-      
+      if (!rawText) { setIsProcessing(false); setIsListening(false); return; }
+      setIsProcessing(true);
       setFeedback("Processing...");
       const text = normalize(rawText);
-      console.log("Voice Command (Clean):", text);
       const textWords = text.split(' ');
-
       let targetName = null;
       let targetChat = null;
       let messageContent = "";
       let commandType = "message"; 
-      let isQuestion = rawText.toLowerCase().startsWith("ask"); // Infer intent
+      let isQuestion = rawText.toLowerCase().startsWith("ask");
 
-      // A. Check for "Open/Search/Go To"
       if (text.startsWith("open") || text.startsWith("go to") || text.startsWith("search") || text.startsWith("show")) {
           commandType = "open";
           const words = text.split(' ');
@@ -370,107 +334,61 @@ const VoiceAssistant = () => {
           targetName = words.join(' '); 
       } 
       
-      // B. FUZZY SCAN for Known Contacts
       if (!targetName) {
           const allContacts = [];
           chatsRef.current.forEach(c => {
-              if (c.isGroup) {
-                  allContacts.push({ name: c.groupName, chat: c });
-              } else {
+              if (c.isGroup) allContacts.push({ name: c.groupName, chat: c });
+              else {
                   const p = c.participants.find(p => p._id !== userRef.current?._id);
                   if (p) allContacts.push({ name: p.name, chat: c });
               }
           });
-
           let bestMatch = null;
           let highestScore = 0;
           let matchedText = "";
-
           for (const contact of allContacts) {
               const contactTokens = normalize(contact.name).split(/\s+/);
               let matchedTokensCount = 0;
               let totalSimilarity = 0;
               let currentMatchText = [];
-
-              // Check each part of the contact's name against the transcript words
               for (const token of contactTokens) {
-                  if (token.length < 2) continue; // Skip initials like "J" to avoid noise
-
+                  if (token.length < 2) continue;
                   const tokenPhonetic = getPhonetic(token);
                   let bestTokenScore = 0;
                   let bestWordMatch = "";
-
                   for (const word of textWords) {
                       const wordPhonetic = getPhonetic(word);
-                      
-                      // 1. Phonetic Check
                       let pScore = (tokenPhonetic === wordPhonetic) ? 1.0 : 0;
-                      
-                      // 2. Spelling Check
                       const sScore = getLevenshteinDistance(token, word);
-                      
-                      // Combined Score
                       const score = Math.max(pScore, sScore);
-
-                      if (score > bestTokenScore) {
-                          bestTokenScore = score;
-                          bestWordMatch = word;
-                      }
+                      if (score > bestTokenScore) { bestTokenScore = score; bestWordMatch = word; }
                   }
-
-                  // Threshold for a "word match"
-                  if (bestTokenScore > 0.75) { // Strict enough to avoid "Hi" matching "He"
-                      matchedTokensCount++;
-                      totalSimilarity += bestTokenScore;
-                      currentMatchText.push(bestWordMatch);
-                  }
+                  if (bestTokenScore > 0.75) { matchedTokensCount++; totalSimilarity += bestTokenScore; currentMatchText.push(bestWordMatch); }
               }
-
-              // Evaluate the contact match
               if (matchedTokensCount > 0) {
-                  // Boost score if the FIRST name matches (common case)
-                  const isFirstNameMatch = currentMatchText.includes(textWords.find(w => 
-                      getLevenshteinDistance(w, contactTokens[0]) > 0.8
-                  ));
-                  
+                  const isFirstNameMatch = currentMatchText.includes(textWords.find(w => getLevenshteinDistance(w, contactTokens[0]) > 0.8));
                   let finalScore = totalSimilarity; 
-                  if (isFirstNameMatch) finalScore += 0.5; // Boost first name matches
-
-                  if (finalScore > highestScore) {
-                      highestScore = finalScore;
-                      bestMatch = contact;
-                      matchedText = currentMatchText.join(' ');
-                  }
+                  if (isFirstNameMatch) finalScore += 0.5;
+                  if (finalScore > highestScore) { highestScore = finalScore; bestMatch = contact; matchedText = currentMatchText.join(' '); }
               }
           }
-
-          if (bestMatch && highestScore > 0.8) { // Minimum quality threshold
-              console.log(`Fuzzy Match: '${bestMatch.name}' (Score: ${highestScore.toFixed(2)})`);
+          if (bestMatch && highestScore > 0.8) {
               targetName = bestMatch.name;
               targetChat = bestMatch.chat;
-
-              // Extract message: Remove the matched words from the original text
               const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\\]/g, '\\$&');
-              
               let temp = text;
               const foundWords = matchedText.split(' ');
-              for (const word of foundWords) {
-                  temp = temp.replace(new RegExp(`\\b${escapeRegExp(word)}\\b`, 'i'), "");
-              }
+              for (const word of foundWords) temp = temp.replace(new RegExp(`\\b${escapeRegExp(word)}\\b`, 'i'), "");
               temp = temp.trim();
-
               const fillers = ["say", "tell", "ask", "ping", "message", "text", "to", "that", "about", "msg", "send", "is", "are", "hi", "hey"];
               let words = temp.split(/\s+/);
               while(words.length > 0 && fillers.includes(words[0])) words.shift();
               while(words.length > 0 && fillers.includes(words[words.length-1])) words.pop();
-              
               messageContent = words.join(' ');
           }
       }
 
-      // C. Global Search Fallback (if name extracted but no local chat found)
       if (!targetChat && targetName && commandType === "open") {
-           setFeedback(`Searching directory for "${targetName}"...`);
            try {
                const { data: users } = await api.get(`/users/search?q=${targetName}`);
                if (users && users.length > 0) {
@@ -482,36 +400,22 @@ const VoiceAssistant = () => {
            } catch(e) { console.error(e); }
       }
 
-      // D. Execute
       if (targetChat) {
-          const partnerName = targetChat.isGroup 
-              ? targetChat.groupName 
-              : targetChat.participants.find(p => p._id !== userRef.current?._id)?.name;
-
+          const partnerName = targetChat.isGroup ? targetChat.groupName : targetChat.participants.find(p => p._id !== userRef.current?._id)?.name;
           if (commandType === "open") {
               setFeedback(`Opening ${partnerName}`);
               if (selectChatRef.current) selectChatRef.current(targetChat);
-              setTimeout(() => setIsListening(false), 1000);
+              setTimeout(() => { setIsProcessing(false); setIsListening(false); }, 1000);
           } else {
               if (!messageContent) messageContent = "👋"; 
-              
-              // --- APPLY ADVANCED POV TRANSFORMER ---
               messageContent = transformContent(messageContent, isQuestion);
-
               setFeedback(`Sent to ${partnerName}: "${messageContent}"`);
-              
-              // Use REF to get the latest function instance
-              if (sendMessageRef.current) {
-                  // INSTANT SEND (Optimistic)
-                  sendMessageRef.current(targetChat._id, messageContent).catch(err => {
-                     console.error("VoiceAssistant: Background Send Failed", err);
-                  });
-              }
-              setTimeout(() => setIsListening(false), 1500);
+              if (sendMessageRef.current) sendMessageRef.current(targetChat._id, messageContent).catch(err => console.error(err));
+              setTimeout(() => { setIsProcessing(false); setIsListening(false); }, 1500);
           }
       } else {
           setFeedback("Couldn't find that contact.");
-          setTimeout(() => setIsListening(false), 2000);
+          setTimeout(() => { setIsProcessing(false); setIsListening(false); }, 2000);
       }
   }, []);
 
@@ -525,67 +429,49 @@ const VoiceAssistant = () => {
 
       recognitionRef.current.onstart = () => {
         setIsListening(true);
+        setIsProcessing(false);
         setFeedback('Listening...');
         setTranscript('');
         transcriptRef.current = '';
-        
-        // Safety: Hard stop after 5 seconds of silence
-        if (silenceTimer.current) clearTimeout(silenceTimer.current);
-        silenceTimer.current = setTimeout(() => {
-            console.log("Safety timeout: Stopping...");
-            if (recognitionRef.current) recognitionRef.current.stop();
-        }, 5000);
-      };
-
-      recognitionRef.current.onspeechend = () => {
-          console.log("Speech ended (Native)");
-          if (recognitionRef.current) recognitionRef.current.stop();
       };
 
       recognitionRef.current.onresult = (event) => {
-        if (silenceTimer.current) clearTimeout(silenceTimer.current);
-        
         let currentText = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            currentText += event.results[i][0].transcript;
-        }
+        for (let i = event.resultIndex; i < event.results.length; ++i) currentText += event.results[i][0].transcript;
         setTranscript(currentText);
         transcriptRef.current = currentText;
-
-        // Manual backup timer
-        silenceTimer.current = setTimeout(() => {
-            if (recognitionRef.current) recognitionRef.current.stop();
-        }, 1000); 
       };
 
       recognitionRef.current.onend = () => {
-          setIsListening(false);
-          const finalParam = transcriptRef.current;
-          if (finalParam && finalParam.length > 1) {
-              console.log("onend triggered. Processing:", finalParam);
-              processCommand(finalParam);
+          if (!transcriptRef.current) {
+              setIsListening(false);
+              return;
           }
+          setIsProcessing(true);
+          processCommand(transcriptRef.current);
       };
       
       recognitionRef.current.onerror = (e) => {
           console.error(e);
           setIsListening(false);
+          setIsProcessing(false);
       };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [processCommand]);
 
-  const handleToggle = () => {
-      if (isListening) {
-          if (recognitionRef.current) recognitionRef.current.stop();
-          setIsListening(false);
-      } else {
-          try {
-            setTranscript('');
-            transcriptRef.current = '';
-            if (recognitionRef.current) recognitionRef.current.start();
-          } catch(e) { console.error(e); }
-      }
+  const handleStart = (e) => {
+      if (e) e.preventDefault();
+      if (isListening || isProcessing) return;
+      try {
+        setTranscript('');
+        transcriptRef.current = '';
+        if (recognitionRef.current) recognitionRef.current.start();
+      } catch(e) { console.error(e); }
+  };
+
+  const handleStop = (e) => {
+      if (e) e.preventDefault();
+      if (recognitionRef.current && isListening) recognitionRef.current.stop();
   };
 
   if (!window.SpeechRecognition && !window.webkitSpeechRecognition) return null;
@@ -593,27 +479,50 @@ const VoiceAssistant = () => {
   return (
     <>
       <AssistantContainer>
-        <TriggerButton onClick={handleToggle} $isListening={isListening}>
-            {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
+        <TriggerButton 
+            $isListening={isListening || isProcessing}
+            onMouseDown={handleStart}
+            onMouseUp={handleStop}
+            onTouchStart={handleStart}
+            onTouchEnd={handleStop}
+            onContextMenu={(e) => e.preventDefault()}
+        >
+            {isListening || isProcessing ? <FaMicrophoneSlash /> : <FaMicrophone />}
             <RiSparklingFill className="sparkle" />
         </TriggerButton>
       </AssistantContainer>
 
-      {isListening && ReactDOM.createPortal(
+      {(isListening || isProcessing) && ReactDOM.createPortal(
           <Overlay>
               <StatusText>{feedback}</StatusText>
-              <WaveContainer>
-                <WaveBar delay={0} />
-                <WaveBar delay={0.2} />
-                <WaveBar delay={0.4} />
-                <WaveBar delay={0.1} />
-                <WaveBar delay={0.3} />
-              </WaveContainer>
+              
+              {isProcessing ? (
+                  <TypingIndicator>
+                      <Dot delay={0} />
+                      <Dot delay={0.2} />
+                      <Dot delay={0.4} />
+                  </TypingIndicator>
+              ) : (
+                  <WaveContainer>
+                    <WaveBar delay={0} />
+                    <WaveBar delay={0.2} />
+                    <WaveBar delay={0.4} />
+                    <WaveBar delay={0.1} />
+                    <WaveBar delay={0.3} />
+                  </WaveContainer>
+              )}
+
               <TranscriptText>"{transcript}"</TranscriptText>
               <ActionButtons>
-                  <ActionButton onClick={handleToggle}>Cancel</ActionButton>
+                  <ActionButton onClick={() => { 
+                      if (recognitionRef.current) recognitionRef.current.stop();
+                      setIsListening(false); 
+                      setIsProcessing(false);
+                  }}>
+                      Cancel
+                  </ActionButton>
               </ActionButtons>
-              <HintText>{hints[hintIndex]}</HintText>
+              {!isProcessing && <HintText>{hints[hintIndex]}</HintText>}
           </Overlay>,
           document.body
       )}
