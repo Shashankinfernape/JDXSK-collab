@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo, useState } from 'react';
+import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import styled from 'styled-components';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -8,6 +8,8 @@ const VisualizerContainer = styled.div`
   position: relative;
   cursor: pointer;
   touch-action: none;
+  display: flex;
+  align-items: center;
 `;
 
 const Canvas = styled.canvas`
@@ -24,10 +26,9 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
 
   // RESTORED: Original "Random Bar" Pattern (Compact Look)
   const bars = useMemo(() => {
-      const count = 45; // Original count
+      const count = 60; // Increased count for smoother look
       const data = [];
       for (let i = 0; i < count; i++) {
-          // Original Algorithm: Sine + Random Noise
           const val = Math.sin(i * 0.2) * 0.5 + 0.5; 
           const height = Math.max(0.2, val * Math.random() * 0.8 + 0.2); 
           data.push(height);
@@ -35,126 +36,146 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
       return data;
   }, []);
 
-  const handleInteraction = (clientX) => {
-      if (!containerRef.current || duration <= 0) return;
+  const handleInteraction = useCallback((clientX) => {
+      if (!containerRef.current || duration <= 0 || isNaN(duration) || duration === Infinity) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = clientX - rect.left;
       const percent = Math.min(1, Math.max(0, x / rect.width));
       onSeek && onSeek(percent * duration);
+  }, [duration, onSeek]);
+
+  const onMouseDown = (e) => { 
+      setIsDragging(true); 
+      handleInteraction(e.clientX); 
+  };
+  
+  const onTouchStart = (e) => { 
+      setIsDragging(true); 
+      handleInteraction(e.touches[0].clientX); 
   };
 
-  const onMouseDown = (e) => { setIsDragging(true); handleInteraction(e.clientX); };
-  const onTouchStart = (e) => { setIsDragging(true); handleInteraction(e.touches[0].clientX); };
-
   useEffect(() => {
-      const onMouseMove = (e) => { if (isDragging) handleInteraction(e.clientX); };
-      const onTouchMove = (e) => { if (isDragging) handleInteraction(e.touches[0].clientX); };
+      if (!isDragging) return;
+
+      const onMouseMove = (e) => handleInteraction(e.clientX);
+      const onTouchMove = (e) => handleInteraction(e.touches[0].clientX);
       const onMouseUp = () => setIsDragging(false);
       const onTouchEnd = () => setIsDragging(false);
 
-      if (isDragging) {
-          window.addEventListener('mouseup', onMouseUp);
-          window.addEventListener('touchend', onTouchEnd);
-          window.addEventListener('mousemove', onMouseMove);
-          window.addEventListener('touchmove', onTouchMove);
-      }
+      window.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('touchend', onTouchEnd);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('touchmove', onTouchMove);
+      
       return () => {
           window.removeEventListener('mouseup', onMouseUp);
           window.removeEventListener('touchend', onTouchEnd);
           window.removeEventListener('mousemove', onMouseMove);
           window.removeEventListener('touchmove', onTouchMove);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging]);
+  }, [isDragging, handleInteraction]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    let animationId;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+    }
 
-    const render = () => {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    
+    ctx.clearRect(0, 0, width, height);
+
+    // COMPACT SETTINGS
+    const barWidth = 2.5; 
+    const gap = 1.5; 
+    const totalBarWidth = barWidth + gap;
+    const totalBars = Math.floor(width / totalBarWidth);
+    
+    const playedColor = isMe 
+        ? 'rgba(255, 255, 255, 1.0)' 
+        : (theme.colors.primary || '#007AFF');
         
-        if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-        }
+    const pendingColor = isMe
+        ? 'rgba(255, 255, 255, 0.35)'
+        : (theme.isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)');
 
-        const width = rect.width;
-        const height = rect.height;
+    const validDuration = (duration > 0 && !isNaN(duration) && duration !== Infinity) ? duration : 0;
+    const progressPercent = validDuration > 0 ? currentTime / validDuration : 0;
+    
+    // 1. Draw Background Track Line (Subtle)
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2);
+    ctx.lineTo(width, height / 2);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = pendingColor;
+    ctx.globalAlpha = 0.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+
+    // 2. Draw Waveform Bars
+    for (let i = 0; i < totalBars; i++) {
+        const patternIndex = i % bars.length;
+        const rawHeight = bars[patternIndex];
+        const barHeight = Math.max(3, rawHeight * height * 0.8); 
         
-        ctx.clearRect(0, 0, width, height);
+        const x = i * totalBarWidth;
+        const y = (height - barHeight) / 2;
 
-        // COMPACT SETTINGS
-        const barWidth = 3; 
-        const gap = 2; 
-        const totalBarWidth = barWidth + gap;
-        const totalBars = Math.floor(width / totalBarWidth);
+        const isPlayed = (i / totalBars) < progressPercent;
         
-        const playedColor = isMe 
-            ? 'rgba(255, 255, 255, 1.0)' 
-            : (theme.colors.primary || '#007AFF');
-            
-        const pendingColor = isMe
-            ? 'rgba(255, 255, 255, 0.4)'
-            : (theme.isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)');
-
-        const progressPercent = duration > 0 ? currentTime / duration : 0;
+        ctx.beginPath();
+        ctx.lineCap = 'round';
+        ctx.lineWidth = barWidth;
+        ctx.moveTo(x + barWidth/2, y);
+        ctx.lineTo(x + barWidth/2, y + barHeight);
+        ctx.strokeStyle = isPlayed ? playedColor : pendingColor;
+        ctx.stroke();
+    }
+    
+    // 3. Draw Handle (Knob)
+    if (validDuration > 0) {
+        const cursorX = Math.max(0, Math.min(width, progressPercent * width));
+        const color = isMe ? '#FFFFFF' : (theme.colors.primary || '#007AFF');
         
-        // Draw Compact Centered Bars
-        for (let i = 0; i < totalBars; i++) {
-            const patternIndex = i % bars.length;
-            const rawHeight = bars[patternIndex];
-            const barHeight = Math.max(3, rawHeight * height * 0.85); 
-            
-            const x = i * totalBarWidth;
-            const y = (height - barHeight) / 2;
-
-            const isPlayed = (i / totalBars) < progressPercent;
-            
-            ctx.beginPath();
-            ctx.lineCap = 'round';
-            ctx.lineWidth = barWidth;
-            ctx.moveTo(x + barWidth/2, y);
-            ctx.lineTo(x + barWidth/2, y + barHeight);
-            ctx.strokeStyle = isPlayed ? playedColor : pendingColor;
-            ctx.stroke();
-        }
+        // Shadow for Knob
+        ctx.beginPath();
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.arc(cursorX, height / 2, 6, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.shadowBlur = 0; // Reset
         
-        // Draw Cursor Line & Handle (Knob)
-        if (duration > 0) {
-            const cursorX = Math.max(0, Math.min(width, progressPercent * width));
-            const color = isMe ? '#FFFFFF' : (theme.colors.primary || '#007AFF');
-            
-            // Handle (Knob) - Made slightly larger and with a subtle glow
-            ctx.beginPath();
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = 'rgba(0,0,0,0.3)';
-            ctx.arc(cursorX, height / 2, 5.5, 0, Math.PI * 2);
-            ctx.fillStyle = color;
-            ctx.fill();
-            ctx.shadowBlur = 0; // Reset
-            
-            // Center Dot in Knob for premium feel
-            ctx.beginPath();
-            ctx.arc(cursorX, height / 2, 2, 0, Math.PI * 2);
-            ctx.fillStyle = isMe ? (theme.colors.primary || '#007AFF') : '#FFFFFF';
-            ctx.fill();
-        }
+        // Inner Dot
+        ctx.beginPath();
+        ctx.arc(cursorX, height / 2, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = isMe ? (theme.colors.primary || '#007AFF') : '#FFFFFF';
+        ctx.fill();
+    }
 
-        animationId = requestAnimationFrame(render);
-    };
+  }, [currentTime, duration, theme, bars, isMe]);
 
-    render();
+  return (
+      <VisualizerContainer 
+        ref={containerRef}
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+      >
+          <Canvas ref={canvasRef} />
+      </VisualizerContainer>
+  );
+};
 
-    return () => {
-        cancelAnimationFrame(animationId);
-    };
-  }, [currentTime, duration, isPlaying, theme, bars, isMe]);
+export default AudioVisualizer;
 
   return (
       <VisualizerContainer 

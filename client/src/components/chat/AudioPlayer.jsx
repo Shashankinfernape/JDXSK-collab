@@ -89,32 +89,40 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
   const animationRef = useRef(null);
 
   useEffect(() => {
-    if (initialDuration) setDuration(initialDuration);
+    // If we get a valid duration from props, use it
+    if (initialDuration && !isNaN(initialDuration) && initialDuration !== Infinity) {
+        setDuration(initialDuration);
+    }
   }, [initialDuration]);
 
   // Handle Seek Logic
   const handleSeek = (newTime) => {
       if (audioRef.current) {
-          audioRef.current.currentTime = newTime;
-          setCurrentTime(newTime);
+          // Robustness check for duration
+          const maxTime = audioRef.current.duration || duration;
+          const targetTime = Math.min(newTime, maxTime);
+          
+          audioRef.current.currentTime = targetTime;
+          setCurrentTime(targetTime);
       }
   };
 
   const updateProgress = useCallback(() => {
       if (audioRef.current) {
           setCurrentTime(audioRef.current.currentTime);
+          
+          // Fallback duration update if it was 0 or Infinity
+          if ((duration === 0 || duration === Infinity) && audioRef.current.duration && audioRef.current.duration !== Infinity) {
+              setDuration(audioRef.current.duration);
+          }
+          
           animationRef.current = requestAnimationFrame(updateProgress);
       }
-  }, []);
+  }, [duration]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
-    // Reset
-    if (!isPlaying) {
-        cancelAnimationFrame(animationRef.current);
-    }
 
     const updateDuration = () => {
         if (audio.duration && audio.duration !== Infinity && !isNaN(audio.duration)) {
@@ -125,6 +133,7 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
     const handleEnded = () => {
         setIsPlaying(false);
         setCurrentTime(0);
+        if (audioRef.current) audioRef.current.currentTime = 0;
         cancelAnimationFrame(animationRef.current);
     };
 
@@ -138,12 +147,18 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
         cancelAnimationFrame(animationRef.current);
     };
 
+    const handleError = (e) => {
+        console.error("Audio Playback Error:", src, audio.error);
+        setIsPlaying(false);
+    };
+
     // Events
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('durationchange', updateDuration);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
+    audio.addEventListener('error', handleError);
     
     if (audio.readyState >= 1) updateDuration();
 
@@ -153,20 +168,27 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
         audio.removeEventListener('ended', handleEnded);
         audio.removeEventListener('play', handlePlay);
         audio.removeEventListener('pause', handlePause);
+        audio.removeEventListener('error', handleError);
         cancelAnimationFrame(animationRef.current);
     };
-  }, [src, isPlaying, updateProgress]);
+  }, [src, updateProgress]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
     
-    if (isPlaying) audio.pause();
-    else audio.play().catch(e => console.error("Playback failed", e));
+    if (isPlaying) {
+        audio.pause();
+    } else {
+        audio.play().catch(e => {
+            console.error("Playback failed", e);
+            setIsPlaying(false);
+        });
+    }
   };
 
   const formatTime = (time) => {
-    if (!time || time === Infinity || isNaN(time)) return "0:00";
+    if (isNaN(time) || time === Infinity) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
@@ -178,10 +200,6 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
         ref={audioRef} 
         src={src} 
         preload="metadata" 
-        onError={(e) => {
-            console.error("Audio Playback Error:", src, e.currentTarget.error);
-            setIsPlaying(false);
-        }}
       />
       
       {senderProfilePic && (
@@ -204,7 +222,8 @@ const AudioPlayer = ({ src, isMe, senderProfilePic, footer, duration: initialDur
           </VisualizerWrapper>
           <BottomRow>
             <Duration $isMe={isMe}>
-                {formatTime(currentTime > 0 ? currentTime : duration)}
+                {/* Show current time if playing or seeked, otherwise total duration */}
+                {formatTime(isPlaying || (currentTime > 0 && currentTime < duration - 0.1) ? currentTime : duration)}
             </Duration>
             {footer && <FooterContainer>{footer}</FooterContainer>}
           </BottomRow>
