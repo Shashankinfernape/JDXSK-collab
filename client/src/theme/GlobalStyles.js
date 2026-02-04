@@ -1,7 +1,11 @@
 import { createGlobalStyle, css } from 'styled-components';
 
 // --- Keyframes ---
-// const instagramBgAnimation removed - unused
+const highlight = keyframes`
+  0% { background-color: transparent; }
+  30% { background-color: rgba(255, 235, 59, 0.45); }
+  100% { background-color: transparent; }
+`;
 
 // --- Shared Layout Tokens ---
 const layoutTokens = {

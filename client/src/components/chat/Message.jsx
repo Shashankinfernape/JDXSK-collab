@@ -4,17 +4,10 @@ import { useAuth } from '../../context/AuthContext';
 import { BsCheck, BsCheckAll } from 'react-icons/bs'; 
 import { BiTime } from 'react-icons/bi'; 
 import { IoMdUndo } from 'react-icons/io'; 
-import AudioPlayer from './AudioPlayer'; // Import AudioPlayer
+import AudioPlayer from './AudioPlayer'; 
 
-// --- FIX: Robust Production URL Check ---
-const isProduction = 
-    window.location.hostname.includes('onrender.com') || 
-    window.location.hostname.includes('vercel.app');
-
-const SERVER_URL = isProduction 
-    ? "https://jdxsk-collab.onrender.com" 
-    : `http://${window.location.hostname}:5000`; 
-// --- END FIX ---
+const isProduction = window.location.hostname.includes('onrender.com') || window.location.hostname.includes('vercel.app');
+const SERVER_URL = isProduction ? "https://jdxsk-collab.onrender.com" : `http://${window.location.hostname}:5000`; 
 
 const SwipeContainer = styled.div`
   position: relative;
@@ -39,97 +32,74 @@ const ReplyIconWrapper = styled.div`
 const MessageWrapper = styled.div`
   display: flex;
   justify-content: ${props => (props.isMe ? 'flex-end' : 'flex-start')};
-  
-  /* Dynamic spacing based on sequence */
   margin-bottom: ${props => props.$isSequence ? '1px' : '12px'}; 
-  
-  @media (max-width: 900px) {
-    margin-bottom: ${props => props.$isSequence ? '2px' : '16px'};
-  }
-
+  @media (max-width: 900px) { margin-bottom: ${props => props.$isSequence ? '2px' : '16px'}; }
   padding: 0 5%; 
   position: relative;
   background-color: ${props => props.$isSelected ? 'rgba(66, 133, 244, 0.2)' : 'transparent'}; 
   transition: background-color 0.2s ease;
-  
   user-select: ${props => props.$isSelectionMode ? 'none' : 'text'};
   touch-action: pan-y;
-  
   transform: translateX(${props => props.$translateX}px);
   ${props => props.$isDragging && `transition: none;`} 
 `;
 
 const MessageBubble = styled.div`
   max-width: 90%; 
-  @media (min-width: 900px) {
-    max-width: 80%; 
-  }
-  
+  @media (min-width: 900px) { max-width: 80%; }
   padding: 4px;
-  
   border-radius: ${props => props.theme.bubbleBorderRadius}; 
-  background-color: ${props =>
-    props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
-  
+  background-color: ${props => props.isMe ? props.theme.colors.bubbleMe : props.theme.colors.bubbleOther};
   background: ${props => props.isMe && props.theme.name === 'instagram' ? props.theme.colors.bubbleMe : undefined}; 
   background-color: ${props => props.isMe && props.theme.name !== 'instagram' ? props.theme.colors.bubbleMe : (props.isMe ? undefined : props.theme.colors.bubbleOther)};
-
-  color: ${props => 
-    props.isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textBubbleOther};
-  
+  color: ${props => props.isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textBubbleOther};
   word-wrap: break-word; 
   box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13); 
   position: relative; 
   min-width: 100px; 
   width: fit-content; 
   cursor: pointer;
-  
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0px; 
+
+  ${props => props.$isCurrentMatch && `
+    animation: highlight 2s infinite;
+    box-shadow: 0 0 10px rgba(255, 235, 59, 0.6);
+  `}
 `;
 
-// --- Quoted Reply Block (Synchronized Style) ---
+const Highlight = styled.span`
+  background-color: rgba(255, 235, 59, 0.65);
+  color: #000;
+  border-radius: 2px;
+  padding: 0 1px;
+`;
+
 const QuotedMessage = styled.div`
-  /* Standard margin within bubble padding - Contained */
   margin: 0 0 2px 0;
   width: 100%;
-  
-  /* Visuals */
   background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)'};
   ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.08);`}
-  
-  /* Contained corners: rounding all sides keeps the stripe within the bubble's flow */
   border-radius: ${props => props.theme.quoteBorderRadius || '6px'};
   position: relative;
-  overflow: hidden; /* Clips the pseudo-element stripe to the radius */
-  
-  padding: 5px 12px 5px 16px; /* Left padding includes space for the 4px stripe */
-  
+  overflow: hidden; 
+  padding: 5px 12px 5px 16px; 
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  
   font-size: 0.82rem;
   line-height: 1.25;
   cursor: pointer;
   transition: background-color 0.2s;
-
-  /* Straight line stripe - Purely contained within the rounded block */
   &::before {
     content: '';
     position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
+    left: 0; top: 0; bottom: 0; width: 4px;
     background-color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : props.theme.colors.primary};
   }
-
-  &:hover {
-    background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.07)'};
-  }
+  &:hover { background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.07)'}; }
 `;
 
 const QuotedSender = styled.span`
@@ -141,68 +111,46 @@ const QuotedSender = styled.span`
 `;
 
 const QuotedText = styled.span`
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: inherit;
-  opacity: 0.85;
-  font-size: 0.8rem;
-  line-height: 1.3;
-  display: block;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: inherit; opacity: 0.85; font-size: 0.8rem; line-height: 1.3; display: block;
 `;
 
 const MessageText = styled.div`
-  font-size: 0.95rem; 
-  line-height: 1.4;
-  color: inherit;
-  width: 100%;
-  padding: 2px 5px 0 5px;
-  margin-bottom: 0px;
+  font-size: 0.95rem; line-height: 1.4; color: inherit; width: 100%; padding: 2px 5px 0 5px; margin-bottom: 0px;
 `;
 
 const StatusContainer = styled.div`
-  align-self: flex-end;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-top: -2px; /* Pull timestamp closer to text */
-  margin-right: 2px;
-  margin-bottom: 2px;
-  
-  height: 14px; 
-  line-height: 1;
+  align-self: flex-end; display: flex; align-items: center; gap: 3px; margin-top: -2px; margin-right: 2px; margin-bottom: 2px; height: 14px; line-height: 1;
 `;
 const Timestamp = styled.span`
-  font-size: 0.68rem; /* Slightly larger for readability */
-  color: inherit;
-  opacity: 0.75;
-  white-space: nowrap; 
+  font-size: 0.68rem; color: inherit; opacity: 0.75; white-space: nowrap; 
 `;
 
 const Ticks = styled.div`
-  display: flex;
-  align-items: center;
-  font-size: 0.9rem; /* Clean size */
-  opacity: 0.9;
-  
-  /* WhatsApp Ticks Colors */
-  .tick-read { color: #53bdeb; } /* Standard Cyan-Blue for Read */
-  /* Use text color for contrast (e.g. dark text on light bubble -> dark ticks) */
+  display: flex; align-items: center; font-size: 0.9rem; opacity: 0.9;
+  .tick-read { color: #53bdeb; } 
   .tick-delivered { color: ${props => props.$isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textSecondary}; opacity: 0.6; }
   .tick-sent { color: ${props => props.$isMe ? props.theme.colors.textBubbleMe : props.theme.colors.textSecondary}; opacity: 0.6; }
 `;
 
-const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSequence }) => {
+const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSequence, searchTerm, isCurrentMatch }) => {
   const { user } = useAuth();
   const longPressTimer = useRef(null);
   const isLongPress = useRef(false);
-  
-  // Swipe State
   const [translateX, setTranslateX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
   const startY = useRef(0);
   const isSwiping = useRef(false);
+
+  const highlightText = (text, term) => {
+      if (!term || !text) return text;
+      const parts = text.split(new RegExp(`(${term})`, 'gi'));
+      return parts.map((part, i) => 
+          part.toLowerCase() === term.toLowerCase() 
+            ? <Highlight key={i}>{part}</Highlight> 
+            : part
+      );
+  };
 
   if (!message || !message.senderId) return null;
   const isMe = message.senderId._id === user?._id; 
@@ -212,13 +160,10 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
       const originalId = message.replyTo?._id;
       if (originalId) {
           const el = document.getElementById(`msg-${originalId}`);
-          if (el) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
   };
 
-  // --- Interaction Handlers ---
   const handleStartTimer = () => {
       isLongPress.current = false; 
       longPressTimer.current = setTimeout(() => {
@@ -229,36 +174,26 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
       }, 500); 
   };
 
-  const handleClearTimer = () => {
-      if (longPressTimer.current) {
-          clearTimeout(longPressTimer.current);
-      }
-  };
+  const handleClearTimer = () => { if (longPressTimer.current) clearTimeout(longPressTimer.current); };
 
-  // --- Swipe Logic ---
   const handleTouchStart = (e) => {
       if (isSelectionMode) return; 
-      
       const touch = e.touches ? e.touches[0] : e;
       startX.current = touch.clientX;
       startY.current = touch.clientY;
       isSwiping.current = false;
       setIsDragging(true);
-      
       handleStartTimer();
   };
 
   const handleTouchMove = (e) => {
       if (isSelectionMode || !isDragging) return;
-
       const touch = e.touches ? e.touches[0] : e;
       const dx = touch.clientX - startX.current;
       const dy = touch.clientY - startY.current;
-
       if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
           isSwiping.current = true;
           handleClearTimer(); 
-          
           if (dx > 0) { 
               const resistance = Math.min(dx, 100); 
               setTranslateX(resistance);
@@ -269,54 +204,26 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
   const handleTouchEnd = () => {
       handleClearTimer();
       setIsDragging(false);
-      
       if (isSwiping.current) {
-          if (translateX > 50) { 
-              if (onReply) onReply(message);
-          }
+          if (translateX > 50) if (onReply) onReply(message);
           setTranslateX(0); 
           isSwiping.current = false;
       }
   };
 
   const handleClick = (e) => {
-      if (isLongPress.current) {
-          isLongPress.current = false;
-          return;
-      }
+      if (isLongPress.current) { isLongPress.current = false; return; }
       if (isSwiping.current) return;
-
-      if (isSelectionMode || e.ctrlKey || e.metaKey) {
-          onSelect(message._id); 
-      }
+      if (isSelectionMode || e.ctrlKey || e.metaKey) onSelect(message._id); 
   };
 
-  const handleContextMenu = (e) => {
-      e.preventDefault(); 
-      if (!isSelectionMode) {
-          onSelect(message._id); 
-      }
-  };
+  const handleContextMenu = (e) => { e.preventDefault(); if (!isSelectionMode) onSelect(message._id); };
 
   const getTicks = () => {
-    // Sending (Clock) - Prioritize this check
-    if (isMe && message._id?.startsWith('temp-')) {
-        return <Ticks $isMe={isMe}><BiTime style={{fontSize: '0.85rem', opacity: 0.7}} /></Ticks>;
-    }
-    
-    if (!isMe) return null; // Recipients don't see ticks on incoming messages
-
-    // Read (Blue Double Tick)
-    if (message.readBy && message.readBy.length > 0) {
-        return <Ticks $isMe={isMe}><BsCheckAll className="tick-read" /></Ticks>;
-    }
-    
-    // Delivered (Gray Double Tick)
-    if (message.deliveredTo && message.deliveredTo.length > 0) {
-        return <Ticks $isMe={isMe}><BsCheckAll className="tick-delivered" /></Ticks>;
-    }
-    
-    // Sent (Gray Single Tick) - Default fallback
+    if (isMe && message._id?.startsWith('temp-')) return <Ticks $isMe={isMe}><BiTime style={{fontSize: '0.85rem', opacity: 0.7}} /></Ticks>;
+    if (!isMe) return null;
+    if (message.readBy && message.readBy.length > 0) return <Ticks $isMe={isMe}><BsCheckAll className="tick-read" /></Ticks>;
+    if (message.deliveredTo && message.deliveredTo.length > 0) return <Ticks $isMe={isMe}><BsCheckAll className="tick-delivered" /></Ticks>;
     return <Ticks $isMe={isMe}><BsCheck className="tick-sent" /></Ticks>;
   };
 
@@ -337,57 +244,38 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
             <IoMdUndo />
         </ReplyIconWrapper>
         <MessageWrapper 
-            isMe={isMe} 
-            $isSelected={isSelected} 
-            $isSelectionMode={isSelectionMode}
-            $translateX={translateX}
-            $isDragging={isDragging}
-            $isSequence={isSequence}
-            onClick={handleClick}
-            onContextMenu={handleContextMenu}
-            
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            
-            onMouseDown={handleTouchStart}
-            onMouseMove={handleTouchMove}
-            onMouseUp={handleTouchEnd}
-            onMouseLeave={handleTouchEnd}
+            isMe={isMe} $isSelected={isSelected} $isSelectionMode={isSelectionMode} $translateX={translateX} $isDragging={isDragging} $isSequence={isSequence}
+            onClick={handleClick} onContextMenu={handleContextMenu} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
+            onMouseDown={handleTouchStart} onMouseMove={handleTouchMove} onMouseUp={handleTouchEnd} onMouseLeave={handleTouchEnd}
         >
-        <MessageBubble isMe={isMe}>
+        <MessageBubble isMe={isMe} $isCurrentMatch={isCurrentMatch}>
             {message.replyTo && message.replyTo.content && (
                 <QuotedMessage $isMe={isMe} onClick={scrollToOriginal}>
                     <QuotedSender $isMe={isMe}>{message.replyTo.senderName || "User"}</QuotedSender>
                     <QuotedText $isMe={isMe}>{message.replyTo.content}</QuotedText>
                 </QuotedMessage>
             )}
-            
             {isAudio ? (
                 <AudioPlayer 
                     src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} 
-                    isMe={isMe}
-                    senderProfilePic={message.senderId?.profilePic || `https://i.pravatar.cc/150?u=${message.senderId?._id}`}
-                    footer={messageStatus}
-                    duration={message.duration}
+                    isMe={isMe} senderProfilePic={message.senderId?.profilePic || `https://i.pravatar.cc/150?u=${message.senderId?._id}`}
+                    footer={messageStatus} duration={message.duration}
                 />
             ) : message.contentType === 'image' ? (
                 <>
                     <img 
                         src={message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`} 
-                        alt="Shared" 
-                        style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '4px', cursor: 'pointer' }}
+                        alt="Shared" style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '4px', cursor: 'pointer' }}
                         onClick={() => window.open(message.fileUrl?.startsWith('http') ? message.fileUrl : `${SERVER_URL}${message.fileUrl}`, '_blank')}
                     />
                     <StatusContainer>{messageStatus}</StatusContainer>
                 </>
             ) : (
                 <>
-                    <MessageText>{message.content}</MessageText>
+                    <MessageText>{highlightText(message.content, searchTerm)}</MessageText>
                     <StatusContainer>{messageStatus}</StatusContainer>
                 </>
             )}
-
         </MessageBubble>
         </MessageWrapper>
     </SwipeContainer>

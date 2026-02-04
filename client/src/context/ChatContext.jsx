@@ -18,6 +18,7 @@ export const ChatProvider = ({ children }) => {
   // --- New State for Selection & Reply ---
   const [selectedMessages, setSelectedMessages] = useState([]); // Array of message IDs
   const [replyingTo, setReplyingTo] = useState(null); // Message object
+  const [chatSearchTerm, setChatSearchTerm] = useState(''); // Search in active chat
 
   const { socket } = useSocket(); // Fix: destructure socket
   const { user } = useAuth();
@@ -165,6 +166,7 @@ export const ChatProvider = ({ children }) => {
     let fullChat = chat;
     setActiveChat(fullChat); 
     clearSelection(); // Clear selection when changing chat
+    setChatSearchTerm(''); // Reset search on chat switch
     socket.emit('joinRoom', fullChat._id);
     
     let messageData = messages[fullChat._id];
@@ -391,6 +393,8 @@ export const ChatProvider = ({ children }) => {
     clearSelection,
     replyingTo,
     setReplyingTo,
+    chatSearchTerm,
+    setChatSearchTerm,
   };
 
   return (

@@ -153,21 +153,28 @@ const DropdownItem = styled.button`
 `;
 
 const SearchBar = styled.div`
-  padding: 0.5rem 0.8rem;
+  padding: 0.75rem 1rem;
   background-color: ${props => props.theme.colors.panelBackground};
-  /* border-bottom removed for cleaner look */
   display: flex; align-items: center; flex-shrink: 0;
 `;
 
 const SearchInputWrapper = styled.div`
   position: relative; width: 100%; display: flex; align-items: center;
   background-color: ${props => props.theme.colors.inputBackground};
-  border-radius: 8px; padding: 0.4rem 0.8rem;
+  border-radius: 24px; /* Circular Pill Shape */
+  padding: 0.5rem 1.2rem;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  
+  &:focus-within {
+    border-color: ${props => props.theme.colors.primary}50;
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primary}20;
+  }
 `;
 
 const SearchIcon = styled(AiOutlineSearch)`
   color: ${props => props.theme.colors.icon};
-  font-size: 1.1rem; margin-right: 0.8rem;
+  font-size: 1.2rem; margin-right: 0.8rem;
 `;
 
 const SearchInput = styled.input`
