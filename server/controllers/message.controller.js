@@ -139,11 +139,13 @@ const uploadMessage = async (req, res) => {
             disappearAt: disappearAt
         });
 
-        const fullMessage = await Message.findById(newMessage._id)
-            .populate('senderId', 'name profilePic email')
-            .populate('chatId');
+        // Optimization: Only populate sender fields, no need to populate full chatId
+        const fullMessage = await newMessage.populate('senderId', 'name profilePic email');
 
-        await Chat.findByIdAndUpdate(chatId, { lastMessage: newMessage._id });
+        await Chat.findByIdAndUpdate(chatId, { 
+            lastMessage: newMessage._id,
+            updatedAt: new Date() // Ensure chat list updates position
+        });
         
         // --- Socket Logic for File Uploads ---
         try {
@@ -158,16 +160,7 @@ const uploadMessage = async (req, res) => {
                     if (participantId.toString() !== senderId.toString()) {
                          Message.findByIdAndUpdate(newMessage._id, 
                              { $addToSet: { deliveredTo: participantId } }
-                         ).then(updatedMsg => {
-                             const senderSocketId = getSocketId(senderId.toString());
-                             if (senderSocketId) {
-                                 io.to(senderSocketId).emit('messageDelivered', { 
-                                     messageId: newMessage._id, 
-                                     chatId: chatId,
-                                     deliveredTo: participantId 
-                                 });
-                             }
-                         }).catch(err => console.error("Error updating deliveredTo for file:", err));
+                         ).catch(err => console.error("Error updating deliveredTo for file:", err));
                     }
                 }
             });
