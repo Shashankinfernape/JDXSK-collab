@@ -24,6 +24,10 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
   const { theme } = useTheme();
   const [isDragging, setIsDragging] = useState(false);
 
+  // KNOB SETTINGS
+  const knobRadius = 6;
+  const hPadding = knobRadius + 2; // Extra room for shadow/glow
+
   // RESTORED: Original "Random Bar" Pattern (Compact Look)
   const bars = useMemo(() => {
       const count = 60; // Increased count for smoother look
@@ -39,10 +43,13 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
   const handleInteraction = useCallback((clientX) => {
       if (!containerRef.current || duration <= 0 || isNaN(duration) || duration === Infinity) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const percent = Math.min(1, Math.max(0, x / rect.width));
+      
+      const x = clientX - rect.left - hPadding;
+      const innerWidth = rect.width - (hPadding * 2);
+      
+      const percent = Math.min(1, Math.max(0, x / innerWidth));
       onSeek && onSeek(percent * duration);
-  }, [duration, onSeek]);
+  }, [duration, onSeek, hPadding]);
 
   const onMouseDown = (e) => { 
       setIsDragging(true); 
@@ -91,6 +98,7 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
 
     const width = rect.width;
     const height = rect.height;
+    const innerWidth = width - (hPadding * 2);
     
     ctx.clearRect(0, 0, width, height);
 
@@ -98,7 +106,7 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
     const barWidth = 2.5; 
     const gap = 1.5; 
     const totalBarWidth = barWidth + gap;
-    const totalBars = Math.floor(width / totalBarWidth);
+    const totalBars = Math.floor(innerWidth / totalBarWidth);
     
     const playedColor = isMe 
         ? 'rgba(255, 255, 255, 1.0)' 
@@ -113,8 +121,8 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
     
     // 1. Draw Background Track Line (Subtle)
     ctx.beginPath();
-    ctx.moveTo(0, height / 2);
-    ctx.lineTo(width, height / 2);
+    ctx.moveTo(hPadding, height / 2);
+    ctx.lineTo(width - hPadding, height / 2);
     ctx.lineWidth = 1;
     ctx.strokeStyle = pendingColor;
     ctx.globalAlpha = 0.5;
@@ -127,7 +135,7 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
         const rawHeight = bars[patternIndex];
         const barHeight = Math.max(3, rawHeight * height * 0.8); 
         
-        const x = i * totalBarWidth;
+        const x = hPadding + (i * totalBarWidth);
         const y = (height - barHeight) / 2;
 
         const isPlayed = (i / totalBars) < progressPercent;
@@ -143,14 +151,14 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
     
     // 3. Draw Handle (Knob)
     if (validDuration > 0) {
-        const cursorX = Math.max(0, Math.min(width, progressPercent * width));
+        const cursorX = hPadding + Math.max(0, Math.min(innerWidth, progressPercent * innerWidth));
         const color = isMe ? '#FFFFFF' : (theme.colors.primary || '#007AFF');
         
         // Shadow for Knob
         ctx.beginPath();
         ctx.shadowBlur = 4;
         ctx.shadowColor = 'rgba(0,0,0,0.4)';
-        ctx.arc(cursorX, height / 2, 6, 0, Math.PI * 2);
+        ctx.arc(cursorX, height / 2, knobRadius, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
         ctx.shadowBlur = 0; // Reset
@@ -162,7 +170,7 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
         ctx.fill();
     }
 
-  }, [currentTime, duration, theme, bars, isMe]);
+  }, [currentTime, duration, theme, bars, isMe, hPadding, knobRadius]);
 
   return (
       <VisualizerContainer 

@@ -36,10 +36,10 @@ const AssistantContainer = styled.div`
 const TriggerButton = styled.button`
   background: ${props => props.$isListening 
     ? `linear-gradient(135deg, ${props.theme.colors.primary}, ${props.theme.colors.primary}dd)`
-    : props.theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'};
-  border: 1px solid ${props => props.$isListening ? 'transparent' : props.theme.colors.border};
-  width: 52px;
-  height: 52px;
+    : 'transparent'};
+  border: none;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -47,35 +47,34 @@ const TriggerButton = styled.button`
   color: ${props => props.$isListening ? '#FFFFFF' : props.theme.colors.icon};
   cursor: pointer;
   position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: ${props => props.$isListening 
-    ? `0 0 20px ${props.theme.colors.primary}60` 
-    : '0 2px 8px rgba(0,0,0,0.1)'};
+  transition: all 0.2s ease;
+  padding: 4px;
 
   &:hover {
-    transform: scale(1.1) translateY(-2px);
     background: ${props => props.$isListening 
       ? `linear-gradient(135deg, ${props.theme.colors.primary}, ${props.theme.colors.primary})`
       : props.theme.colors.hoverBackground};
-    color: ${props => props.$isListening ? '#FFFFFF' : props.theme.colors.primary};
+    color: ${props => props.$isListening ? '#FFFFFF' : props.theme.colors.iconActive};
   }
 
   svg:first-child {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     filter: ${props => props.$isListening ? 'drop-shadow(0 0 5px rgba(255,255,255,0.5))' : 'none'};
   }
 
   ${props => props.$isListening && css`
     animation: ${pulse} 2s infinite;
+    box-shadow: 0 0 15px ${props.theme.colors.primary}60;
   `}
 
   .sparkle {
     position: absolute;
-    top: 6px;
-    right: 6px;
-    font-size: 0.9rem;
+    top: 2px;
+    right: 2px;
+    font-size: 0.8rem;
     color: ${props => props.$isListening ? '#FFFFFF' : props.theme.colors.primary};
     filter: drop-shadow(0 0 2px rgba(0,0,0,0.1));
+    opacity: ${props => props.$isListening ? 1 : 0.8};
   }
 `;
 
