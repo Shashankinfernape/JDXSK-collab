@@ -43,7 +43,7 @@ const TriggerButton = styled.button`
     ? `linear-gradient(135deg, ${props.theme.colors.primary}, ${props.theme.colors.primary}dd)`
     : 'transparent'};
   border: none;
-  width: 32px; /* Standard sidebar icon size (IconButton 1.5rem + minimal padding) */
+  width: 32px; 
   height: 32px;
   border-radius: 50%;
   display: flex;
@@ -63,7 +63,7 @@ const TriggerButton = styled.button`
   }
 
   svg:first-child {
-    font-size: 1.5rem; /* Matches Spotify/Apple icon size */
+    font-size: 1.5rem; 
     filter: ${props => props.$isListening ? 'drop-shadow(0 0 5px rgba(255,255,255,0.5))' : 'none'};
   }
 
@@ -459,19 +459,17 @@ const VoiceAssistant = () => {
     }
   }, [processCommand]);
 
-  const handleStart = (e) => {
-      if (e) e.preventDefault();
-      if (isListening || isProcessing) return;
-      try {
-        setTranscript('');
-        transcriptRef.current = '';
-        if (recognitionRef.current) recognitionRef.current.start();
-      } catch(e) { console.error(e); }
-  };
-
-  const handleStop = (e) => {
-      if (e) e.preventDefault();
-      if (recognitionRef.current && isListening) recognitionRef.current.stop();
+  const handleToggle = () => {
+      if (isListening) {
+          if (recognitionRef.current) recognitionRef.current.stop();
+          setIsListening(false);
+      } else {
+          try {
+            setTranscript('');
+            transcriptRef.current = '';
+            if (recognitionRef.current) recognitionRef.current.start();
+          } catch(e) { console.error(e); }
+      }
   };
 
   if (!window.SpeechRecognition && !window.webkitSpeechRecognition) return null;
@@ -479,14 +477,7 @@ const VoiceAssistant = () => {
   return (
     <>
       <AssistantContainer>
-        <TriggerButton 
-            $isListening={isListening || isProcessing}
-            onMouseDown={handleStart}
-            onMouseUp={handleStop}
-            onTouchStart={handleStart}
-            onTouchEnd={handleStop}
-            onContextMenu={(e) => e.preventDefault()}
-        >
+        <TriggerButton onClick={handleToggle} $isListening={isListening || isProcessing}>
             {isListening || isProcessing ? <FaMicrophoneSlash /> : <FaMicrophone />}
             <RiSparklingFill className="sparkle" />
         </TriggerButton>
