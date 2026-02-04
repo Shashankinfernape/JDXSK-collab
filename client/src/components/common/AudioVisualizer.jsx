@@ -72,82 +72,89 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
+    let animationId;
 
-    const width = rect.width;
-    const height = rect.height;
-    
-    ctx.clearRect(0, 0, width, height);
-
-    // COMPACT SETTINGS
-    const barWidth = 3; // Thicker bars for solid look
-    const gap = 2; // Tight gap
-    const totalBarWidth = barWidth + gap;
-    const totalBars = Math.floor(width / totalBarWidth);
-    
-    // Colors
-    // If isMe (sent message), use White for played, Faint White for pending
-    // If !isMe (received), use Primary for played, Faint Gray/White for pending
-    const playedColor = isMe 
-        ? 'rgba(255, 255, 255, 1.0)' 
-        : (theme.colors.primary || '#007AFF');
+    const render = () => {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
         
-    const pendingColor = isMe
-        ? 'rgba(255, 255, 255, 0.5)'
-        : (theme.isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)');
+        if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+        }
 
-    const progressPercent = duration > 0 ? currentTime / duration : 0;
-    
-    // Draw Compact Centered Bars
-    for (let i = 0; i < totalBars; i++) {
-        // Recycle pattern
-        const patternIndex = i % bars.length;
-        const rawHeight = bars[patternIndex];
+        const width = rect.width;
+        const height = rect.height;
         
-        // CRITICAL FIX: Scale height to 85% of container for balance in compact view
-        const barHeight = Math.max(3, rawHeight * height * 0.85); 
-        
-        const x = i * totalBarWidth;
-        const y = (height - barHeight) / 2; // Perfect vertical center
+        ctx.clearRect(0, 0, width, height);
 
-        const isPlayed = (i / totalBars) < progressPercent;
+        // COMPACT SETTINGS
+        const barWidth = 3; 
+        const gap = 2; 
+        const totalBarWidth = barWidth + gap;
+        const totalBars = Math.floor(width / totalBarWidth);
         
-        ctx.beginPath();
-        ctx.lineCap = 'round';
-        ctx.lineWidth = barWidth;
-        ctx.moveTo(x + barWidth/2, y);
-        ctx.lineTo(x + barWidth/2, y + barHeight);
-        ctx.strokeStyle = isPlayed ? playedColor : pendingColor;
-        ctx.stroke();
-    }
-    
-    // Draw Cursor Line & Handle
-    if (duration > 0) {
-        const cursorX = progressPercent * width;
+        const playedColor = isMe 
+            ? 'rgba(255, 255, 255, 1.0)' 
+            : (theme.colors.primary || '#007AFF');
+            
+        const pendingColor = isMe
+            ? 'rgba(255, 255, 255, 0.4)'
+            : (theme.isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)');
+
+        const progressPercent = duration > 0 ? currentTime / duration : 0;
         
-        // Line
-        ctx.beginPath();
-        ctx.moveTo(cursorX, 0);
-        ctx.lineTo(cursorX, height);
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = isMe ? '#FFFFFF' : (theme.colors.primary || '#007AFF');
-        ctx.globalAlpha = 0.8; 
-        ctx.stroke();
-        ctx.globalAlpha = 1.0;
+        // Draw Compact Centered Bars
+        for (let i = 0; i < totalBars; i++) {
+            const patternIndex = i % bars.length;
+            const rawHeight = bars[patternIndex];
+            const barHeight = Math.max(3, rawHeight * height * 0.85); 
+            
+            const x = i * totalBarWidth;
+            const y = (height - barHeight) / 2;
 
-        // Handle (Knob)
-        ctx.beginPath();
-        ctx.arc(cursorX, height / 2, 4, 0, Math.PI * 2);
-        ctx.fillStyle = isMe ? '#FFFFFF' : (theme.colors.primary || '#007AFF');
-        ctx.fill();
-    }
+            const isPlayed = (i / totalBars) < progressPercent;
+            
+            ctx.beginPath();
+            ctx.lineCap = 'round';
+            ctx.lineWidth = barWidth;
+            ctx.moveTo(x + barWidth/2, y);
+            ctx.lineTo(x + barWidth/2, y + barHeight);
+            ctx.strokeStyle = isPlayed ? playedColor : pendingColor;
+            ctx.stroke();
+        }
+        
+        // Draw Cursor Line & Handle (Knob)
+        if (duration > 0) {
+            const cursorX = Math.max(0, Math.min(width, progressPercent * width));
+            const color = isMe ? '#FFFFFF' : (theme.colors.primary || '#007AFF');
+            
+            // Handle (Knob) - Made slightly larger and with a subtle glow
+            ctx.beginPath();
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.arc(cursorX, height / 2, 5.5, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
+            
+            // Center Dot in Knob for premium feel
+            ctx.beginPath();
+            ctx.arc(cursorX, height / 2, 2, 0, Math.PI * 2);
+            ctx.fillStyle = isMe ? (theme.colors.primary || '#007AFF') : '#FFFFFF';
+            ctx.fill();
+        }
 
-  }, [currentTime, duration, isPlaying, theme, bars, isDragging, isMe]);
+        animationId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+        cancelAnimationFrame(animationId);
+    };
+  }, [currentTime, duration, isPlaying, theme, bars, isMe]);
 
   return (
       <VisualizerContainer 
