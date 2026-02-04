@@ -453,9 +453,26 @@ const transformContent = (rawText, isQuestion = false) => {
   };
 
   const handleRetry = () => {
+      // 1. Reset all states
       setIsConfirming(false);
+      setIsProcessing(false);
+      setIsListening(true);
+      setTranscript('');
+      transcriptRef.current = '';
       setPendingMessage({ chat: null, content: '', partnerName: '' });
-      handleToggle(); // Restart listening
+      setFeedback('Listening...');
+
+      // 2. Start recognition directly
+      try {
+          if (recognitionRef.current) {
+              // Stop if somehow still active
+              try { recognitionRef.current.stop(); } catch(e) {}
+              recognitionRef.current.start();
+          }
+      } catch (e) {
+          console.error("Retry failed to start mic:", e);
+          setIsListening(false);
+      }
   };
 
   useEffect(() => {
