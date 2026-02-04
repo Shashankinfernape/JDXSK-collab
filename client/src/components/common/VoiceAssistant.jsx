@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import styled, { keyframes, css } from 'styled-components';
-import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
+import { MdMic, MdMicOff } from 'react-icons/md';
 import { RiSparklingFill } from 'react-icons/ri';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
@@ -63,7 +63,7 @@ const TriggerButton = styled.button`
   }
 
   svg:first-child {
-    font-size: 1.5rem; 
+    font-size: 1.35rem; /* Slightly reduced */
     filter: ${props => props.$isListening ? 'drop-shadow(0 0 5px rgba(255,255,255,0.5))' : 'none'};
   }
 
@@ -237,85 +237,82 @@ const VoiceAssistant = () => {
   
   const recognitionRef = useRef(null);
 
-  // --- FUZZY & PHONETIC HELPERS ---
-  // ... (keeping existing phonetic/fuzzy helpers) ...
-
   const getLevenshteinDistance = (a, b) => {
-    const matrix = [];
-    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-    for (let i = 1; i <= b.length; i++) {
-        for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1];
-            } else {
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j - 1] + 1,
-                    Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
-                );
-            }
-        }
-    }
-    return 1 - (matrix[b.length][a.length] / Math.max(a.length, b.length));
-};
+      const matrix = [];
+      for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+      for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+      for (let i = 1; i <= b.length; i++) {
+          for (let j = 1; j <= a.length; j++) {
+              if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                  matrix[i][j] = matrix[i - 1][j - 1];
+              } else {
+                  matrix[i][j] = Math.min(
+                      matrix[i - 1][j - 1] + 1,
+                      Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+                  );
+              }
+          }
+      }
+      return 1 - (matrix[b.length][a.length] / Math.max(a.length, b.length));
+  };
 
-const getPhonetic = (str) => {
-    let s = str.toLowerCase().trim();
-    if (!s) return '';
-    s = s.replace(/[^a-z]/g, '')
-         .replace(/ee/g, 'i').replace(/oo/g, 'u').replace(/th/g, 't')
-         .replace(/ph/g, 'f').replace(/sh/g, 's').replace(/ch/g, 'k')
-         .replace(/ck/g, 'k').replace(/[z]/g, 's').replace(/[v]/g, 'w')
-         .replace(/(.)\1+/g, '$1');
-    const first = s[0];
-    const rest = s.slice(1).replace(/[aeiou]/g, '');
-    return first + rest;
-};
+  const getPhonetic = (str) => {
+      let s = str.toLowerCase().trim();
+      if (!s) return '';
+      s = s.replace(/[^a-z]/g, '')
+           .replace(/ee/g, 'i').replace(/oo/g, 'u').replace(/th/g, 't')
+           .replace(/ph/g, 'f').replace(/sh/g, 's').replace(/ch/g, 'k')
+           .replace(/ck/g, 'k').replace(/[z]/g, 's').replace(/[v]/g, 'w')
+           .replace(/(.)\1+/g, '$1');
+      const first = s[0];
+      const rest = s.slice(1).replace(/[aeiou]/g, '');
+      return first + rest;
+  };
 
-const normalize = (text) => text.toLowerCase().replace(/[.,?!]/g, '').trim();
+  const normalize = (text) => text.toLowerCase().replace(/[.,?!]/g, '').trim();
 
-const transformContent = (rawText, isQuestion = false) => {
-    let text = rawText.trim();
-    if (!text) return "";
-    const grammarRules = [
-        { regex: /\bif (?:he|she|it) is\b/gi, replace: "are you" },
-        { regex: /\bif (?:he|she|it) was\b/gi, replace: "were you" },
-        { regex: /\bif (?:he|she|it) will be\b/gi, replace: "will you be" },
-        { regex: /\bif (?:he|she|it) can\b/gi, replace: "can you" },
-        { regex: /\bif (?:he|she|it) could\b/gi, replace: "could you" },
-        { regex: /\bif (?:he|she|it) would\b/gi, replace: "would you" },
-        { regex: /\bif (?:he|she|it) should\b/gi, replace: "should you" },
-        { regex: /\bif (?:he|she|it) (likes|wants|needs|has|knows|thinks)\b/gi, replace: (_, v) => `do you ${v.slice(0, -1)}` },
-        { regex: /\bif (?:he|she|it) (went|saw|did|took|made)\b/gi, replace: (_, v) => `did you ${v}` },
-        { regex: /\bwhat (?:he|she|it) is\b/gi, replace: "what are you" },
-        { regex: /\bwhere (?:he|she|it) is\b/gi, replace: "where are you" },
-        { regex: /\bwho (?:he|she|it) is\b/gi, replace: "who are you" },
-        { regex: /\bhow (?:he|she|it) is\b/gi, replace: "how are you" },
-        { regex: /\bwhen (?:he|she|it) is\b/gi, replace: "when are you" },
-        { regex: /\bwhy (?:he|she|it) is\b/gi, replace: "why are you" },
-        { regex: /\b(what|where|when|how|why) (?:he|she|it) (will|can|could|should)\b/gi, replace: "$1 $2 you" },
-        { regex: /^to\s+/i, replace: "" },
-        { regex: /\bthat\s+/i, replace: "" },
-    ];
-    let transformed = text;
-    for (const rule of grammarRules) {
-        if (rule.regex.test(transformed)) transformed = transformed.replace(rule.regex, rule.replace);
-    }
-    transformed = transformed
-        .replace(/\bhe\b/gi, "you").replace(/\bshe\b/gi, "you")
-        .replace(/\bhim\b/gi, "you").replace(/\bher\b/gi, "you")
-        .replace(/\bhis\b/gi, "your").replace(/\b(hers)\b/gi, "yours");
-    transformed = transformed
-        .replace(/\byou is\b/gi, "you are").replace(/\byou was\b/gi, "you were")
-        .replace(/\byou has\b/gi, "you have").replace(/\byou likes\b/gi, "you like")
-        .replace(/\byou wants\b/gi, "you want").replace(/\byou needs\b/gi, "you need");
-    transformed = transformed.trim();
-    transformed = transformed.charAt(0).toUpperCase() + transformed.slice(1);
-    const questionStarters = ["do", "are", "is", "can", "could", "would", "should", "will", "did", "have", "has", "what", "where", "when", "who", "why", "how"];
-    const startsWithQuestion = questionStarters.some(q => transformed.toLowerCase().startsWith(q));
-    if ((isQuestion || startsWithQuestion) && !transformed.endsWith('?')) transformed += '?';
-    return transformed;
-};
+  const transformContent = (rawText, isQuestion = false) => {
+      let text = rawText.trim();
+      if (!text) return "";
+      const grammarRules = [
+          { regex: /\bif (?:he|she|it) is\b/gi, replace: "are you" },
+          { regex: /\bif (?:he|she|it) was\b/gi, replace: "were you" },
+          { regex: /\bif (?:he|she|it) will be\b/gi, replace: "will you be" },
+          { regex: /\bif (?:he|she|it) can\b/gi, replace: "can you" },
+          { regex: /\bif (?:he|she|it) could\b/gi, replace: "could you" },
+          { regex: /\bif (?:he|she|it) would\b/gi, replace: "would you" },
+          { regex: /\bif (?:he|she|it) should\b/gi, replace: "should you" },
+          { regex: /\bif (?:he|she|it) (likes|wants|needs|has|knows|thinks)\b/gi, replace: (_, v) => `do you ${v.slice(0, -1)}` },
+          { regex: /\bif (?:he|she|it) (went|saw|did|took|made)\b/gi, replace: (_, v) => `did you ${v}` },
+          { regex: /\bwhat (?:he|she|it) is\b/gi, replace: "what are you" },
+          { regex: /\bwhere (?:he|she|it) is\b/gi, replace: "where are you" },
+          { regex: /\bwho (?:he|she|it) is\b/gi, replace: "who are you" },
+          { regex: /\bhow (?:he|she|it) is\b/gi, replace: "how are you" },
+          { regex: /\bwhen (?:he|she|it) is\b/gi, replace: "when are you" },
+          { regex: /\bwhy (?:he|she|it) is\b/gi, replace: "why are you" },
+          { regex: /\b(what|where|when|how|why) (?:he|she|it) (will|can|could|should)\b/gi, replace: "$1 $2 you" },
+          { regex: /^to\s+/i, replace: "" },
+          { regex: /\bthat\s+/i, replace: "" },
+      ];
+      let transformed = text;
+      for (const rule of grammarRules) {
+          if (rule.regex.test(transformed)) transformed = transformed.replace(rule.regex, rule.replace);
+      }
+      transformed = transformed
+          .replace(/\bhe\b/gi, "you").replace(/\bshe\b/gi, "you")
+          .replace(/\bhim\b/gi, "you").replace(/\bher\b/gi, "you")
+          .replace(/\bhis\b/gi, "your").replace(/\b(hers)\b/gi, "yours");
+      transformed = transformed
+          .replace(/\byou is\b/gi, "you are").replace(/\byou was\b/gi, "you were")
+          .replace(/\byou has\b/gi, "you have").replace(/\byou likes\b/gi, "you like")
+          .replace(/\byou wants\b/gi, "you want").replace(/\byou needs\b/gi, "you need");
+      transformed = transformed.trim();
+      transformed = transformed.charAt(0).toUpperCase() + transformed.slice(1);
+      const questionStarters = ["do", "are", "is", "can", "could", "would", "should", "will", "did", "have", "has", "what", "where", "when", "who", "why", "how"];
+      const startsWithQuestion = questionStarters.some(q => transformed.toLowerCase().startsWith(q));
+      if ((isQuestion || startsWithQuestion) && !transformed.endsWith('?')) transformed += '?';
+      return transformed;
+  };
 
   const processCommand = useCallback(async (rawText) => {
       if (!rawText) { setIsProcessing(false); setIsListening(false); return; }
@@ -412,10 +409,7 @@ const transformContent = (rawText, isQuestion = false) => {
           } else {
               if (!messageContent) messageContent = "👋"; 
               messageContent = transformContent(messageContent, isQuestion);
-
-              // Check Auto-send preference
               const autoSend = localStorage.getItem('voice_auto_send') === 'true'; 
-
               if (autoSend) {
                   setFeedback(`Sent to ${partnerName}: "${messageContent}"`);
                   if (sendMessageRef.current) sendMessageRef.current(targetChat._id, messageContent).catch(err => console.error(err));
@@ -437,7 +431,7 @@ const transformContent = (rawText, isQuestion = false) => {
       if (pendingMessage.chat && pendingMessage.content) {
           setFeedback(`Sent to ${pendingMessage.partnerName}`);
           setIsConfirming(false);
-          setIsProcessing(true); // Show dots while sending
+          setIsProcessing(true); 
           if (sendMessageRef.current) {
               sendMessageRef.current(pendingMessage.chat._id, pendingMessage.content)
                 .catch(err => console.error(err))
@@ -453,7 +447,6 @@ const transformContent = (rawText, isQuestion = false) => {
   };
 
   const handleRetry = () => {
-      // 1. Reset all states
       setIsConfirming(false);
       setIsProcessing(false);
       setIsListening(true);
@@ -461,11 +454,8 @@ const transformContent = (rawText, isQuestion = false) => {
       transcriptRef.current = '';
       setPendingMessage({ chat: null, content: '', partnerName: '' });
       setFeedback('Listening...');
-
-      // 2. Start recognition directly
       try {
           if (recognitionRef.current) {
-              // Stop if somehow still active
               try { recognitionRef.current.stop(); } catch(e) {}
               recognitionRef.current.start();
           }
@@ -504,7 +494,6 @@ const transformContent = (rawText, isQuestion = false) => {
               setIsListening(false);
               return;
           }
-          // Don't close UI yet, process command
           processCommand(transcriptRef.current);
       };
       
@@ -535,7 +524,7 @@ const transformContent = (rawText, isQuestion = false) => {
     <>
       <AssistantContainer>
         <TriggerButton onClick={handleToggle} $isListening={isListening || isProcessing || isConfirming}>
-            {isListening || isProcessing || isConfirming ? <FaMicrophoneSlash /> : <FaMicrophone />}
+            {isListening || isProcessing || isConfirming ? <MdMicOff /> : <MdMic />}
             <RiSparklingFill className="sparkle" />
         </TriggerButton>
       </AssistantContainer>
@@ -543,7 +532,6 @@ const transformContent = (rawText, isQuestion = false) => {
       {(isListening || isProcessing || isConfirming) && ReactDOM.createPortal(
           <Overlay>
               <StatusText>{feedback}</StatusText>
-              
               {isProcessing ? (
                   <TypingIndicator>
                       <Dot delay={0} />
@@ -559,11 +547,9 @@ const transformContent = (rawText, isQuestion = false) => {
                     <WaveBar delay={0.3} />
                   </WaveContainer>
               ) : null}
-
               <TranscriptText>
                   {isConfirming ? `"${pendingMessage.content}"` : transcript ? `"${transcript}"` : ""}
               </TranscriptText>
-
               <ActionButtons>
                   {isConfirming ? (
                       <>
@@ -574,9 +560,7 @@ const transformContent = (rawText, isQuestion = false) => {
                   ) : (
                       <ActionButton onClick={() => { 
                           if (recognitionRef.current) recognitionRef.current.stop();
-                          setIsListening(false); 
-                          setIsProcessing(false);
-                          setIsConfirming(false);
+                          setIsListening(false); setIsProcessing(false); setIsConfirming(false);
                       }}>
                           Cancel
                       </ActionButton>

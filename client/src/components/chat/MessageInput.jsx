@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { IoMdSend, IoMdClose } from 'react-icons/io';
-import { BsEmojiSmile, BsMicFill } from 'react-icons/bs';
+import { BsEmojiSmile } from 'react-icons/bs';
+import { MdMic } from 'react-icons/md';
 import { useChat } from '../../context/ChatContext';
 import EmojiPicker from './EmojiPicker';
 
@@ -108,12 +109,14 @@ const SendButton = styled.button`
 `;
 
 const MicButton = styled(SendButton)`
-  /* Keep it solid primary color, no weird red unless holding */
   background-color: ${props => props.theme.colors.primary}; 
   
+  svg {
+      font-size: 1.25rem; /* Slightly reduced */
+  }
+
   ${props => props.$recording && css`
     transform: scale(1.2);
-    /* Subtle pulse in theme color */
     animation: ${pulse} 1.5s infinite;
   `}
 `;
@@ -132,13 +135,13 @@ const RecordingIndicator = styled.div`
   animation: ${slideUp} 0.2s ease-out;
   
   span:first-of-type {
-      color: #ff3b30; /* Red timer text for urgency/clarity */
+      color: #ff3b30; 
       min-width: 45px;
   }
 `;
 
 const RecDot = styled.div`
-  width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%;
+  width: 100px; height: 10px; background-color: #ff3b30; border-radius: 50%;
   animation: ${pulse} 1s infinite;
 `;
 
@@ -146,7 +149,7 @@ const MessageInput = () => {
   const [text, setText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isUploading, setIsUploading] = useState(false); // New uploading state
+  const [isUploading, setIsUploading] = useState(false); 
   const [recordingTime, setRecordingTime] = useState(0);
   
   const { sendMessage, sendFileMessage, replyingTo, setReplyingTo } = useChat();
@@ -157,7 +160,6 @@ const MessageInput = () => {
   const startTimeRef = useRef(0); 
   const streamRef = useRef(null);
 
-  // --- Timer ---
   useEffect(() => {
       let interval;
       if (isRecording) {
@@ -203,7 +205,6 @@ const MessageInput = () => {
               const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
               const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
               
-              // Cleanup
               if (streamRef.current) {
                   streamRef.current.getTracks().forEach(track => track.stop());
               }
@@ -303,7 +304,7 @@ const MessageInput = () => {
                     onTouchEnd={stopRecording}
                     onContextMenu={(e) => e.preventDefault()}
                 > 
-                    <BsMicFill /> 
+                    <MdMic /> 
                 </MicButton>
             )}
         </InputRow>
