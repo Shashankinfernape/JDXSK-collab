@@ -176,16 +176,3 @@ const AudioVisualizer = ({ currentTime, duration, isPlaying, onSeek, isMe }) => 
 };
 
 export default AudioVisualizer;
-
-  return (
-      <VisualizerContainer 
-        ref={containerRef}
-        onMouseDown={onMouseDown}
-        onTouchStart={onTouchStart}
-      >
-          <Canvas ref={canvasRef} />
-      </VisualizerContainer>
-  );
-};
-
-export default AudioVisualizer;
