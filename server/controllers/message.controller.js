@@ -1,6 +1,7 @@
 const Message = require('../models/message.model');
 const Chat = require('../models/chat.model');
 const { getIo, getSocketId } = require('../socket/socket');
+const path = require('path');
 
 // Send Text Message (REST API)
 const sendMessage = async (req, res) => {
@@ -83,26 +84,48 @@ const uploadMessage = async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        const { chatId, duration } = req.body;
+        const { chatId, duration, replyTo } = req.body;
         const senderId = req.user._id;
+
+        if (!chatId) {
+            return res.status(400).json({ message: "ChatId is required" });
+        }
+
+        const chatDoc = await Chat.findById(chatId);
+        if (!chatDoc) {
+            return res.status(404).json({ message: "Chat not found" });
+        }
         
         // Robust Mimetype/Extension Check
+        // Some mobile browsers or recorders might send different mimetypes
+        const mimetype = req.file.mimetype.toLowerCase();
+        const extension = path.extname(req.file.originalname).toLowerCase();
+        
         const isAudio = 
-            req.file.mimetype.startsWith('audio/') || 
-            req.file.mimetype === 'video/webm' || 
-            req.file.mimetype === 'application/octet-stream' ||
-            req.file.originalname.match(/\.(webm|mp3|wav|m4a|ogg)$/i);
+            mimetype.startsWith('audio/') || 
+            mimetype === 'video/webm' || 
+            mimetype === 'video/ogg' ||
+            mimetype === 'application/octet-stream' ||
+            ['.webm', '.mp3', '.wav', '.m4a', '.ogg', '.aac'].includes(extension);
 
         const type = isAudio ? 'audio' : 'image';
         
-        // Construct public URL (assuming static serve setup)
-        // In production, this would be the S3/Cloudinary URL
+        // Construct public URL
         const fileUrl = `/uploads/${req.file.filename}`;
 
-        const chatDoc = await Chat.findById(chatId);
         let disappearAt = null;
-        if (chatDoc && chatDoc.disappearingMessages) {
+        if (chatDoc.disappearingMessages) {
             disappearAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        }
+
+        // Parse replyTo if it's a string (multipart/form-data often sends JSON as string)
+        let parsedReplyTo = null;
+        if (replyTo) {
+            try {
+                parsedReplyTo = typeof replyTo === 'string' ? JSON.parse(replyTo) : replyTo;
+            } catch (e) {
+                console.error("Error parsing replyTo in uploadMessage:", e);
+            }
         }
 
         const newMessage = await Message.create({
@@ -112,6 +135,7 @@ const uploadMessage = async (req, res) => {
             contentType: type,
             fileUrl: fileUrl,
             duration: duration ? Number(duration) : 0,
+            replyTo: parsedReplyTo,
             disappearAt: disappearAt
         });
 
@@ -121,7 +145,7 @@ const uploadMessage = async (req, res) => {
 
         await Chat.findByIdAndUpdate(chatId, { lastMessage: newMessage._id });
         
-        // --- Socket Logic for File Uploads (Copied to keep consistent) ---
+        // --- Socket Logic for File Uploads ---
         try {
             const io = getIo();
             chatDoc.participants.forEach(participantId => {
@@ -129,9 +153,27 @@ const uploadMessage = async (req, res) => {
                 if (socketId) {
                     io.to(socketId).emit('receiveMessage', fullMessage);
                     io.to(socketId).emit('updateChatList', fullMessage);
+                    
+                    // Delivery Receipt Logic (for Recipient)
+                    if (participantId.toString() !== senderId.toString()) {
+                         Message.findByIdAndUpdate(newMessage._id, 
+                             { $addToSet: { deliveredTo: participantId } }
+                         ).then(updatedMsg => {
+                             const senderSocketId = getSocketId(senderId.toString());
+                             if (senderSocketId) {
+                                 io.to(senderSocketId).emit('messageDelivered', { 
+                                     messageId: newMessage._id, 
+                                     chatId: chatId,
+                                     deliveredTo: participantId 
+                                 });
+                             }
+                         }).catch(err => console.error("Error updating deliveredTo for file:", err));
+                    }
                 }
             });
-        } catch (e) { console.error("Socket emit error on upload", e); }
+        } catch (socketError) {
+            console.error("Socket emit failed on upload (non-fatal):", socketError);
+        }
 
         res.status(201).json(fullMessage);
     } catch (error) {

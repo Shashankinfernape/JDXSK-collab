@@ -16,7 +16,28 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => {
         // chatID-timestamp-random.ext
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        let ext = path.extname(file.originalname);
+        
+        // If extension is missing, try to infer it from mimetype
+        if (!ext) {
+            if (file.mimetype === 'audio/webm' || file.mimetype === 'video/webm') {
+                ext = '.webm';
+            } else if (file.mimetype === 'audio/ogg' || file.mimetype === 'video/ogg') {
+                ext = '.ogg';
+            } else if (file.mimetype === 'audio/mpeg') {
+                ext = '.mp3';
+            } else if (file.mimetype === 'image/jpeg') {
+                ext = '.jpg';
+            } else if (file.mimetype === 'image/png') {
+                ext = '.png';
+            } else if (file.mimetype === 'image/gif') {
+                ext = '.gif';
+            } else if (file.mimetype === 'image/webp') {
+                ext = '.webp';
+            }
+        }
+        
+        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
     }
 });
 
