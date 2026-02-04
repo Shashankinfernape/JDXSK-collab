@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { IoMdSend, IoMdClose } from 'react-icons/io';
-import { BsEmojiSmile } from 'react-icons/bs';
-import { MdMic } from 'react-icons/md';
+import { MdMic, MdOutlineEmojiEmotions } from 'react-icons/md';
 import { useChat } from '../../context/ChatContext';
 import EmojiPicker from './EmojiPicker';
 
@@ -88,33 +87,31 @@ const CloseButton = styled.button`
 `;
 
 const InputRow = styled.form`
-  display: flex; align-items: center; padding: 6px 12px; min-height: 48px;
+  display: flex; align-items: center; padding: 6px 8px; min-height: 48px;
 `;
 
 const IconButton = styled.button`
   background: transparent; border: none; color: ${props => props.theme.colors.icon};
-  cursor: pointer; font-size: 1.4rem; display: flex; align-items: center;
-  padding: 8px; border-radius: 50%; transition: color 0.2s ease; margin-right: 4px;
+  cursor: pointer; font-size: 1.6rem; 
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%; 
+  transition: all 0.2s ease; flex-shrink: 0;
   &:hover { color: ${props => props.theme.colors.iconActive}; background-color: ${props => props.theme.colors.hoverBackground}; }
 `;
 
 const SendButton = styled.button`
   background-color: ${props => props.theme.colors.primary};
-  color: #FFFFFF; border: none; width: 42px; height: 42px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
-  cursor: pointer; transition: transform 0.2s, filter 0.2s; margin-left: 4px; flex-shrink: 0;
+  color: #FFFFFF; border: none; width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+  cursor: pointer; transition: transform 0.2s, filter 0.2s; margin-left: 6px; flex-shrink: 0;
   &:hover { filter: brightness(1.1); transform: scale(1.05); }
   &:active { transform: scale(0.95); }
-  svg { margin-left: 2px; }
+  svg { display: block; }
 `;
 
 const MicButton = styled(SendButton)`
   background-color: ${props => props.theme.colors.primary}; 
-  
-  svg {
-      font-size: 1.25rem; /* Slightly reduced */
-  }
-
+  svg { font-size: 1.35rem; }
   ${props => props.$recording && css`
     transform: scale(1.2);
     animation: ${pulse} 1.5s infinite;
@@ -122,7 +119,7 @@ const MicButton = styled(SendButton)`
 `;
 
 const TextInput = styled.input`
-  flex: 1; background: transparent; border: none; padding: 8px 4px;
+  flex: 1; background: transparent; border: none; padding: 8px 8px;
   color: ${props => props.theme.colors.textPrimary}; font-size: 0.95rem; outline: none;
   &::placeholder { color: ${props => props.theme.colors.textSecondary}; }
 `;
@@ -133,15 +130,11 @@ const RecordingIndicator = styled.div`
   font-weight: 700; font-size: 1.1rem;
   padding-left: 10px;
   animation: ${slideUp} 0.2s ease-out;
-  
-  span:first-of-type {
-      color: #ff3b30; 
-      min-width: 45px;
-  }
+  span:first-of-type { color: #ff3b30; min-width: 45px; }
 `;
 
 const RecDot = styled.div`
-  width: 100px; height: 10px; background-color: #ff3b30; border-radius: 50%;
+  width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%;
   animation: ${pulse} 1s infinite;
 `;
 
@@ -154,7 +147,6 @@ const MessageInput = () => {
   
   const { sendMessage, sendFileMessage, replyingTo, setReplyingTo } = useChat();
   const inputRef = useRef(null);
-  
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const startTimeRef = useRef(0); 
@@ -164,9 +156,7 @@ const MessageInput = () => {
       let interval;
       if (isRecording) {
           setRecordingTime(0);
-          interval = setInterval(() => {
-              setRecordingTime(prev => prev + 1);
-          }, 1000);
+          interval = setInterval(() => { setRecordingTime(prev => prev + 1); }, 1000);
       } else {
           setRecordingTime(0);
       }
@@ -186,58 +176,34 @@ const MessageInput = () => {
   const startRecording = async (e) => {
       if (e) e.preventDefault();
       if (isRecording || isUploading) return;
-
       try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           streamRef.current = stream;
-          
           const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
           const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-          
           mediaRecorderRef.current = recorder;
           audioChunksRef.current = [];
-          
-          recorder.ondataavailable = (event) => {
-              if (event.data.size > 0) audioChunksRef.current.push(event.data);
-          };
-
+          recorder.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
           recorder.onstop = async () => {
               const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
               const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
-              
-              if (streamRef.current) {
-                  streamRef.current.getTracks().forEach(track => track.stop());
-              }
-
+              if (streamRef.current) { streamRef.current.getTracks().forEach(track => track.stop()); }
               if (audioBlob.size > 0 && duration >= 1) {
                   setIsUploading(true);
                   const file = new File([audioBlob], "voice.webm", { type: 'audio/webm' });
-                  try {
-                      await sendFileMessage(file, duration);
-                  } catch (err) {
-                      console.error("Upload failed", err);
-                  } finally {
-                      setIsUploading(false);
-                  }
+                  try { await sendFileMessage(file, duration); } catch (err) { console.error("Upload failed", err); } finally { setIsUploading(false); }
               }
               setIsRecording(false);
           };
-
           recorder.start();
           startTimeRef.current = Date.now();
           setIsRecording(true);
-
-      } catch (err) {
-          console.error("Microphone error:", err);
-          setIsRecording(false);
-      }
+      } catch (err) { console.error("Microphone error:", err); setIsRecording(false); }
   };
 
   const stopRecording = (e) => {
       if (e) e.preventDefault();
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-          mediaRecorderRef.current.stop();
-      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') { mediaRecorderRef.current.stop(); }
   };
 
   const handleSubmit = (e) => {
@@ -249,9 +215,7 @@ const MessageInput = () => {
     }
   };
 
-  const handleEmojiClick = (emoji) => {
-    setText(prev => prev + emoji);
-  };
+  const handleEmojiClick = (emoji) => { setText(prev => prev + emoji); };
 
   return (
     <Container>
@@ -262,15 +226,13 @@ const MessageInput = () => {
                     <ReplySender>{replyingTo.senderId?.name || "User"}</ReplySender>
                     <ReplyText>{replyingTo.content}</ReplyText>
                 </ReplyContent>
-                <CloseButton onClick={() => setReplyingTo(null)}>
-                    <IoMdClose />
-                </CloseButton>
+                <CloseButton onClick={() => setReplyingTo(null)}><IoMdClose /></CloseButton>
             </ReplyPreview>
         )}
         
         <InputRow onSubmit={handleSubmit}>
             <IconButton type="button" onClick={() => setShowPicker(!showPicker)}> 
-                <BsEmojiSmile /> 
+                <MdOutlineEmojiEmotions /> 
             </IconButton>
             
             {isRecording ? (
@@ -293,7 +255,7 @@ const MessageInput = () => {
             )}
             
             {text.trim() ? (
-                <SendButton type="submit"> <IoMdSend /> </SendButton>
+                <SendButton type="submit"> <IoMdSend style={{ marginLeft: '2px' }} /> </SendButton>
             ) : (
                 <MicButton 
                     type="button" 
@@ -309,7 +271,6 @@ const MessageInput = () => {
             )}
         </InputRow>
       </InputBubble>
-      
       {showPicker && <EmojiPicker onEmojiClick={handleEmojiClick} />}
     </Container>
   );
