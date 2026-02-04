@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { BsCheck, BsCheckAll } from 'react-icons/bs'; 
 import { BiTime } from 'react-icons/bi'; 
 import { IoMdUndo } from 'react-icons/io'; 
 import AudioPlayer from './AudioPlayer'; 
+import { highlight } from '../../theme/GlobalStyles';
 
 const isProduction = window.location.hostname.includes('onrender.com') || window.location.hostname.includes('vercel.app');
 const SERVER_URL = isProduction ? "https://jdxsk-collab.onrender.com" : `http://${window.location.hostname}:5000`; 
@@ -64,8 +65,8 @@ const MessageBubble = styled.div`
   align-items: stretch;
   gap: 0px; 
 
-  ${props => props.$isCurrentMatch && `
-    animation: highlight 2s infinite;
+  ${props => props.$isCurrentMatch && css`
+    animation: ${highlight} 2s infinite;
     box-shadow: 0 0 10px rgba(255, 235, 59, 0.6);
   `}
 `;
@@ -160,7 +161,9 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
       const originalId = message.replyTo?._id;
       if (originalId) {
           const el = document.getElementById(`msg-${originalId}`);
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
       }
   };
 

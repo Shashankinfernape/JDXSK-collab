@@ -1,7 +1,7 @@
-import { createGlobalStyle, css } from 'styled-components';
+import { createGlobalStyle, css, keyframes } from 'styled-components';
 
 // --- Keyframes ---
-const highlight = keyframes`
+export const highlight = keyframes`
   0% { background-color: transparent; }
   30% { background-color: rgba(255, 235, 59, 0.45); }
   100% { background-color: transparent; }
