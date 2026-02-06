@@ -4,6 +4,7 @@ import { IoMdSend, IoMdClose } from 'react-icons/io';
 import { MdMic, MdOutlineEmojiEmotions } from 'react-icons/md';
 import { useChat } from '../../context/ChatContext';
 import EmojiPicker from './EmojiPicker';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const slideUp = keyframes`
   from { opacity: 0; transform: translateY(10px); }
@@ -198,6 +199,7 @@ const MessageInput = () => {
           audioChunksRef.current = [];
           recorder.ondataavailable = (event) => { if (event.data.size > 0) audioChunksRef.current.push(event.data); };
           recorder.onstop = async () => {
+              setIsRecording(false);
               const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
               const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
               if (streamRef.current) { streamRef.current.getTracks().forEach(track => track.stop()); }
@@ -206,7 +208,6 @@ const MessageInput = () => {
                   const file = new File([audioBlob], "voice.webm", { type: 'audio/webm' });
                   try { await sendFileMessage(file, duration); } catch (err) { console.error("Upload failed", err); } finally { setIsUploading(false); }
               }
-              setIsRecording(false);
           };
           recorder.start();
           startTimeRef.current = Date.now();
@@ -267,15 +268,22 @@ const MessageInput = () => {
                 <TextInput
                     ref={inputRef}
                     type="text"
-                    placeholder="Type a message"
+                    placeholder={isUploading ? "Sending voice message..." : "Type a message"}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     onFocus={() => setShowPicker(false)}
+                    disabled={isUploading}
                 />
             )}
             
             {text.trim() ? (
-                <SendButton type="submit"> <IoMdSend style={{ marginLeft: '2px' }} /> </SendButton>
+                <SendButton type="submit" disabled={isUploading}> 
+                    {isUploading ? <LoadingSpinner size="20px" color="#ffffff" /> : <IoMdSend style={{ marginLeft: '2px' }} />}
+                </SendButton>
+            ) : isUploading ? (
+                <div style={{ width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 6 }}>
+                    <LoadingSpinner size="24px" />
+                </div>
             ) : (
                 <MicButton 
                     type="button" 
