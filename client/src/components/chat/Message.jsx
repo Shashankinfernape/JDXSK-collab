@@ -79,21 +79,24 @@ const Highlight = styled.span`
 `;
 
 const QuotedMessage = styled.div`
-  margin: 0 0 2px 0;
+  margin: 0 0 4px 0;
   width: 100%;
   background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)'};
   ${props => !props.$isMe && props.theme.isDark && `background-color: rgba(255, 255, 255, 0.08);`}
-  border-radius: ${props => props.theme.quoteBorderRadius || '6px'};
+  border-radius: ${props => props.theme.quoteBorderRadius || '12px'};
   position: relative;
   overflow: hidden; 
-  padding: 5px 12px 5px 16px; 
+  padding: 8px 12px 8px 16px; 
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   box-sizing: border-box;
   font-size: 0.82rem;
   line-height: 1.25;
   cursor: pointer;
   transition: background-color 0.2s;
+  min-height: 50px;
+
   &::before {
     content: '';
     position: absolute;
@@ -101,6 +104,21 @@ const QuotedMessage = styled.div`
     background-color: ${props => props.$isMe ? 'rgba(255,255,255,0.7)' : props.theme.colors.primary};
   }
   &:hover { background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.07)'}; }
+`;
+
+const QuotedProfilePic = styled.img`
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+`;
+
+const QuotedContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
 `;
 
 const QuotedSender = styled.span`
@@ -254,8 +272,14 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
         <MessageBubble isMe={isMe} $isCurrentMatch={isCurrentMatch}>
             {message.replyTo && message.replyTo.content && (
                 <QuotedMessage $isMe={isMe} onClick={scrollToOriginal}>
-                    <QuotedSender $isMe={isMe}>{message.replyTo.senderName || "User"}</QuotedSender>
-                    <QuotedText $isMe={isMe}>{message.replyTo.content}</QuotedText>
+                    <QuotedProfilePic 
+                        src={message.replyTo.senderId?.profilePic || `https://i.pravatar.cc/150?u=${message.replyTo.senderId?._id || 'u'}`} 
+                        alt="Sender" 
+                    />
+                    <QuotedContent>
+                        <QuotedSender $isMe={isMe}>{message.replyTo.senderName || "User"}</QuotedSender>
+                        <QuotedText $isMe={isMe}>{message.replyTo.content}</QuotedText>
+                    </QuotedContent>
                 </QuotedMessage>
             )}
             {isAudio ? (

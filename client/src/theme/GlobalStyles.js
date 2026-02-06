@@ -21,28 +21,28 @@ const brands = {
     font: "'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif",
     logo: '/netflix-logo.svg',
     bubbleBorderRadius: '8px', // Cinematic, Boxy
-    quoteBorderRadius: '4px',
+    quoteBorderRadius: '8px',
   },
   spotify: {
     primary: '#1DB954',
     font: "'Montserrat', 'Helvetica Neue', Helvetica, Arial, sans-serif",
     logo: '/spotify-logo.svg',
     bubbleBorderRadius: '12px', // Modern, Rounded
-    quoteBorderRadius: '8px',
+    quoteBorderRadius: '12px',
   },
   apple: {
     primary: '#007AFF',
     font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     logo: '/apple-logo.svg',
     bubbleBorderRadius: '16px', // iOS Standard
-    quoteBorderRadius: '12px',
+    quoteBorderRadius: '16px',
   },
   google: {
     primary: '#1A73E8',
     font: "'Google Sans', Roboto, sans-serif",
     logo: '/google-logo.svg',
     bubbleBorderRadius: '12px', // Clean, Minimal
-    quoteBorderRadius: '8px',
+    quoteBorderRadius: '12px',
   },
   instagram: {
     primary: '#E1306C', // Instagram Pink
@@ -50,7 +50,7 @@ const brands = {
     font: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     logo: '/instagram-logo.svg',
     bubbleBorderRadius: '18px', // Messenger Roundness
-    quoteBorderRadius: '14px',
+    quoteBorderRadius: '18px',
   }
 };
 
@@ -178,9 +178,9 @@ const createTheme = (brandKey, modeKey) => {
       colors.chatBackground = '#FFFFFF';
       colors.panelBackground = '#F1F3F4';
       colors.headerBackground = '#F1F3F4'; // Match panel
-      colors.bubbleOther = '#F1F3F4';
-      colors.bubbleMe = '#D2E3FC';
-      colors.textBubbleMe = '#174EA6';
+      colors.bubbleOther = '#E8EAED'; // Slightly darker for better visibility
+      colors.bubbleMe = '#1A73E8'; // Stronger Blue
+      colors.textBubbleMe = '#FFFFFF';
     }
   }
 
