@@ -272,10 +272,6 @@ const Message = ({ message, isSelected, isSelectionMode, onSelect, onReply, isSe
         <MessageBubble isMe={isMe} $isCurrentMatch={isCurrentMatch}>
             {message.replyTo && message.replyTo.content && (
                 <QuotedMessage $isMe={isMe} onClick={scrollToOriginal}>
-                    <QuotedProfilePic 
-                        src={message.replyTo.senderId?.profilePic || `https://i.pravatar.cc/150?u=${message.replyTo.senderId?._id || 'u'}`} 
-                        alt="Sender" 
-                    />
                     <QuotedContent>
                         <QuotedSender $isMe={isMe}>{message.replyTo.senderName || "User"}</QuotedSender>
                         <QuotedText $isMe={isMe}>{message.replyTo.content}</QuotedText>

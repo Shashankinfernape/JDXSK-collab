@@ -43,7 +43,7 @@ const InputBubble = styled.div`
 `;
 
 const ReplyPreview = styled.div`
-  margin: 4px 6px 8px 6px;
+  margin: 4px 6px 2px 6px;
   width: calc(100% - 12px);
   background-color: ${props => props.theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};
   border-radius: ${props => props.theme.quoteBorderRadius || '12px'};
@@ -99,7 +99,7 @@ const CloseButton = styled.button`
 `;
 
 const InputRow = styled.form`
-  display: flex; align-items: center; padding: 6px 8px; min-height: 48px;
+  display: flex; align-items: center; padding: 4px 8px; min-height: 48px;
 `;
 
 const IconButton = styled.button`
@@ -113,9 +113,10 @@ const IconButton = styled.button`
 
 const SendButton = styled.button`
   background-color: ${props => props.theme.colors.primary};
-  color: #FFFFFF; border: none; width: 40px; height: 40px; border-radius: 50%;
+  color: #FFFFFF; border: none; width: 42px; height: 42px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
   cursor: pointer; transition: transform 0.2s, filter 0.2s; margin-left: 6px; flex-shrink: 0;
+  padding: 0;
   &:hover { filter: brightness(1.1); transform: scale(1.05); }
   &:active { transform: scale(0.95); }
   svg { display: block; }
