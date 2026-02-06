@@ -237,21 +237,21 @@ const ChatWindow = ({ onBack }) => {
                     value={chatSearchTerm}
                     onChange={(e) => setChatSearchTerm(e.target.value)}
                 />
+                <div style={{ display: 'flex', gap: '4px' }}>
+                    <IconButton 
+                        style={{ fontSize: '1.2rem', padding: '4px' }} 
+                        onClick={() => window._searchPrev && window._searchPrev()}
+                    >
+                        <IoMdArrowUp />
+                    </IconButton>
+                    <IconButton 
+                        style={{ fontSize: '1.2rem', padding: '4px' }} 
+                        onClick={() => window._searchNext && window._searchNext()}
+                    >
+                        <IoMdArrowDown />
+                    </IconButton>
+                </div>
             </SearchInputWrapper>
-            <div style={{ display: 'flex' }}>
-                <IconButton 
-                    style={{ fontSize: '1.2rem' }} 
-                    onClick={() => window._searchPrev && window._searchPrev()}
-                >
-                    <IoMdArrowUp />
-                </IconButton>
-                <IconButton 
-                    style={{ fontSize: '1.2rem' }} 
-                    onClick={() => window._searchNext && window._searchNext()}
-                >
-                    <IoMdArrowDown />
-                </IconButton>
-            </div>
         </SearchBarOverlay>
       </ChatHeader>
 

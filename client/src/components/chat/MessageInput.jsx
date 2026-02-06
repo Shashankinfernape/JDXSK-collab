@@ -66,16 +66,6 @@ const ReplyPreview = styled.div`
   }
 `;
 
-const ReplyProfilePic = styled.img`
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  margin-right: 12px;
-  object-fit: cover;
-  flex-shrink: 0;
-  background-color: ${props => props.theme.colors.hoverBackground};
-`;
-
 const ReplyContent = styled.div`
   display: flex; flex-direction: column; overflow: hidden; flex: 1;
   justify-content: center;
@@ -231,18 +221,11 @@ const MessageInput = () => {
 
   const handleEmojiClick = (emoji) => { setText(prev => prev + emoji); };
 
-  const getReplyProfilePic = () => {
-      if (!replyingTo) return null;
-      // Depending on how your message object is structured
-      return replyingTo.senderId?.profilePic || `https://i.pravatar.cc/150?u=${replyingTo.senderId?._id || 'u'}`;
-  };
-
   return (
     <Container>
       <InputBubble $isReplying={!!replyingTo}>
         {replyingTo && (
             <ReplyPreview>
-                <ReplyProfilePic src={getReplyProfilePic()} alt="Sender" />
                 <ReplyContent>
                     <ReplySender>{replyingTo.senderId?.name || "User"}</ReplySender>
                     <ReplyText>{replyingTo.content}</ReplyText>
