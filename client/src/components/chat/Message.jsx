@@ -106,14 +106,6 @@ const QuotedMessage = styled.div`
   &:hover { background-color: ${props => props.$isMe ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.07)'}; }
 `;
 
-const QuotedProfilePic = styled.img`
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  object-fit: cover;
-  flex-shrink: 0;
-`;
-
 const QuotedContent = styled.div`
   display: flex;
   flex-direction: column;
