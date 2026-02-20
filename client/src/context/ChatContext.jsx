@@ -194,27 +194,26 @@ export const ChatProvider = ({ children }) => {
 
   // ... (sendMessage and addNewChat are unchanged from the previous step) ...
   const sendMessage = async (text) => {
-    if (!activeChat || !user) return; // Socket check not strictly required for REST, but good for online status
+    if (!activeChat || !user) return; 
     
-    const messageData = {
-      chatId: activeChat._id,
-      senderId: user._id, 
-      content: text,
-      replyTo: replyingTo ? { _id: replyingTo._id, content: replyingTo.content, senderName: replyingTo.senderId.name } : null
-    };
+    const replySnapshot = replyingTo ? { 
+      _id: replyingTo._id, 
+      content: replyingTo.contentType === 'audio' ? '🎤 Voice Message' : (replyingTo.contentType === 'image' ? '📷 Image' : replyingTo.content), 
+      senderName: replyingTo.senderId.name 
+    } : null;
 
     // 1. Optimistic UI Update
     const optimisticMessage = {
-      ...messageData,
-      _id: `temp-${Math.random()}`, // Temporary ID
-      createdAt: new Date().toISOString(),
+      chatId: activeChat._id,
       senderId: { 
         _id: user._id, 
         name: user.name,
         profilePic: user.profilePic,
       },
-      // We need to match the structure for replyingTo if present
-      replyTo: replyingTo ? replyingTo : null 
+      content: text,
+      _id: `temp-${Math.random()}`, 
+      createdAt: new Date().toISOString(),
+      replyTo: replySnapshot 
     };
 
     setMessages(prev => ({
@@ -225,18 +224,12 @@ export const ChatProvider = ({ children }) => {
 
     // 2. Reliable REST API Call
     try {
-        // We use POST /messages instead of socket.emit
-        // The server will save to DB AND emit 'receiveMessage' via socket
         const { data: savedMessage } = await api.post('/messages', {
             chatId: activeChat._id,
             content: text,
-            replyTo: replyingTo ? replyingTo._id : null
+            replyTo: replySnapshot
         });
         
-        // 3. Reconcile Optimistic Message (Optional but good)
-        // The socket listener 'receiveMessage' will likely handle this replacement 
-        // via the deduplication logic we added earlier (temp- ID check).
-        // But we can also manually replace it here if socket is slow.
         setMessages(prev => {
             const currentMessages = prev[activeChat._id] || [];
             const tempIndex = currentMessages.findIndex(m => m._id === optimisticMessage._id);
@@ -250,33 +243,36 @@ export const ChatProvider = ({ children }) => {
 
     } catch (error) {
         console.error("Failed to send message via API", error);
-        // TODO: Mark message as failed in UI
     }
   };
 
   const sendFileMessage = async (file, duration = 0) => {
       if (!activeChat || !user) return;
       
-      // 1. Log Upload Start (No Optimistic UI for Files to prevent dupes)
+      const replySnapshot = replyingTo ? { 
+        _id: replyingTo._id, 
+        content: replyingTo.contentType === 'audio' ? '🎤 Voice Message' : (replyingTo.contentType === 'image' ? '📷 Image' : replyingTo.content), 
+        senderName: replyingTo.senderId.name 
+      } : null;
+
       console.log("Uploading file...", file.type, file.size);
 
       const formData = new FormData();
       formData.append('file', file);
       formData.append('chatId', activeChat._id);
       if (duration) formData.append('duration', duration);
+      if (replySnapshot) formData.append('replyTo', JSON.stringify(replySnapshot));
+
+      setReplyingTo(null); // Clear reply state on send
 
       try {
           const { data: newMessage } = await api.post('/messages/upload', formData, {
               headers: { 'Content-Type': 'multipart/form-data' }
           });
           
-          // Socket emit NO LONGER NEEDED (Server emits on upload)
-          // socket.emit('sendMessage', newMessage); 
-          
-          // Add REAL message directly (Dedup logic in setMessages will handle race with socket)
           setMessages(prev => {
               const chatMessages = prev[activeChat._id] || [];
-              if (chatMessages.some(m => m._id === newMessage._id)) return prev; // Already added by socket?
+              if (chatMessages.some(m => m._id === newMessage._id)) return prev; 
               return { 
                   ...prev, 
                   [activeChat._id]: [...chatMessages, newMessage] 
@@ -284,7 +280,6 @@ export const ChatProvider = ({ children }) => {
           });
       } catch (error) {
           console.error("Failed to send file", error);
-          // Show error toast or alert here if needed
       }
   };
 

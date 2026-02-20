@@ -72,8 +72,11 @@
 - [x] **Voice Messages:** WhatsApp-grade recording and waveform player.
 - [x] **Settings:** Added Disappearing Messages toggle.
 - [x] **Emojis:** Categorized WhatsApp-style picker.
+- [x] **Google Light Theme:** Optimized bubble visibility and contrast.
+- [x] **Search UI:** Expanded search bar with integrated navigation controls.
+- [x] **Voice UX Fix:** Immediate recording release and upload feedback (Spinners).
 - [ ] **Cloud Storage:** Migration from local `uploads/` to S3/Cloudinary.
 
 ---
-*Last updated: January 25, 2026*
-*Latest Milestone: Voice Assistant & Messaging Rework*
+*Last updated: February 6, 2026*
+*Latest Milestone: UI Refinements & Voice UX Fixes*

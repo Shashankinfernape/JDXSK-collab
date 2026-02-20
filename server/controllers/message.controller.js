@@ -35,8 +35,7 @@ const sendMessage = async (req, res) => {
         await Chat.findByIdAndUpdate(chatId, { lastMessage: newMessage._id });
 
         const populatedMessage = await Message.findById(newMessage._id)
-            .populate('senderId', 'name profilePic email')
-            .populate('replyTo', 'content senderId'); // Populate reply if needed
+            .populate('senderId', 'name profilePic email');
 
         // --- Real-time Socket Emits ---
         try {
