@@ -12,6 +12,7 @@ router.get('/google', passport.authenticate('google', {
     'email',   // Request email address
     'https://www.googleapis.com/auth/drive.file' // Scope needed for Google Drive backup later
   ],
+  prompt: 'select_account', // Forces Google to show the account selection screen on every login
   session: false // We are not using server sessions, using JWT instead
 }));
 
